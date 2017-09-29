@@ -1,7 +1,7 @@
-# Matterport3DSimulator
+# Matterport3D Simulator
 AI Research Platform for Reinforcement Learning from Real Panoramic Images.
 
-This simulator enables development of AI **agents that interact with real 3D environments using visual information** (RGB-D images). It is primarily intended for research in deep reinforcement learning, at the intersection of computer vision, natural language processing and robotics.
+The Matterport3D Simulator enables development of AI **agents that interact with real 3D environments using visual information** (RGB-D images). It is primarily intended for research in deep reinforcement learning, at the intersection of computer vision, natural language processing and robotics.
 
 ## Features (eventually maybe)
 - Dataset consisting of 90 different predominantly indoor environments,
@@ -28,6 +28,6 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 ### Actions
 
-At each viewpoint location, the agent can pan and tilt the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are configurable.
+At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are configurable.
 
 ## Installation/Building instructions
