@@ -8,6 +8,7 @@ import cv2
 cv2.namedWindow('displaywin')
 sim = MatterSim.Simulator()
 sim.setDatasetPath('../data')
+sim.setNavGraphPath('connectivity')
 sim.setScanId('2t7WUuJeko7')
 sim.setScreenResolution(640, 480)
 sim.init()
