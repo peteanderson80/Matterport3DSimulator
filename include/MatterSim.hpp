@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+#include <opencv/cv.h>
+
 #include <GL/glew.h>
 
 #include <glm/glm.hpp>
