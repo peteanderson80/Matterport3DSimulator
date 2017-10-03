@@ -18,14 +18,13 @@ int main(int argc, char *argv[]) {
     Simulator *sim = new Simulator();
 
     // Sets path to Matterport3D dataset.
-    sim->setDatasetPath("../../data/Matterport3D");
+    sim->setDatasetPath("../data");
 
     // Sets path to viewpoint connectivity graphs (these are not in the Matterport3D dataset, I will provide) 
-    sim->setNavGraphPath("../../data/nav");
+    sim->setNavGraphPath("connectivity");
 
     // Sets resolution. Default is 320X240
     sim->setScreenResolution(640,480);
-
 
     // Sets which scene is used
     sim->setScanId("2t7WUuJeko7");

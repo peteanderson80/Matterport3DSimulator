@@ -70,11 +70,11 @@ void setupCubeMap(GLuint& texture, cv::Mat &xpos, cv::Mat &xneg, cv::Mat &ypos, 
 }
 
 void Simulator::setDatasetPath(std::string path) {
-    std::cout << "FIXME implement dataset pathing" << std::endl;
+    datasetPath = path; // FIXME check for existence?
 }
 
 void Simulator::setNavGraphPath(std::string path) {
-    std::cout << "FIXME implement nav graph path" << std::endl;
+    navGraphPath = path; // FIXME check for existence?
 }
 
 void Simulator::setScreenResolution(int width, int height) {
@@ -83,7 +83,7 @@ void Simulator::setScreenResolution(int width, int height) {
 }
 
 void Simulator::setScanId(std::string id) {
-    std::cout << "FIXME implement scan ID" << std::endl;
+    scanId = id; // FIXME check for existence?
 }
 
 void Simulator::init() {
@@ -95,7 +95,7 @@ void Simulator::init() {
     glewInit();
 
     // set up the cube map texture
-    std::string datafolder("../data/v1/scans/2t7WUuJeko7/2t7WUuJeko7/matterport_skybox_images/");
+    auto datafolder = datasetPath + "/v1/scans/" + scanId + "/" + scanId + "/matterport_skybox_images/";
 
     auto xpos = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox2_sami.jpg");
     auto xneg = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox4_sami.jpg");
