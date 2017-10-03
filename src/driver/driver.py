@@ -18,7 +18,7 @@ while True:
     sim.makeAction(0, heading, elevation)
     cv2.imshow('displaywin', sim.getState().rgb)
     k = cv2.waitKey(1)
-    if k == 113:
+    if k == ord('q'):
         break
     elif k == 81 or k == ord('a'):
         heading -= math.pi / 180
