@@ -87,8 +87,7 @@ void Simulator::setScanId(std::string id) {
 }
 
 void Simulator::init() {
-    cv::Mat img(height, width, CV_8UC3);
-    state->rgb = img;
+    state->rgb.create(height, width, CV_8UC3);
 
     cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
     cv::setOpenGlContext("renderwin");
