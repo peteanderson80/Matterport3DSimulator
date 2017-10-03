@@ -54,6 +54,7 @@ namespace mattersim {
         glm::mat4 Model;
         GLint PVM;
         GLint vertex;
+        GLuint FramebufferName;
         std::string datasetPath;
         std::string navGraphPath;
         std::string scanId;
