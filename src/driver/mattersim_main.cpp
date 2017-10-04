@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
             switch (key) {
             case -1:
                 continue;
-            case 113:
+            case 'q':
                 return 0;
                 break;
             case 81:
