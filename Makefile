@@ -2,7 +2,7 @@
 
 all: lib/MatterSim.o bin/mattersim_main
 
-bin/mattersim_main:
+bin/mattersim_main: lib/MatterSim.o
 	@mkdir -p bin
 	g++ -std=c++11 src/driver/mattersim_main.cpp -Iinclude lib/MatterSim.o -o bin/mattersim_main -L/usr/lib -lOpenGL -lGLEW -lopencv_core -lopencv_imgcodecs -lopencv_highgui
 
