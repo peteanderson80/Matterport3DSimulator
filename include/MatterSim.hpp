@@ -32,6 +32,16 @@ namespace mattersim {
 
     typedef std::shared_ptr<SimState> SimStatePtr;
 
+    struct Location {
+        bool included;
+        std::string image_id;
+        glm::mat4 pose;
+        std::vector<bool> unobstructed;
+        GLuint cubemap_texture;
+    };
+
+    typedef std::shared_ptr<Location> LocationPtr;
+
     class Simulator {
     public:
         Simulator() : state{new SimState()} {};
@@ -46,6 +56,7 @@ namespace mattersim {
         void makeAction(int index, float heading, float elevation);
         void close();
     private:
+        void populateNavigable();
         SimStatePtr state;
         int width;
         int height;
@@ -58,6 +69,7 @@ namespace mattersim {
         std::string datasetPath;
         std::string navGraphPath;
         std::string scanId;
+        std::vector<LocationPtr> locations;
     };
 }
 

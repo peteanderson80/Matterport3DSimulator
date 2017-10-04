@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <json/json.h>
 #include "MatterSim.hpp"
 
 namespace mattersim {
@@ -96,14 +97,35 @@ void Simulator::init() {
     // set up the cube map texture
     auto datafolder = datasetPath + "/v1/scans/" + scanId + "/matterport_skybox_images/";
 
-    auto xpos = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox2_sami.jpg");
-    auto xneg = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox4_sami.jpg");
-    auto ypos = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox0_sami.jpg");
-    auto yneg = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox5_sami.jpg");
-    auto zpos = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox1_sami.jpg");
-    auto zneg = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox3_sami.jpg");
-    GLuint cubemap_texture;
-    setupCubeMap(cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
+    Json::Value root;
+    std::ifstream ifs(navGraphPath + "/" + scanId + "_connectivity.json", std::ifstream::in);
+    ifs >> root;
+
+    for (auto viewpoint : root) {
+        float posearr[16];
+        int i = 0;
+        for (auto f : viewpoint["pose"]) {
+            posearr[i++] = f.asFloat();
+        }
+        glm::mat4 pose = glm::make_mat4(posearr);
+        std::vector<bool> unobstructed;
+        for (auto u : viewpoint["unobstructed"]) {
+            unobstructed.push_back(u.asBool());
+        }
+
+        auto image_id = viewpoint["image_id"].asString();
+        auto xpos = cv::imread(datafolder + image_id + "_skybox2_sami.jpg");
+        auto xneg = cv::imread(datafolder + image_id + "_skybox4_sami.jpg");
+        auto ypos = cv::imread(datafolder + image_id + "_skybox0_sami.jpg");
+        auto yneg = cv::imread(datafolder + image_id + "_skybox5_sami.jpg");
+        auto zpos = cv::imread(datafolder + image_id + "_skybox1_sami.jpg");
+        auto zneg = cv::imread(datafolder + image_id + "_skybox3_sami.jpg");
+        GLuint cubemap_texture;
+        setupCubeMap(cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
+
+        Location l{viewpoint["included"].asBool(), image_id, pose, unobstructed, cubemap_texture};
+        locations.push_back(std::make_shared<Location>(l));
+    }
 
 // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     FramebufferName = 0;
@@ -200,8 +222,28 @@ void Simulator::init() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
 }
 
+void Simulator::populateNavigable() {
+    state->navigableLocations.clear();
+    state->navigableLocations.push_back(state->location);
+    unsigned int idx = state->location->id;
+    unsigned int i = 0;
+    for (auto u : locations[idx]->unobstructed) {
+        if (u) {
+            if (i == state->location->id) {
+                std::cout << "self-reachable" << std::endl;
+                continue;
+            }
+            Viewpoint v{i, cv::Point3f(0, 0, 0)};
+            state->navigableLocations.push_back(std::make_shared<Viewpoint>(v));
+        }
+        i++;
+    }
+}
 void Simulator::newEpisode() {
     std::cout << "FIXME new episode" << std::endl;
+    Viewpoint v{0, cv::Point3f(0, 0, 0)};
+    state->location = std::make_shared<Viewpoint>(v);
+    populateNavigable();
 }
 
 bool Simulator::isEpisodeFinished() {
@@ -215,6 +257,8 @@ SimStatePtr Simulator::getState() {
 
 void Simulator::makeAction(int index, float heading, float elevation) {
     // rendering
+    state->location = state->navigableLocations[index];
+    populateNavigable();
     state->heading = heading;
     state->elevation = elevation;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -228,6 +272,7 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
     glViewport(0, 0, width, height);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, locations[state->location->id]->cubemap_texture);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
 
     cv::Mat img(height, width, CV_8UC3);
