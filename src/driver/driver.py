@@ -20,11 +20,11 @@ while True:
     k = cv2.waitKey(1)
     if k == 113:
         break
-    elif k == 81:
+    elif k == 81 or k == ord('a'):
         heading -= math.pi / 180
-    elif k == 82:
+    elif k == 82 or k == ord('w'):
         elevation += math.pi / 180
-    elif k == 83:
+    elif k == 83 or k == ord('d'):
         heading += math.pi / 180
-    elif k == 84:
+    elif k == 84 or k == ord('s'):
         elevation -= math.pi / 180
