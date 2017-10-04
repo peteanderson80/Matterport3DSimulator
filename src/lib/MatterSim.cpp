@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <GL/glew.h>
 
@@ -95,7 +95,7 @@ void Simulator::init() {
     glewInit();
 
     // set up the cube map texture
-    auto datafolder = datasetPath + "/v1/scans/" + scanId + "/" + scanId + "/matterport_skybox_images/";
+    auto datafolder = datasetPath + "/v1/scans/" + scanId + "/matterport_skybox_images/";
 
     auto xpos = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox2_sami.jpg");
     auto xneg = cv::imread(datafolder + "7b017f053981438a9c075e599f2c5866_skybox4_sami.jpg");
