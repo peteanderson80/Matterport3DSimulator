@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
             float heading = state->heading;
             float elevation = state->elevation; // camera parameters
             std::vector<ViewpointPtr> reachable = state->navigableLocations; // Where we can move to,
+            int locationIdx = 0;
 
             cv::imshow("displaywin", rgb);
             // Make action (index into reachable, heading change in rad, elevation change in rad)      
@@ -63,6 +64,20 @@ int main(int argc, char *argv[]) {
             switch (key) {
             case -1:
                 continue;
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                locationIdx = key - '0';
+                if (locationIdx >= reachable.size()) {
+                    locationIdx = 0;
+                }
+                break;
             case 'q':
                 return 0;
                 break;
@@ -79,7 +94,7 @@ int main(int argc, char *argv[]) {
                 elevation -= M_PI / 180;
                 break;
             }
-            sim->makeAction(0, heading, elevation);
+            sim->makeAction(locationIdx, heading, elevation);
 
         }
         std::cout << "Episode finished.\n";
