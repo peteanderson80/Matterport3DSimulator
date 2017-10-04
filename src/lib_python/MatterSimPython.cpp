@@ -7,14 +7,24 @@
 namespace py = pybind11;
 
 namespace mattersim {
+    class ViewPointPython {
+    public:
+        unsigned int id;
+        //cv::Point3f location;
+    };
+
     class SimStatePython {
     public:
         SimStatePython(SimStatePtr state) {
             npy_intp colorShape[3] {state->rgb.rows, state->rgb.cols, 3};
 
             rgb = matToNumpyArray(3, colorShape, NPY_UBYTE, (void*)state->rgb.data);
+            for (auto viewpoint : state->navigableLocations) {
+                navigableLocations.append(ViewPointPython{viewpoint->id});
+            }
         }
         py::object rgb;
+        py::list navigableLocations;
     private:
         py::object matToNumpyArray(int dims, npy_intp *shape, int type, void *data) {
             //colorDims, this->colorShape, NPY_UBYTE, this->state->screenBuffer->data());
@@ -83,8 +93,10 @@ namespace mattersim {
 using namespace mattersim;
 
 PYBIND11_MODULE(MatterSim, m) {
+    py::class_<ViewPointPython>(m, "ViewPoint");
     py::class_<SimStatePython>(m, "SimState")
-        .def_readonly("rgb", &SimStatePython::rgb);
+        .def_readonly("rgb", &SimStatePython::rgb)
+        .def_readonly("navigableLocations", &SimStatePython::navigableLocations);
     py::class_<SimulatorPython>(m, "Simulator")
         .def(py::init<>())
         .def("setDatasetPath", &SimulatorPython::setDatasetPath)
