@@ -12,7 +12,7 @@ lib/MatterSim.o: include/MatterSim.hpp src/lib/MatterSim.cpp
 
 pybind: lib/MatterSim.o
 	@mkdir -p lib
-	g++ -shared -std=c++11 -fPIC -Iinclude -I`python3 -c "import numpy;print(numpy.get_include())"` `python3 -m pybind11 --includes` src/lib_python/MatterSimPython.cpp lib/MatterSim.o -o lib/MatterSim`python3-config --extension-suffix` -lOpenGL -lGLEW -lopencv_core -lopencv_highgui -ggdb
+	g++ -shared -std=c++11 -fPIC -Iinclude -I`python3 -c "import numpy;print(numpy.get_include())"` `python3 -m pybind11 --includes` src/lib_python/MatterSimPython.cpp lib/MatterSim.o -o lib/MatterSim`python3-config --extension-suffix` -lOpenGL -lGLEW -lopencv_core -lopencv_highgui
 
 clean:
 	@rm -f lib/* bin/*
