@@ -107,7 +107,11 @@ void Simulator::init() {
         for (auto f : viewpoint["pose"]) {
             posearr[i++] = f.asFloat();
         }
-        glm::mat4 pose = glm::make_mat4(posearr);
+        glm::mat4 pose = glm::transpose(glm::make_mat4(posearr));
+
+        glm::vec3 pos = pose[3];
+        pose[3] = {0,0,0,1};
+
         std::vector<bool> unobstructed;
         for (auto u : viewpoint["unobstructed"]) {
             unobstructed.push_back(u.asBool());
@@ -123,7 +127,7 @@ void Simulator::init() {
         GLuint cubemap_texture;
         setupCubeMap(cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
 
-        Location l{viewpoint["included"].asBool(), image_id, pose, unobstructed, cubemap_texture};
+        Location l{viewpoint["included"].asBool(), image_id, pose, pos, unobstructed, cubemap_texture};
         locations.push_back(std::make_shared<Location>(l));
     }
 
@@ -233,7 +237,8 @@ void Simulator::populateNavigable() {
                 std::cout << "self-reachable" << std::endl;
                 continue;
             }
-            Viewpoint v{i, cv::Point3f(0, 0, 0)};
+            glm::vec3 pos(locations[idx]->pos);
+            Viewpoint v{i, cv::Point3f(pos[0], pos[1], pos[2])};
             state->navigableLocations.push_back(std::make_shared<Viewpoint>(v));
         }
         i++;
@@ -241,7 +246,8 @@ void Simulator::populateNavigable() {
 }
 void Simulator::newEpisode() {
     std::cout << "FIXME new episode" << std::endl;
-    Viewpoint v{0, cv::Point3f(0, 0, 0)};
+    glm::vec3 pos(locations[0]->pos);
+    Viewpoint v{0, cv::Point3f(pos[0], pos[1], pos[2])};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
 }
@@ -263,10 +269,10 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     state->elevation = elevation;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), state->elevation, glm::vec3(-1.0f, 0.0f, 0.0f));
-    glm::mat4 RotateY = glm::rotate(RotateX, state->heading, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), state->elevation - (float)M_PI / 2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
+    glm::mat4 RotateY = glm::rotate(RotateX, state->heading, glm::vec3(0.0f, 0.0f, -1.0f));
 
-    glm::mat4 M = Projection * View * Model * RotateY;
+    glm::mat4 M = Projection * View * Model * RotateY * locations[state->location->id]->pose;
     glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
 
     // Render to our framebuffer

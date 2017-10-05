@@ -36,6 +36,7 @@ namespace mattersim {
         bool included;
         std::string image_id;
         glm::mat4 pose;
+        glm::vec3 pos;
         std::vector<bool> unobstructed;
         GLuint cubemap_texture;
     };
