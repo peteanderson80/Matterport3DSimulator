@@ -237,7 +237,7 @@ void Simulator::populateNavigable() {
                 std::cout << "self-reachable" << std::endl;
                 continue;
             }
-            glm::vec3 pos(locations[idx]->pos);
+            glm::vec3 pos(locations[i]->pos);
             Viewpoint v{i, cv::Point3f(pos[0], pos[1], pos[2])};
             state->navigableLocations.push_back(std::make_shared<Viewpoint>(v));
         }
