@@ -21,7 +21,21 @@ while True:
     sim.makeAction(location, heading, elevation)
     location = 0
     locations = sim.getState().navigableLocations
-    cv2.imshow('displaywin', sim.getState().rgb)
+    im = sim.getState().rgb
+    origin = locations[0].location
+    adjustedheading = heading + math.pi / 2
+    for idx, loc in enumerate(locations[1:]):
+        angle = math.atan2(loc.location[1] - origin[1], loc.location[0] - origin[0])
+        anglediff = angle - adjustedheading
+        while anglediff > math.pi:
+            anglediff -= 2 * math.pi
+        while anglediff < -math.pi:
+            anglediff += 2 * math.pi
+        if abs(anglediff) < math.pi / 4:
+            dist = math.sqrt((loc.location[0] - origin[0]) ** 2 + (loc.location[1] - origin[1]) ** 2)
+            colour = [230, 40, 40]
+            cv2.putText(im, str(idx + 1), (320 + int(320 * anglediff * 4 / math.pi), 480 - int(dist * 100)), cv2.FONT_HERSHEY_SIMPLEX, 2, colour, thickness=3)
+    cv2.imshow('displaywin', im)
     k = cv2.waitKey(1)
     if k == ord('q'):
         break
