@@ -1,4 +1,5 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <numpy/ndarrayobject.h>
 #include <numpy/npy_math.h>
 #include <iostream>
@@ -10,7 +11,7 @@ namespace mattersim {
     class ViewPointPython {
     public:
         unsigned int id;
-        //cv::Point3f location;
+        std::vector<float> location;
     };
 
     class SimStatePython {
@@ -20,7 +21,8 @@ namespace mattersim {
 
             rgb = matToNumpyArray(3, colorShape, NPY_UBYTE, (void*)state->rgb.data);
             for (auto viewpoint : state->navigableLocations) {
-                navigableLocations.append(ViewPointPython{viewpoint->id});
+                std::vector<float> loc{viewpoint->location.x, viewpoint->location.y, viewpoint->location.z};
+                navigableLocations.append(ViewPointPython{viewpoint->id, loc});
             }
         }
         py::object rgb;
@@ -93,7 +95,9 @@ namespace mattersim {
 using namespace mattersim;
 
 PYBIND11_MODULE(MatterSim, m) {
-    py::class_<ViewPointPython>(m, "ViewPoint");
+    py::class_<ViewPointPython>(m, "ViewPoint")
+        .def_readonly("id", &ViewPointPython::id)
+        .def_readonly("location", &ViewPointPython::location);
     py::class_<SimStatePython>(m, "SimState")
         .def_readonly("rgb", &SimStatePython::rgb)
         .def_readonly("navigableLocations", &SimStatePython::navigableLocations);
