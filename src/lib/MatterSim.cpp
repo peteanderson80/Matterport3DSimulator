@@ -231,6 +231,8 @@ void Simulator::populateNavigable() {
     state->navigableLocations.push_back(state->location);
     unsigned int idx = state->location->id;
     unsigned int i = 0;
+    cv::Point3f curPos = state->location->location;
+    float adjustedheading = state->heading + M_PI / 2;
     for (auto u : locations[idx]->unobstructed) {
         if (u) {
             if (i == state->location->id) {
@@ -238,8 +240,18 @@ void Simulator::populateNavigable() {
                 continue;
             }
             glm::vec3 pos(locations[i]->pos);
-            Viewpoint v{i, cv::Point3f(pos[0], pos[1], pos[2])};
-            state->navigableLocations.push_back(std::make_shared<Viewpoint>(v));
+            float bearing = atan2(pos[1] - curPos.y, pos[0] - curPos.x);
+            float headingDelta = bearing - adjustedheading;
+            while (headingDelta > M_PI) {
+                headingDelta -= 2 * M_PI;
+            }
+            while (headingDelta < -M_PI) {
+                headingDelta += 2 * M_PI;
+            }
+            if (fabs(headingDelta) < M_PI / 4) {
+                Viewpoint v{i, cv::Point3f(pos[0], pos[1], pos[2])};
+                state->navigableLocations.push_back(std::make_shared<Viewpoint>(v));
+            }
         }
         i++;
     }
