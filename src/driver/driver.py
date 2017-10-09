@@ -17,6 +17,7 @@ sim.newEpisode()
 heading = 0
 elevation = 0
 location = 0
+ANGLEDELTA = 5 * math.pi / 180
 while True:
     sim.makeAction(location, heading, elevation)
     location = 0
@@ -44,10 +45,10 @@ while True:
         if location >= len(locations):
             location = 0
     elif k == 81 or k == ord('a'):
-        heading -= math.pi / 180
+        heading -= ANGLEDELTA
     elif k == 82 or k == ord('w'):
-        elevation += math.pi / 180
+        elevation += ANGLEDELTA
     elif k == 83 or k == ord('d'):
-        heading += math.pi / 180
+        heading += ANGLEDELTA
     elif k == 84 or k == ord('s'):
-        elevation -= math.pi / 180
+        elevation -= ANGLEDELTA
