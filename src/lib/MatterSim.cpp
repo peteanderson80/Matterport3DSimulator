@@ -110,6 +110,7 @@ void Simulator::init() {
         glm::mat4 pose = glm::transpose(glm::make_mat4(posearr));
 
         glm::vec3 pos = pose[3];
+        pos[0] = -pos[0]; // Flip x coordinate since we flip x in the model matrix.
         pose[3] = {0,0,0,1};
 
         std::vector<bool> unobstructed;
@@ -200,7 +201,7 @@ void Simulator::init() {
     // these won't change for now
     Projection = glm::perspective(45.0f, (float)width / (float)height, 0.1f, 100.0f);
     View       = glm::mat4(1.0f);
-    Model      = glm::scale(glm::mat4(1.0f),glm::vec3(50,50,50));
+    Model      = glm::scale(glm::mat4(1.0f),glm::vec3(-50,50,50));
 
     // cube vertices for vertex buffer object
     GLfloat cube_vertices[] = {
@@ -282,7 +283,7 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), state->elevation - (float)M_PI / 2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
-    glm::mat4 RotateY = glm::rotate(RotateX, state->heading, glm::vec3(0.0f, 0.0f, -1.0f));
+    glm::mat4 RotateY = glm::rotate(RotateX, state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
 
     glm::mat4 M = Projection * View * Model * RotateY * locations[state->location->id]->pose;
     glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
