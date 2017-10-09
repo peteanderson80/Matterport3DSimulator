@@ -278,8 +278,8 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     // rendering
     state->location = state->navigableLocations[index];
     populateNavigable();
-    state->heading = heading;
-    state->elevation = elevation;
+    state->heading += heading;
+    state->elevation += elevation;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), state->elevation - (float)M_PI / 2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));

@@ -21,10 +21,13 @@ ANGLEDELTA = 5 * math.pi / 180
 while True:
     sim.makeAction(location, heading, elevation)
     location = 0
-    locations = sim.getState().navigableLocations
-    im = sim.getState().rgb
+    heading = 0
+    elevation = 0
+    state = sim.getState()
+    locations = state.navigableLocations
+    im = state.rgb
     origin = locations[0].location
-    adjustedheading = heading + math.pi / 2
+    adjustedheading = state.heading + math.pi / 2
     for idx, loc in enumerate(locations[1:]):
         angle = math.atan2(loc.location[1] - origin[1], loc.location[0] - origin[0])
         anglediff = angle - adjustedheading
@@ -45,10 +48,10 @@ while True:
         if location >= len(locations):
             location = 0
     elif k == 81 or k == ord('a'):
-        heading -= ANGLEDELTA
+        heading = -ANGLEDELTA
     elif k == 82 or k == ord('w'):
-        elevation += ANGLEDELTA
+        elevation = ANGLEDELTA
     elif k == 83 or k == ord('d'):
-        heading += ANGLEDELTA
+        heading = ANGLEDELTA
     elif k == 84 or k == ord('s'):
-        elevation -= ANGLEDELTA
+        elevation = -ANGLEDELTA
