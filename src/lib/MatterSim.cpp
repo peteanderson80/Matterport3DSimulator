@@ -94,9 +94,6 @@ void Simulator::init() {
     // initialize the extension wrangler
     glewInit();
 
-    // set up the cube map texture
-    auto datafolder = datasetPath + "/v1/scans/" + scanId + "/matterport_skybox_images/";
-
     Json::Value root;
     std::ifstream ifs(navGraphPath + "/" + scanId + "_connectivity.json", std::ifstream::in);
     ifs >> root;
@@ -119,14 +116,7 @@ void Simulator::init() {
         }
 
         auto image_id = viewpoint["image_id"].asString();
-        auto xpos = cv::imread(datafolder + image_id + "_skybox2_sami.jpg");
-        auto xneg = cv::imread(datafolder + image_id + "_skybox4_sami.jpg");
-        auto ypos = cv::imread(datafolder + image_id + "_skybox0_sami.jpg");
-        auto yneg = cv::imread(datafolder + image_id + "_skybox5_sami.jpg");
-        auto zpos = cv::imread(datafolder + image_id + "_skybox1_sami.jpg");
-        auto zneg = cv::imread(datafolder + image_id + "_skybox3_sami.jpg");
-        GLuint cubemap_texture;
-        setupCubeMap(cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
+        GLuint cubemap_texture = 0;
 
         Location l{viewpoint["included"].asBool(), image_id, pose, pos, unobstructed, cubemap_texture};
         locations.push_back(std::make_shared<Location>(l));
@@ -228,8 +218,8 @@ void Simulator::init() {
 }
 
 void Simulator::populateNavigable() {
-    state->navigableLocations.clear();
-    state->navigableLocations.push_back(state->location);
+    std::vector<ViewpointPtr> updatedNavigable;
+    updatedNavigable.push_back(state->location);
     unsigned int idx = state->location->id;
     unsigned int i = 0;
     cv::Point3f curPos = state->location->location;
@@ -251,12 +241,45 @@ void Simulator::populateNavigable() {
             }
             if (fabs(headingDelta) < M_PI / 4) {
                 Viewpoint v{i, cv::Point3f(pos[0], pos[1], pos[2])};
-                state->navigableLocations.push_back(std::make_shared<Viewpoint>(v));
+                updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
             }
         }
         i++;
     }
+
+    // set up the cube map textures
+    auto datafolder = datasetPath + "/v1/scans/" + scanId + "/matterport_skybox_images/";
+
+    for (auto v : updatedNavigable) {
+        if (locations[v->id]->cubemap_texture != 0) {
+            continue;
+        }
+        auto image_id = locations[v->id]->image_id;
+        auto xpos = cv::imread(datafolder + image_id + "_skybox2_sami.jpg");
+        auto xneg = cv::imread(datafolder + image_id + "_skybox4_sami.jpg");
+        auto ypos = cv::imread(datafolder + image_id + "_skybox0_sami.jpg");
+        auto yneg = cv::imread(datafolder + image_id + "_skybox5_sami.jpg");
+        auto zpos = cv::imread(datafolder + image_id + "_skybox1_sami.jpg");
+        auto zneg = cv::imread(datafolder + image_id + "_skybox3_sami.jpg");
+        setupCubeMap(locations[v->id]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
+    }
+
+    for (auto v : state->navigableLocations) {
+        bool retained = false;
+        for (auto updatedV : updatedNavigable) {
+            if (v->id == updatedV->id) {
+                retained = true;
+                break;
+            }
+        }
+        if (!retained) {
+            glDeleteTextures(1, &locations[v->id]->cubemap_texture);
+            locations[v->id]->cubemap_texture = 0;
+        }
+    }
+    state->navigableLocations = updatedNavigable;
 }
+
 void Simulator::newEpisode() {
     std::cout << "FIXME new episode" << std::endl;
     glm::vec3 pos(locations[0]->pos);
