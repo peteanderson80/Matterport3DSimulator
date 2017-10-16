@@ -1,5 +1,4 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 #include <numpy/ndarrayobject.h>
 #include <numpy/npy_math.h>
 #include <iostream>
@@ -10,22 +9,34 @@ namespace py = pybind11;
 namespace mattersim {
     class ViewPointPython {
     public:
+        ViewPointPython(ViewpointPtr locptr) {
+            id = locptr->id;
+            location.append(locptr->location.x);
+            location.append(locptr->location.y);
+            location.append(locptr->location.z);
+        }
         unsigned int id;
-        std::vector<float> location;
+        py::list location;
     };
 
     class SimStatePython {
     public:
-        SimStatePython(SimStatePtr state) {
+        SimStatePython(SimStatePtr state) : step{state->step},
+                                            location{state->location},
+                                            heading{state->heading},
+                                            elevation{state->elevation} {
             npy_intp colorShape[3] {state->rgb.rows, state->rgb.cols, 3};
-
             rgb = matToNumpyArray(3, colorShape, NPY_UBYTE, (void*)state->rgb.data);
+
             for (auto viewpoint : state->navigableLocations) {
-                std::vector<float> loc{viewpoint->location.x, viewpoint->location.y, viewpoint->location.z};
-                navigableLocations.append(ViewPointPython{viewpoint->id, loc});
+                navigableLocations.append(ViewPointPython{viewpoint});
             }
         }
+        unsigned int step;
         py::object rgb;
+        ViewPointPython location;
+        float heading;
+        float elevation;
         py::list navigableLocations;
     private:
         py::object matToNumpyArray(int dims, npy_intp *shape, int type, void *data) {
@@ -99,7 +110,11 @@ PYBIND11_MODULE(MatterSim, m) {
         .def_readonly("id", &ViewPointPython::id)
         .def_readonly("location", &ViewPointPython::location);
     py::class_<SimStatePython>(m, "SimState")
+        .def_readonly("step", &SimStatePython::step)
         .def_readonly("rgb", &SimStatePython::rgb)
+        .def_readonly("location", &SimStatePython::location)
+        .def_readonly("heading", &SimStatePython::heading)
+        .def_readonly("elevation", &SimStatePython::elevation)
         .def_readonly("navigableLocations", &SimStatePython::navigableLocations);
     py::class_<SimulatorPython>(m, "Simulator")
         .def(py::init<>())
