@@ -1,10 +1,14 @@
 .PHONY: all pybind
 
-all: lib/MatterSim.o bin/mattersim_main
+all: lib/MatterSim.o bin/mattersim_main bin/random_agent
 
 bin/mattersim_main: lib/MatterSim.o src/driver/mattersim_main.cpp
 	@mkdir -p bin
 	g++ -std=c++11 src/driver/mattersim_main.cpp -Iinclude lib/MatterSim.o -o bin/mattersim_main -L/usr/lib -lOpenGL -lGLEW -lopencv_core -lopencv_imgcodecs -lopencv_highgui -ljsoncpp
+
+bin/random_agent: lib/MatterSim.o src/driver/random_agent.cpp
+	@mkdir -p bin
+	g++ -std=c++11 src/driver/random_agent.cpp -Iinclude lib/MatterSim.o -o bin/random_agent -L/usr/lib -lOpenGL -lGLEW -lopencv_core -lopencv_imgcodecs -lopencv_highgui -ljsoncpp
 
 lib/MatterSim.o: include/MatterSim.hpp src/lib/MatterSim.cpp
 	@mkdir -p lib
