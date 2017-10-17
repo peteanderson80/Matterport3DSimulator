@@ -5,7 +5,7 @@ ifeq ($(wildcard $(CONFIG_FILE)),)
 endif
 include $(CONFIG_FILE)
 
-LIBRARIES += GL GLEW opencv_core opencv_highgui jsoncpp
+LIBRARIES += OSMesa opencv_core opencv_highgui jsoncpp
 ifeq ($(OPENCV_VERSION), 3)
 	LIBRARIES += opencv_imgcodecs
 endif

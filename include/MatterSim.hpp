@@ -6,7 +6,9 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/osmesa.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -127,6 +129,8 @@ namespace mattersim {
     private:
         void populateNavigable();
         void loadTexture(int locationId);
+        OSMesaContext ctx;
+        void *buffer;
         SimStatePtr state;
         int width;
         int height;
@@ -135,7 +139,6 @@ namespace mattersim {
         glm::mat4 Model;
         GLint PVM;
         GLint vertex;
-        GLuint FramebufferName;
         std::string datasetPath;
         std::string navGraphPath;
         std::string scanId;

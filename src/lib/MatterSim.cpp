@@ -2,8 +2,6 @@
 #include <fstream>
 #include <opencv2/opencv.hpp>
 
-#include <GL/glew.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -90,10 +88,9 @@ void Simulator::setScanId(std::string id) {
 void Simulator::init() {
     state->rgb.create(height, width, CV_8UC3);
 
-    cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
-    cv::setOpenGlContext("renderwin");
-    // initialize the extension wrangler
-    glewInit();
+    ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
+    buffer = malloc(width * height * 4 * sizeof(GLubyte));
+    OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height);
 
     Json::Value root;
     auto navGraphFile =  navGraphPath + "/" + scanId + "_connectivity.json";
@@ -125,37 +122,6 @@ void Simulator::init() {
 
         Location l{viewpoint["included"].asBool(), image_id, pose, pos, unobstructed, cubemap_texture};
         locations.push_back(std::make_shared<Location>(l));
-    }
-
-    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
-    FramebufferName = 0;
-    glGenFramebuffers(1, &FramebufferName);
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-
-    // The texture we're going to render to
-    GLuint renderedTexture;
-    glGenTextures(1, &renderedTexture);
-
-    // "Bind" the newly created texture : all future texture functions will modify this texture
-    glBindTexture(GL_TEXTURE_2D, renderedTexture);
-
-    // Give an empty image to OpenGL ( the last "0" )
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-    // Poor filtering. Needed !
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // Set "renderedTexture" as our colour attachement #0
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderedTexture, 0);
-
-    // Set the list of draw buffers.
-    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-
-    // Always check that our framebuffer is ok
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        throw std::runtime_error( "GL_FRAMEBUFFER failure" );
     }
 
     // set our viewport, clear color and depth, and enable depth testing
@@ -338,8 +304,6 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     glm::mat4 M = Projection * View * Model * RotateY * locations[state->location->id]->pose;
     glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
 
-    // Render to our framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
     glViewport(0, 0, width, height);
     glBindTexture(GL_TEXTURE_CUBE_MAP, locations[state->location->id]->cubemap_texture);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
