@@ -1,6 +1,6 @@
-#version 130
+#version 120
 
-in vec3 vertex;
+attribute vec3 vertex;
 varying vec3 texCoord;
 uniform mat4 PVM;
 

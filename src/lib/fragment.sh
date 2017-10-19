@@ -1,4 +1,4 @@
-#version 130
+#version 120
 
 varying vec3 texCoord;
 uniform samplerCube cubemap;
