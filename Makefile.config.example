@@ -1,0 +1,6 @@
+
+# Uncomment if you're using OpenCV 3
+# OPENCV_VERSION := 3
+
+# Uncomment to use Python 3 (default is Python 2)
+# PYTHON_VERSION := 3

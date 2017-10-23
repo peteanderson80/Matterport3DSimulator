@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <json/json.h>
+#include <jsoncpp/json/json.h>
 #include "MatterSim.hpp"
 
 namespace mattersim {
@@ -70,11 +70,11 @@ void setupCubeMap(GLuint& texture, cv::Mat &xpos, cv::Mat &xneg, cv::Mat &ypos, 
 }
 
 void Simulator::setDatasetPath(std::string path) {
-    datasetPath = path; // FIXME check for existence?
+    datasetPath = path;
 }
 
 void Simulator::setNavGraphPath(std::string path) {
-    navGraphPath = path; // FIXME check for existence?
+    navGraphPath = path;
 }
 
 void Simulator::setScreenResolution(int width, int height) {
@@ -83,7 +83,7 @@ void Simulator::setScreenResolution(int width, int height) {
 }
 
 void Simulator::setScanId(std::string id) {
-    scanId = id; // FIXME check for existence?
+    scanId = id;
 }
 
 void Simulator::init() {
@@ -106,7 +106,7 @@ void Simulator::init() {
         }
         glm::mat4 pose = glm::transpose(glm::make_mat4(posearr));
 
-        glm::vec3 pos = pose[3];
+        glm::vec3 pos{pose[3][0], pose[3][1], pose[3][2]};
         pos[0] = -pos[0]; // Flip x coordinate since we flip x in the model matrix.
         pose[3] = {0,0,0,1};
 
@@ -122,33 +122,33 @@ void Simulator::init() {
         locations.push_back(std::make_shared<Location>(l));
     }
 
-// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     FramebufferName = 0;
     glGenFramebuffers(1, &FramebufferName);
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 
-// The texture we're going to render to
+    // The texture we're going to render to
     GLuint renderedTexture;
     glGenTextures(1, &renderedTexture);
 
-// "Bind" the newly created texture : all future texture functions will modify this texture
+    // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
-// Give an empty image to OpenGL ( the last "0" )
+    // Give an empty image to OpenGL ( the last "0" )
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-// Poor filtering. Needed !
+    // Poor filtering. Needed !
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-// Set "renderedTexture" as our colour attachement #0
+    // Set "renderedTexture" as our colour attachement #0
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderedTexture, 0);
 
-// Set the list of draw buffers.
+    // Set the list of draw buffers.
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 
-// Always check that our framebuffer is ok
+    // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         std::cout << "FRAMEBUFFER FAILURE" << std::endl;
         return;
@@ -195,12 +195,12 @@ void Simulator::init() {
 
     // cube vertices for vertex buffer object
     GLfloat cube_vertices[] = {
-        -1.0,  1.0,  1.0,
-        -1.0, -1.0,  1.0,
+       -1.0,  1.0,  1.0,
+       -1.0, -1.0,  1.0,
         1.0, -1.0,  1.0,
         1.0,  1.0,  1.0,
-        -1.0,  1.0, -1.0,
-        -1.0, -1.0, -1.0,
+       -1.0,  1.0, -1.0,
+       -1.0, -1.0, -1.0,
         1.0, -1.0, -1.0,
         1.0,  1.0, -1.0,
     };

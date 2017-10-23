@@ -7,11 +7,9 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 - Dataset consisting of 90 different predominantly indoor environments,
 - All images are real, not synthetic (providing much more visual complexity),
 - API for C++ and Python
-- Fast (up to xx fps using GPU),
-- Customizable resolution, camera parameters, and actions,
-- Includes depth data (RGB-D),
-- Off-screen rendering,
-- Multi-platform.
+- Customizable resolution, camera parameters, etc,
+- GPU or CPU (off-screen) rendering,
+- Future releases will include depth data (RGB-D).
 
 ## Cite as
 
@@ -31,3 +29,32 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are configurable.
 
 ## Installation/Building instructions
+
+### Prerequisites
+
+Matterport3D Simulator has several dependencies:
+- [OpenCV](http://opencv.org/) >= 2.4 including 3.0 
+- [OpenGL](https://www.opengl.org/)
+- [GLM](https://glm.g-truc.net/0.9.8/index.html)
+- [Numpy](http://www.numpy.org/)
+- [pybind11](https://github.com/pybind/pybind11)
+
+E.g. installing dependencies on Ubuntu:
+```
+sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev
+```
+
+### Compiling
+
+Similar to [Caffe](http://caffe.berkeleyvision.org/installation.html), configure the build by copying and modifying the example Makefile.config for your setup. Uncomment the relevant lines if using OpenCV >= 3 or Python 3.
+
+```
+cp Makefile.config.example Makefile.config
+# Adjust Makefile.config (for example, if using OpenCV >= 3 or Python 3)
+make
+make pybind
+```
+
+## Demo
+
+
