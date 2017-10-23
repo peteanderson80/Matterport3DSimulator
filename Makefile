@@ -39,3 +39,6 @@ pybind: lib/MatterSim.o
 
 clean:
 	@rm -f lib/* bin/*
+
+docs:
+	doxygen
