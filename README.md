@@ -37,11 +37,12 @@ Matterport3D Simulator has several dependencies:
 - [OpenGL](https://www.opengl.org/)
 - [GLM](https://glm.g-truc.net/0.9.8/index.html)
 - [Numpy](http://www.numpy.org/)
-- [pybind11](https://github.com/pybind/pybind11)
+- [pybind11](https://github.com/pybind/pybind11) for Python bindings
+- [Doxygen](http://www.doxygen.org) for building documentation
 
 E.g. installing dependencies on Ubuntu:
 ```
-sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev
+sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev doxygen
 ```
 
 ### Compiling
@@ -53,6 +54,7 @@ cp Makefile.config.example Makefile.config
 # Adjust Makefile.config (for example, if using OpenCV >= 3 or Python 3)
 make
 make pybind
+make docs
 ```
 
 ## Demo

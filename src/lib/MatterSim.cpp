@@ -95,7 +95,11 @@ void Simulator::init() {
     glewInit();
 
     Json::Value root;
-    std::ifstream ifs(navGraphPath + "/" + scanId + "_connectivity.json", std::ifstream::in);
+    auto navGraphFile =  navGraphPath + "/" + scanId + "_connectivity.json";
+    std::ifstream ifs(navGraphFile, std::ifstream::in);
+    if (ifs.fail()){
+        throw std::invalid_argument( "Could not open navigation graph file: " + navGraphFile );
+    }
     ifs >> root;
 
     for (auto viewpoint : root) {
@@ -150,8 +154,7 @@ void Simulator::init() {
 
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "FRAMEBUFFER FAILURE" << std::endl;
-        return;
+        throw std::runtime_error( "GL_FRAMEBUFFER failure" );
     }
 
     // set our viewport, clear color and depth, and enable depth testing
@@ -261,6 +264,9 @@ void Simulator::populateNavigable() {
         auto yneg = cv::imread(datafolder + image_id + "_skybox5_sami.jpg");
         auto zpos = cv::imread(datafolder + image_id + "_skybox1_sami.jpg");
         auto zneg = cv::imread(datafolder + image_id + "_skybox3_sami.jpg");
+        if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
+            throw std::invalid_argument( "Could not open skybox files at: " + datafolder + image_id + "_skybox*_sami.jpg");
+        }
         setupCubeMap(locations[v->id]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
     }
 

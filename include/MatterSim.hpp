@@ -24,12 +24,19 @@ namespace mattersim {
      * Simulator state class.
      */
     struct SimState {
+        //! Number of frames since the last newEpisode() call
         unsigned int step;
+        //! RGB image taken from the agent's current viewpoint
         cv::Mat rgb;
+        //! Depth image taken from the agent's current viewpoint (not implemented)
         cv::Mat depth;
+        //! Agent's current 3D location
         ViewpointPtr location;
+        //! Agent's current camera heading in radians
         float heading;
+        //! Agent's current camera elevation in radians
         float elevation;
+        //! Vector of nearby navigable locations representing action candidates
         std::vector<ViewpointPtr> navigableLocations;
     };
 
@@ -54,16 +61,19 @@ namespace mattersim {
      */
     class Simulator {
     public:
-        Simulator() : state{new SimState()} {};
+        Simulator() : state{new SimState()}, width(320), height(240), navGraphPath("./connectivity") {};
         
         /**
-         * Set path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>. The provided directory must contain 
-         * subdirectories of the form: "/v1/scans/<scanId>/matterport_skybox_images/".
+         * Set path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>. 
+         * The provided directory must contain subdirectories of the form: 
+         * "/v1/scans/<scanId>/matterport_skybox_images/".
          */
         void setDatasetPath(std::string path);
         
         /**
-         * Sets path to viewpoint connectivity graphs. Default is "./connectivity".
+         * Sets path to viewpoint connectivity graphs. The provided directory must contain subdirectories
+         * of the form "/<scanId>_connectivity.json". Default is "./connectivity" (the graphs provided
+         * by this repo).
          */
         void setNavGraphPath(std::string path);
         
