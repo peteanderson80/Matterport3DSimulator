@@ -10,6 +10,7 @@
 
 #include <jsoncpp/json/json.h>
 #include "MatterSim.hpp"
+#include "Benchmark.hpp"
 
 namespace mattersim {
 
@@ -250,26 +251,6 @@ void Simulator::populateNavigable() {
         i++;
     }
 
-    // set up the cube map textures
-    auto datafolder = datasetPath + "/v1/scans/" + scanId + "/matterport_skybox_images/";
-
-    for (auto v : updatedNavigable) {
-        if (locations[v->id]->cubemap_texture != 0) {
-            continue;
-        }
-        auto image_id = locations[v->id]->image_id;
-        auto xpos = cv::imread(datafolder + image_id + "_skybox2_sami.jpg");
-        auto xneg = cv::imread(datafolder + image_id + "_skybox4_sami.jpg");
-        auto ypos = cv::imread(datafolder + image_id + "_skybox0_sami.jpg");
-        auto yneg = cv::imread(datafolder + image_id + "_skybox5_sami.jpg");
-        auto zpos = cv::imread(datafolder + image_id + "_skybox1_sami.jpg");
-        auto zneg = cv::imread(datafolder + image_id + "_skybox3_sami.jpg");
-        if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
-            throw std::invalid_argument( "Could not open skybox files at: " + datafolder + image_id + "_skybox*_sami.jpg");
-        }
-        setupCubeMap(locations[v->id]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
-    }
-
     for (auto v : state->navigableLocations) {
         bool retained = false;
         for (auto updatedV : updatedNavigable) {
@@ -286,12 +267,32 @@ void Simulator::populateNavigable() {
     state->navigableLocations = updatedNavigable;
 }
 
+void Simulator::loadTexture(int locationId) {
+    cpuLoadTimer.Start();
+    auto datafolder = datasetPath + "/v1/scans/" + scanId + "/matterport_skybox_images/";
+    auto image_id = locations[locationId]->image_id;
+    auto xpos = cv::imread(datafolder + image_id + "_skybox2_sami.jpg");
+    auto xneg = cv::imread(datafolder + image_id + "_skybox4_sami.jpg");
+    auto ypos = cv::imread(datafolder + image_id + "_skybox0_sami.jpg");
+    auto yneg = cv::imread(datafolder + image_id + "_skybox5_sami.jpg");
+    auto zpos = cv::imread(datafolder + image_id + "_skybox1_sami.jpg");
+    auto zneg = cv::imread(datafolder + image_id + "_skybox3_sami.jpg");
+    if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
+      throw std::invalid_argument( "Could not open skybox files at: " + datafolder + image_id + "_skybox*_sami.jpg");
+    }
+    cpuLoadTimer.Stop();
+    gpuLoadTimer.Start();
+    setupCubeMap(locations[locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
+    gpuLoadTimer.Stop();
+}
+
 void Simulator::newEpisode() {
     std::cout << "FIXME new episode" << std::endl;
     glm::vec3 pos(locations[0]->pos);
     Viewpoint v{0, cv::Point3f(pos[0], pos[1], pos[2])};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
+    loadTexture(state->location->id);
 }
 
 bool Simulator::isEpisodeFinished() {
@@ -304,16 +305,26 @@ SimStatePtr Simulator::getState() {
 }
 
 void Simulator::makeAction(int index, float heading, float elevation) {
-    // rendering
+    totalTimer.Start();
+    // move
+    if (index < 0 || index >= state->navigableLocations.size() ){
+        throw std::domain_error( "Invalid action index: " + index );
+    }
     state->location = state->navigableLocations[index];
     populateNavigable();
-    state->heading += heading;
+    state->heading += heading; // TODO handle boundaries
     state->elevation += elevation;
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // loading cubemap
+    if (locations[state->location->id]->cubemap_texture == 0) {
+        loadTexture(state->location->id);
+    }
 
+    renderTimer.Start();
+    // rendering
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), state->elevation - (float)M_PI / 2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
     glm::mat4 RotateY = glm::rotate(RotateX, state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
-
     glm::mat4 M = Projection * View * Model * RotateY * locations[state->location->id]->pose;
     glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
 
@@ -332,6 +343,18 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
     cv::flip(img, img, 0);
     this->state->rgb = img;
+    renderTimer.Stop();
+    totalTimer.Stop();
+    
+    //std::cout << "\ntotalTimer: " << totalTimer.MilliSeconds() << " ms" << std::endl;
+    //std::cout << "cpuLoadTimer: " << cpuLoadTimer.MilliSeconds() << " ms" << std::endl;
+    //std::cout << "gpuLoadTimer: " << gpuLoadTimer.MilliSeconds() << " ms" << std::endl;
+    //std::cout << "renderTimer: " << renderTimer.MilliSeconds() << " ms" << std::endl;
+    
+    cpuLoadTimer.Reset();
+    gpuLoadTimer.Reset();
+    renderTimer.Reset();
+    totalTimer.Reset();
 }
 
 void Simulator::close() {

@@ -12,6 +12,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Benchmark.hpp"
+
 namespace mattersim {
     struct Viewpoint {
         unsigned int id;
@@ -124,6 +126,7 @@ namespace mattersim {
         void close();
     private:
         void populateNavigable();
+        void loadTexture(int locationId);
         SimStatePtr state;
         int width;
         int height;
@@ -137,6 +140,10 @@ namespace mattersim {
         std::string navGraphPath;
         std::string scanId;
         std::vector<LocationPtr> locations;
+        Timer cpuLoadTimer;
+        Timer gpuLoadTimer;
+        Timer renderTimer;
+        Timer totalTimer;
     };
 }
 
