@@ -39,7 +39,7 @@ lib/Benchmark.o: include/Benchmark.hpp src/lib/Benchmark.cpp
 
 pybind: lib/MatterSim.o
 	@mkdir -p lib
-	g++ -shared -std=c++11 -fPIC -Iinclude -I`$(PYTHON) -c "import numpy;print(numpy.get_include())"` `$(PYTHON) -m pybind11 --includes` `$(PYTHON)-config --includes` src/lib_python/MatterSimPython.cpp lib/MatterSim.o -o lib/MatterSim`$(PYTHON)-config --extension-suffix` $(LDFLAGS)
+	g++ -shared -std=c++11 -fPIC -Iinclude -I`$(PYTHON) -c "import numpy;print(numpy.get_include())"` `$(PYTHON) -m pybind11 --includes` `$(PYTHON)-config --includes` src/lib_python/MatterSimPython.cpp lib/MatterSim.o lib/Benchmark.o -o lib/MatterSim`$(PYTHON)-config --extension-suffix` $(LDFLAGS)
 
 clean:
 	@rm -f lib/* bin/*
