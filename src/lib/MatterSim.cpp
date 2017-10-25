@@ -90,7 +90,12 @@ void Simulator::init() {
 
     ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
     buffer = malloc(width * height * 4 * sizeof(GLubyte));
-    OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height);
+    if (!buffer) {
+      throw std::runtime_error( "Malloc image buffer failed" );
+    }
+    if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)){
+      throw std::runtime_error( "OSMesaMakeCurrent failed" );
+    }
 
     Json::Value root;
     auto navGraphFile =  navGraphPath + "/" + scanId + "_connectivity.json";
@@ -250,7 +255,7 @@ void Simulator::loadTexture(int locationId) {
     gpuLoadTimer.Start();
     setupCubeMap(locations[locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
     gpuLoadTimer.Stop();
-    if (!glIsTexture(locations[locationId]->cubemap_texture)){
+    if (!glIsTexture(locations[state->location->id]->cubemap_texture)){
       throw std::runtime_error( "loadTexture failed" );
     }
 }
@@ -332,6 +337,8 @@ void Simulator::makeAction(int index, float heading, float elevation) {
 }
 
 void Simulator::close() {
-    std::cout << "FIXME implement close" << std::endl;
+   std::cout << "FIXME implement close" << std::endl;
+   free( buffer );
+   OSMesaDestroyContext( ctx );
 }
 }

@@ -11,6 +11,7 @@ namespace mattersim {
     void Timer::Start() {
       if (!running()) {
         start_ = std::chrono::steady_clock::now();
+        elapsed_ = std::chrono::steady_clock::duration(0);
         running_ = true;
       }
     }
