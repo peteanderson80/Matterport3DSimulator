@@ -1,5 +1,7 @@
 #include <iostream>
 #include <random>
+#include <thread>
+#include <chrono>
 
 #include <opencv2/opencv.hpp>
 
@@ -64,6 +66,7 @@ int main(int argc, char *argv[]) {
             // Make action (index into reachable, heading change in rad, elevation change in rad)      
 // E.g. an RL agent will sample an action here. A reward can be determined based on location, heading, elevation but that is dataset dependent
             sim->makeAction(locationIdx, headingChange, elevationChange);
+            std::this_thread::sleep_for(std::chrono::milliseconds{100});
         }
     }
 
