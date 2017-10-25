@@ -284,15 +284,25 @@ void Simulator::loadTexture(int locationId) {
     gpuLoadTimer.Start();
     setupCubeMap(locations[locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
     gpuLoadTimer.Stop();
+    if (!glIsTexture(locations[locationId]->cubemap_texture)){
+      throw std::runtime_error( "loadTexture failed" );
+    }
 }
 
 void Simulator::newEpisode() {
     std::cout << "FIXME new episode" << std::endl;
-    glm::vec3 pos(locations[0]->pos);
-    Viewpoint v{0, cv::Point3f(pos[0], pos[1], pos[2])};
+    std::default_random_engine generator;
+    generator.seed(time(NULL));
+    std::uniform_int_distribution<int> distribution(0,locations.size()-1);
+    int ix = distribution(generator);  // generates random starting point
+    std::cout << "Starting at " << ix <<  std::endl;
+    glm::vec3 pos(locations[ix]->pos);
+    Viewpoint v{ix, cv::Point3f(pos[0], pos[1], pos[2])};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
+    totalTimer.Start();
     loadTexture(state->location->id);
+    totalTimer.Stop();
 }
 
 bool Simulator::isEpisodeFinished() {
@@ -316,7 +326,7 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     state->elevation += elevation;
     
     // loading cubemap
-    if (locations[state->location->id]->cubemap_texture == 0) {
+    if (!glIsTexture(locations[state->location->id]->cubemap_texture)) {
         loadTexture(state->location->id);
     }
 
@@ -346,15 +356,15 @@ void Simulator::makeAction(int index, float heading, float elevation) {
     renderTimer.Stop();
     totalTimer.Stop();
     
-    //std::cout << "\ntotalTimer: " << totalTimer.MilliSeconds() << " ms" << std::endl;
-    //std::cout << "cpuLoadTimer: " << cpuLoadTimer.MilliSeconds() << " ms" << std::endl;
-    //std::cout << "gpuLoadTimer: " << gpuLoadTimer.MilliSeconds() << " ms" << std::endl;
-    //std::cout << "renderTimer: " << renderTimer.MilliSeconds() << " ms" << std::endl;
+    std::cout << "\ntotalTimer: " << totalTimer.MilliSeconds() << " ms" << std::endl;
+    std::cout << "cpuLoadTimer: " << cpuLoadTimer.MilliSeconds() << " ms" << std::endl;
+    std::cout << "gpuLoadTimer: " << gpuLoadTimer.MilliSeconds() << " ms" << std::endl;
+    std::cout << "renderTimer: " << renderTimer.MilliSeconds() << " ms" << std::endl;
     
-    cpuLoadTimer.Reset();
-    gpuLoadTimer.Reset();
-    renderTimer.Reset();
-    totalTimer.Reset();
+    //cpuLoadTimer.Reset();
+    //gpuLoadTimer.Reset();
+    //renderTimer.Reset();
+    //totalTimer.Reset();
 }
 
 void Simulator::close() {

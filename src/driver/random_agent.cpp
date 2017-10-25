@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
         // Starts a new episode. It is not needed right after init() but it doesn't cost much and the loop is nicer.
         sim->newEpisode(); // Take optional viewpoint_id argument, otherwise launches at a random location
 
-        for (int step = 0;step < 100;++step) {
+        for (int step = 0;step < 10;++step) {
             // Get the state
             SimStatePtr state = sim->getState(); // SimStatePtr is std::shared_ptr<SimState>
 
