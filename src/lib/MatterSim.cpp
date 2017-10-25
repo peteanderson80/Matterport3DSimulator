@@ -255,7 +255,7 @@ void Simulator::loadTexture(int locationId) {
     gpuLoadTimer.Start();
     setupCubeMap(locations[locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
     gpuLoadTimer.Stop();
-    if (!glIsTexture(locations[state->location->id]->cubemap_texture)){
+    if (!glIsTexture(locations[locationId]->cubemap_texture)){
       throw std::runtime_error( "loadTexture failed" );
     }
 }
