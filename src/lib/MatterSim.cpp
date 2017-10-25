@@ -93,7 +93,7 @@ void Simulator::init() {
     if (!buffer) {
       throw std::runtime_error( "Malloc image buffer failed" );
     }
-    if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)){
+    if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)) {
       throw std::runtime_error( "OSMesaMakeCurrent failed" );
     }
 
