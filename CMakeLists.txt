@@ -15,15 +15,17 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 pkg_check_modules(OSMESA REQUIRED osmesa)
 
+add_library(Benchmark SHARED src/lib/Benchmark.cpp)
+
 add_library(MatterSim SHARED src/lib/MatterSim.cpp)
 target_include_directories(MatterSim PRIVATE ${JSONCPP_INCLUDE_DIRS})
 target_link_libraries(MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS} ${OSMESA_LIBRARIES})
 
 add_executable(mattersim_main src/driver/mattersim_main.cpp)
-target_link_libraries(mattersim_main MatterSim)
+target_link_libraries(mattersim_main MatterSim Benchmark)
 
 add_executable(random_agent src/driver/random_agent.cpp)
-target_link_libraries(random_agent MatterSim)
+target_link_libraries(random_agent MatterSim Benchmark)
 
 add_subdirectory(pybind11)
 
@@ -43,7 +45,7 @@ find_package(NumPy REQUIRED)
 
 pybind11_add_module(MatterSimPython src/lib_python/MatterSimPython.cpp)
 target_include_directories(MatterSimPython PRIVATE ${NUMPY_INCLUDES})
-target_link_libraries(MatterSimPython PRIVATE MatterSim)
+target_link_libraries(MatterSimPython PRIVATE MatterSim Benchmark)
 set_target_properties(MatterSimPython
   PROPERTIES
   OUTPUT_NAME MatterSim)
