@@ -7,8 +7,8 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 - Dataset consisting of 90 different predominantly indoor environments,
 - All images are real, not synthetic (providing much more visual complexity),
 - API for C++ and Python
-- Customizable resolution, camera parameters, etc,
-- GPU or CPU (off-screen) rendering,
+- Customizable image resolution, camera parameters, etc,
+- Supports GPU rendering using OpenGL, as well as off-screen CPU rendering using MESA,
 - Future releases will include depth data (RGB-D).
 
 ## Cite as
@@ -35,6 +35,7 @@ At each viewpoint location, the agent can pan and elevate the camera. The agent 
 Matterport3D Simulator has several dependencies:
 - [OpenCV](http://opencv.org/) >= 2.4 including 3.0 
 - [OpenGL](https://www.opengl.org/)
+- [OSMesa](https://www.mesa3d.org/osmesa.html)
 - [GLM](https://glm.g-truc.net/0.9.8/index.html)
 - [Numpy](http://www.numpy.org/)
 - [pybind11](https://github.com/pybind/pybind11) for Python bindings
@@ -42,21 +43,46 @@ Matterport3D Simulator has several dependencies:
 
 E.g. installing dependencies on Ubuntu:
 ```
-sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev doxygen
+sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev doxygen libosmesa6-dev libosmesa6
 ```
 
 ### Compiling
 
-Similar to [Caffe](http://caffe.berkeleyvision.org/installation.html), configure the build by copying and modifying the example Makefile.config for your setup. Uncomment the relevant lines if using OpenCV >= 3 or Python 3.
-
+Clone the Matterport3DSimulator repository:
 ```
-cp Makefile.config.example Makefile.config
-# Adjust Makefile.config (for example, if using OpenCV >= 3 or Python 3)
+# Make sure to clone with --recursive
+git clone --recursive https://github.com/peteanderson80/Matterport3DSimulator.git
+cd Matterport3DSimulator
+```
+
+If you didn't clone with the `--recursive` flat, then you'll need to manually clone the pybind submodule from the top-level directory:
+```
+git submodule update --init --recursive
+```
+
+Build OpenGL version using CMake:
+```
+mkdir build && cd build
+cmake ..
 make
-make pybind
-make docs
+cd ../
 ```
 
-## Demo
+Or build headless OSMESA version using CMake:
+```
+mkdir build && cd build
+cmake -DOSMESA_RENDERING=ON ..
+make
+cd ../
+```
 
+To build html docs for C++ classes in the `doxygen` directory, just run:
+```
+doxygen
+```
+
+### Demo
+```
+build/mattersim_main
+```
 
