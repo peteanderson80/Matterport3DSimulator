@@ -6,9 +6,13 @@
 
 #include <opencv2/opencv.hpp>
 
+#ifdef OSMESA_RENDERING
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/osmesa.h>
+#else
+#include <GL/glew.h>
+#endif
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -129,8 +133,12 @@ namespace mattersim {
     private:
         void populateNavigable();
         void loadTexture(int locationId);
-        OSMesaContext ctx;
+#ifdef OSMESA_RENDERING
         void *buffer;
+        OSMesaContext ctx;
+#else
+        GLuint FramebufferName;
+#endif
         SimStatePtr state;
         int width;
         int height;

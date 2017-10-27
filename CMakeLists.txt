@@ -1,6 +1,8 @@
 project(Matterport_Simulator CXX)
 cmake_minimum_required(VERSION 2.8)
 
+option(OSMESA_RENDERING "Render offscreen with OSMesa" OFF)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -13,13 +15,24 @@ find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(JSONCPP REQUIRED jsoncpp)
-pkg_check_modules(OSMESA REQUIRED osmesa)
+
+if(OSMESA_RENDERING)
+  pkg_check_modules(OSMESA REQUIRED osmesa)
+  set(GL_LIBS ${OSMESA_LIBRARIES})
+else()
+  find_package(OpenGL REQUIRED)
+  find_package(GLEW REQUIRED)
+  set(GL_LIBS ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
+endif()
 
 add_library(Benchmark SHARED src/lib/Benchmark.cpp)
 
 add_library(MatterSim SHARED src/lib/MatterSim.cpp)
+if(OSMESA_RENDERING)
+  target_compile_definitions(MatterSim PUBLIC "-DOSMESA_RENDERING")
+endif()
 target_include_directories(MatterSim PRIVATE ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS} ${OSMESA_LIBRARIES})
+target_link_libraries(MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS} ${GL_LIBS})
 
 add_executable(mattersim_main src/driver/mattersim_main.cpp)
 target_link_libraries(mattersim_main MatterSim Benchmark)
