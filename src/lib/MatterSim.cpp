@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include "MatterSim.hpp"
 #include "Benchmark.hpp"
 
