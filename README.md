@@ -3,7 +3,7 @@ AI Research Platform for Reinforcement Learning from Real Panoramic Images.
 
 The Matterport3D Simulator enables development of AI **agents that interact with real 3D environments using visual information** (RGB-D images). It is primarily intended for research in deep reinforcement learning, at the intersection of computer vision, natural language processing and robotics.
 
-## Features (eventually maybe)
+## Features
 - Dataset consisting of 90 different predominantly indoor environments,
 - All images are real, not synthetic (providing much more visual complexity),
 - API for C++ and Python
@@ -46,7 +46,7 @@ E.g. installing dependencies on Ubuntu:
 sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev doxygen libosmesa6-dev libosmesa6
 ```
 
-### Compiling
+### Clone Repo
 
 Clone the Matterport3DSimulator repository:
 ```
@@ -59,6 +59,20 @@ If you didn't clone with the `--recursive` flat, then you'll need to manually cl
 ```
 git submodule update --init --recursive
 ```
+
+### Dataset Download
+
+Download the Matterport3D dataset which is available after requesting access [here](https://niessner.github.io/Matterport/). The provided download script allows for downloading of selected data types. Note that for the Matterport3D Simulator, only the following data types are required:
+- matterport_skybox_images
+
+Create a symlink to the Matterport3D Dataset, where <Matterdata> should be a directory structured as ```<Matterdata>/v1/scans/<scanId>/matterport_skybox_images/*.jpg```:
+```
+ln -s <Matterdata> data
+```
+
+Using symlinks will allow the same Matterport3D dataset installation to be used between multiple projects.
+
+### Compiling
 
 Build OpenGL version using CMake:
 ```
@@ -85,4 +99,10 @@ doxygen
 ```
 build/mattersim_main
 ```
+
+### Running Tests
+```
+build/tests
+```
+Refer to the [Catch](https://github.com/philsquared/Catch) documentation for usage and configuration options etc.
 

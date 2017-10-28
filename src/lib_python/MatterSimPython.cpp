@@ -74,20 +74,24 @@ namespace mattersim {
         void setNavGraphPath(std::string path) {
             sim.setNavGraphPath(path);
         }
-        void setScreenResolution(int width, int height) {
-            sim.setScreenResolution(width, height);
+        void setCameraResolution(int width, int height) {
+            sim.setCameraResolution(width, height);
         }
-        void setScanId(std::string id) {
-            sim.setScanId(id);
+        void setCameraFOV(float vfov) {
+            sim.setCameraFOV(vfov);
         }
         void init() {
             sim.init();
         }
-        void newEpisode() {
-            sim.newEpisode();
+        void setSeed(int seed) {
+            sim.setSeed(seed);
         }
-        bool isEpisodeFinished() {
-            return sim.isEpisodeFinished();
+        void setElevationLimits(float min, float max) {
+            sim.setElevationLimits(min, max);
+        }
+        void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
+              float heading=0, float elevation=0) {
+            sim.newEpisode(scanId, viewpointId, heading, elevation);
         }
         SimStatePython *getState() {
             return new SimStatePython(sim.getState());
@@ -120,11 +124,12 @@ PYBIND11_MODULE(MatterSim, m) {
         .def(py::init<>())
         .def("setDatasetPath", &SimulatorPython::setDatasetPath)
         .def("setNavGraphPath", &SimulatorPython::setNavGraphPath)
-        .def("setScreenResolution", &SimulatorPython::setScreenResolution)
-        .def("setScanId", &SimulatorPython::setScanId)
+        .def("setCameraResolution", &SimulatorPython::setCameraResolution)
+        .def("setCameraFOV", &SimulatorPython::setCameraFOV)
         .def("init", &SimulatorPython::init)
+        .def("setSeed", &SimulatorPython::setSeed)
+        .def("setElevationLimits", &SimulatorPython::setElevationLimits)
         .def("newEpisode", &SimulatorPython::newEpisode)
-        .def("isEpisodeFinished", &SimulatorPython::isEpisodeFinished)
         .def("getState", &SimulatorPython::getState, py::return_value_policy::take_ownership)
         .def("makeAction", &SimulatorPython::makeAction)
         .def("close", &SimulatorPython::close);

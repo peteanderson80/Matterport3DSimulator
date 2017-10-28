@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <vector>
+#include <random>
+#include <time.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -32,8 +34,10 @@ namespace mattersim {
      * Simulator state class.
      */
     struct SimState {
+        //! Building / scan environment identifier
+        std::string scanId;
         //! Number of frames since the last newEpisode() call
-        unsigned int step;
+        unsigned int step = 0;
         //! RGB image taken from the agent's current viewpoint
         cv::Mat rgb;
         //! Depth image taken from the agent's current viewpoint (not implemented)
@@ -41,9 +45,9 @@ namespace mattersim {
         //! Agent's current 3D location
         ViewpointPtr location;
         //! Agent's current camera heading in radians
-        float heading;
+        float heading = 0;
         //! Agent's current camera elevation in radians
-        float elevation;
+        float elevation = 0;
         //! Vector of nearby navigable locations representing action candidates
         std::vector<ViewpointPtr> navigableLocations;
     };
@@ -55,7 +59,7 @@ namespace mattersim {
      */
     struct Location {
         bool included;
-        std::string image_id;
+        std::string viewpointId;
         glm::mat4 pose;
         glm::vec3 pos;
         std::vector<bool> unobstructed;
@@ -69,47 +73,66 @@ namespace mattersim {
      */
     class Simulator {
     public:
-        Simulator() : state{new SimState()}, width(320), height(240), navGraphPath("./connectivity") {};
-        
+        Simulator() : state{new SimState()}, 
+                      width(320),
+                      height(240),
+                      vfov(45.0),
+                      minElevation(-0.94),
+                      maxElevation(0.94),
+                      navGraphPath("./connectivity"),
+                      datasetPath("./data") { generator.seed(time(NULL));};
+                      
+        ~Simulator() {close();}
+
         /**
-         * Set path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>. 
-         * The provided directory must contain subdirectories of the form: 
-         * "/v1/scans/<scanId>/matterport_skybox_images/".
+         * Sets camera resolution. Default is 320 x 240.
          */
-        void setDatasetPath(std::string path);
+        void setCameraResolution(int width, int height);
         
         /**
-         * Sets path to viewpoint connectivity graphs. The provided directory must contain subdirectories
-         * of the form "/<scanId>_connectivity.json". Default is "./connectivity" (the graphs provided
-         * by this repo).
+         * Sets camera vertical field-of-view in degrees. Default is 45 degrees.
          */
-        void setNavGraphPath(std::string path);
+        void setCameraFOV(float vfov);
         
         /**
-         * Sets resolution. Default is 320 x 240.
-         */
-        void setScreenResolution(int width, int height);
-        
-        /**
-         * Sets which scene is used, e.g. "2t7WUuJeko7".
-         */
-        void setScanId(std::string id);
-        
-        /**
-         * Initialize the simulator. Further configuration won't take any effect from now on.
+         * Initialize the simulator. Further camera configuration won't take any effect from now on.
          */
         void init();
         
         /**
-         * Starts a new episode. It is not needed right after init().
+         * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>. 
+         * The provided directory must contain subdirectories of the form: 
+         * "/v1/scans/<scanId>/matterport_skybox_images/". Default is "./data" (expected location of dataset symlink).
          */
-        void newEpisode();
+        void setDatasetPath(const std::string& path);
         
         /**
-         * Returns true after the end episode action has been selected by the agent 
-         * (after which no more actions can be made).
+         * Set a non-standard path to the viewpoint connectivity graphs. The provided directory must contain subdirectories
+         * of the form "/<scanId>_connectivity.json". Default is "./connectivity" (the graphs provided
+         * by this repo).
          */
-        bool isEpisodeFinished();
+        void setNavGraphPath(const std::string& path);
+        
+        /**
+         * Set the random seed for episodes where viewpoint is not provided.
+         */
+        void setSeed(int seed) { generator.seed(seed); };
+        
+        /**
+         * Set the camera elevation min and max limits in radians. Default is +-0.94 radians.
+         * @return true if successful.
+         */
+        bool setElevationLimits(float min, float max);
+        
+        /**
+         * Starts a new episode. If a viewpoint is not provided initialization will be random.
+         * @param scanId - sets which scene is used, e.g. "2t7WUuJeko7"
+         * @param viewpointId - sets the initial viewpoint location, e.g. "cc34e9176bfe47ebb23c58c165203134"
+         * @param heading - set the agent's initial heading in radians
+         * @param elevation - set the initial camera elevation in radians
+         */
+        void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
+              float heading=0, float elevation=0);
         
         /**
          * Returns the current environment state including RGB image and available actions.
@@ -131,8 +154,13 @@ namespace mattersim {
          */
         void close();
     private:
+        void loadLocationGraph();
+        void clearLocationGraph();
         void populateNavigable();
         void loadTexture(int locationId);
+        void setHeading(float heading);
+        void setElevation(float elevation);
+        void renderScene();
 #ifdef OSMESA_RENDERING
         void *buffer;
         OSMesaContext ctx;
@@ -142,15 +170,23 @@ namespace mattersim {
         SimStatePtr state;
         int width;
         int height;
+        float vfov;
+        float minElevation;
+        float maxElevation;
         glm::mat4 Projection;
         glm::mat4 View;
         glm::mat4 Model;
         GLint PVM;
         GLint vertex;
+        GLuint ibo_cube_indices;
+        GLuint vbo_cube_vertices;
+        GLuint glProgram;
+        GLuint glShaderV;
+        GLuint glShaderF;
         std::string datasetPath;
         std::string navGraphPath;
-        std::string scanId;
         std::vector<LocationPtr> locations;
+        std::default_random_engine generator;
         Timer cpuLoadTimer;
         Timer gpuLoadTimer;
         Timer renderTimer;

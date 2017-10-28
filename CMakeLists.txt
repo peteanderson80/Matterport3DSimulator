@@ -25,20 +25,21 @@ else()
   set(GL_LIBS ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
 endif()
 
-add_library(Benchmark SHARED src/lib/Benchmark.cpp)
-
-add_library(MatterSim SHARED src/lib/MatterSim.cpp)
+add_library(MatterSim SHARED src/lib/MatterSim.cpp src/lib/Benchmark.cpp)
 if(OSMESA_RENDERING)
   target_compile_definitions(MatterSim PUBLIC "-DOSMESA_RENDERING")
 endif()
 target_include_directories(MatterSim PRIVATE ${JSONCPP_INCLUDE_DIRS})
 target_link_libraries(MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS} ${GL_LIBS})
 
+add_executable(tests src/test/main.cpp)
+target_link_libraries(tests MatterSim)
+
 add_executable(mattersim_main src/driver/mattersim_main.cpp)
-target_link_libraries(mattersim_main MatterSim Benchmark)
+target_link_libraries(mattersim_main MatterSim)
 
 add_executable(random_agent src/driver/random_agent.cpp)
-target_link_libraries(random_agent MatterSim Benchmark)
+target_link_libraries(random_agent MatterSim)
 
 add_subdirectory(pybind11)
 
@@ -58,7 +59,7 @@ find_package(NumPy REQUIRED)
 
 pybind11_add_module(MatterSimPython src/lib_python/MatterSimPython.cpp)
 target_include_directories(MatterSimPython PRIVATE ${NUMPY_INCLUDES})
-target_link_libraries(MatterSimPython PRIVATE MatterSim Benchmark)
+target_link_libraries(MatterSimPython PRIVATE MatterSim)
 set_target_properties(MatterSimPython
   PROPERTIES
   OUTPUT_NAME MatterSim)

@@ -19,19 +19,10 @@ int main(int argc, char *argv[]) {
     std::uniform_real_distribution<float> angledist(-M_PI / 4, M_PI / 4);
     Simulator *sim = new Simulator();
 
-    // Sets path to Matterport3D dataset.
-    sim->setDatasetPath("../data");
-
-    // Sets path to viewpoint connectivity graphs (these are not in the Matterport3D dataset, I will provide) 
-    sim->setNavGraphPath("connectivity");
-
     // Sets resolution. Default is 320X240
-    sim->setScreenResolution(640,480);
+    sim->setCameraResolution(640,480);
 
-    // Sets which scene is used
-    sim->setScanId("2t7WUuJeko7");
-
-    // Initialize the simulator. Further configuration won't take any effect from now on.
+    // Initialize the simulator. Further camera configuration won't take any effect from now on.
     sim->init();
 
     // Run this many episodes
@@ -40,7 +31,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < episodes; ++i) {
 
         // Starts a new episode. It is not needed right after init() but it doesn't cost much and the loop is nicer.
-        sim->newEpisode(); // Take optional viewpoint_id argument, otherwise launches at a random location
+        sim->newEpisode("2t7WUuJeko7"); // Take optional viewpoint_id argument, otherwise launches at a random location
 
         for (int step = 0;step < 10;++step) {
             // Get the state
