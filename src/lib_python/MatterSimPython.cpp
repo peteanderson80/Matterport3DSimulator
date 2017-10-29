@@ -10,13 +10,15 @@ namespace mattersim {
     class ViewPointPython {
     public:
         ViewPointPython(ViewpointPtr locptr) {
-            id = locptr->id;
-            location.append(locptr->location.x);
-            location.append(locptr->location.y);
-            location.append(locptr->location.z);
+            viewpointId = locptr->viewpointId;
+            ix = locptr->ix;
+            point.append(locptr->point.x);
+            point.append(locptr->point.y);
+            point.append(locptr->point.z);
         }
-        unsigned int id;
-        py::list location;
+        std::string viewpointId;
+        unsigned int ix;
+        py::list point;
     };
 
     class SimStatePython {
@@ -27,16 +29,17 @@ namespace mattersim {
                                             elevation{state->elevation} {
             npy_intp colorShape[3] {state->rgb.rows, state->rgb.cols, 3};
             rgb = matToNumpyArray(3, colorShape, NPY_UBYTE, (void*)state->rgb.data);
-
+            scanId = state->scanId;
             for (auto viewpoint : state->navigableLocations) {
                 navigableLocations.append(ViewPointPython{viewpoint});
             }
         }
+        std::string scanId;
         unsigned int step;
         py::object rgb;
         ViewPointPython location;
-        float heading;
-        float elevation;
+        double heading;
+        double elevation;
         py::list navigableLocations;
     private:
         py::object matToNumpyArray(int dims, npy_intp *shape, int type, void *data) {
@@ -77,7 +80,7 @@ namespace mattersim {
         void setCameraResolution(int width, int height) {
             sim.setCameraResolution(width, height);
         }
-        void setCameraFOV(float vfov) {
+        void setCameraFOV(double vfov) {
             sim.setCameraFOV(vfov);
         }
         void init() {
@@ -86,17 +89,17 @@ namespace mattersim {
         void setSeed(int seed) {
             sim.setSeed(seed);
         }
-        void setElevationLimits(float min, float max) {
+        void setElevationLimits(double min, double max) {
             sim.setElevationLimits(min, max);
         }
         void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
-              float heading=0, float elevation=0) {
+              double heading=0, double elevation=0) {
             sim.newEpisode(scanId, viewpointId, heading, elevation);
         }
         SimStatePython *getState() {
             return new SimStatePython(sim.getState());
         }
-        void makeAction(int index, float heading, float elevation) {
+        void makeAction(int index, double heading, double elevation) {
             sim.makeAction(index, heading, elevation);
         }
         void close() {
@@ -111,9 +114,11 @@ using namespace mattersim;
 
 PYBIND11_MODULE(MatterSim, m) {
     py::class_<ViewPointPython>(m, "ViewPoint")
-        .def_readonly("id", &ViewPointPython::id)
-        .def_readonly("location", &ViewPointPython::location);
+        .def_readonly("viewpointId", &ViewPointPython::viewpointId)
+        .def_readonly("ix", &ViewPointPython::ix)
+        .def_readonly("point", &ViewPointPython::point);
     py::class_<SimStatePython>(m, "SimState")
+        .def_readonly("scanId", &SimStatePython::scanId)
         .def_readonly("step", &SimStatePython::step)
         .def_readonly("rgb", &SimStatePython::rgb)
         .def_readonly("location", &SimStatePython::location)

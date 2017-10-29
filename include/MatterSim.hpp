@@ -24,8 +24,12 @@
 
 namespace mattersim {
     struct Viewpoint {
-        unsigned int id;
-        cv::Point3f location;
+        //! Viewpoint identifier
+        std::string viewpointId;
+        //! Viewpoint index
+        unsigned int ix;
+        //! 3D position
+        cv::Point3f point;
     };
 
     typedef std::shared_ptr<Viewpoint> ViewpointPtr;
@@ -45,9 +49,9 @@ namespace mattersim {
         //! Agent's current 3D location
         ViewpointPtr location;
         //! Agent's current camera heading in radians
-        float heading = 0;
+        double heading = 0;
         //! Agent's current camera elevation in radians
-        float elevation = 0;
+        double elevation = 0;
         //! Vector of nearby navigable locations representing action candidates
         std::vector<ViewpointPtr> navigableLocations;
     };
@@ -73,16 +77,9 @@ namespace mattersim {
      */
     class Simulator {
     public:
-        Simulator() : state{new SimState()}, 
-                      width(320),
-                      height(240),
-                      vfov(45.0),
-                      minElevation(-0.94),
-                      maxElevation(0.94),
-                      navGraphPath("./connectivity"),
-                      datasetPath("./data") { generator.seed(time(NULL));};
+        Simulator();
                       
-        ~Simulator() {close();}
+        ~Simulator();
 
         /**
          * Sets camera resolution. Default is 320 x 240.
@@ -92,7 +89,7 @@ namespace mattersim {
         /**
          * Sets camera vertical field-of-view in degrees. Default is 45 degrees.
          */
-        void setCameraFOV(float vfov);
+        void setCameraFOV(double vfov);
         
         /**
          * Initialize the simulator. Further camera configuration won't take any effect from now on.
@@ -122,7 +119,7 @@ namespace mattersim {
          * Set the camera elevation min and max limits in radians. Default is +-0.94 radians.
          * @return true if successful.
          */
-        bool setElevationLimits(float min, float max);
+        bool setElevationLimits(double min, double max);
         
         /**
          * Starts a new episode. If a viewpoint is not provided initialization will be random.
@@ -132,7 +129,7 @@ namespace mattersim {
          * @param elevation - set the initial camera elevation in radians
          */
         void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
-              float heading=0, float elevation=0);
+              double heading=0, double elevation=0);
         
         /**
          * Returns the current environment state including RGB image and available actions.
@@ -147,7 +144,7 @@ namespace mattersim {
          * @param heading - desired heading change in radians
          * @param elevation - desired elevation change in radians
          */
-        void makeAction(int index, float heading, float elevation);
+        void makeAction(int index, double heading, double elevation);
         
         /**
          * Closes the environment and releases underlying texture resources, OpenGL contexts, etc.
@@ -158,8 +155,8 @@ namespace mattersim {
         void clearLocationGraph();
         void populateNavigable();
         void loadTexture(int locationId);
-        void setHeading(float heading);
-        void setElevation(float elevation);
+        void setHeading(double heading);
+        void setElevation(double elevation);
         void renderScene();
 #ifdef OSMESA_RENDERING
         void *buffer;
@@ -168,11 +165,12 @@ namespace mattersim {
         GLuint FramebufferName;
 #endif
         SimStatePtr state;
+        bool initialized;
         int width;
         int height;
-        float vfov;
-        float minElevation;
-        float maxElevation;
+        double vfov;
+        double minElevation;
+        double maxElevation;
         glm::mat4 Projection;
         glm::mat4 View;
         glm::mat4 Model;

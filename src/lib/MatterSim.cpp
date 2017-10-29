@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cmath>
 #include <opencv2/opencv.hpp>
 
 #include <glm/glm.hpp>
@@ -67,12 +68,30 @@ void setupCubeMap(GLuint& texture, cv::Mat &xpos, cv::Mat &xneg, cv::Mat &ypos, 
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, zneg.rows, zneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zneg.ptr());
 }
 
+Simulator::Simulator() :state{new SimState()}, 
+                        width(320),
+                        height(240),
+                        vfov(45.0),
+                        minElevation(-0.94),
+                        maxElevation(0.94),
+                        navGraphPath("./connectivity"),
+                        datasetPath("./data"),
+                        buffer(NULL),
+                        initialized(false) { 
+    generator.seed(time(NULL));
+};
+                      
+Simulator::~Simulator() {
+    close();
+}
+
+
 void Simulator::setCameraResolution(int width, int height) {
     this->width = width;
     this->height = height;
 }
 
-void Simulator::setCameraFOV(float vfov) {
+void Simulator::setCameraFOV(double vfov) {
     this->vfov = vfov;
 }
 
@@ -86,15 +105,14 @@ void Simulator::setNavGraphPath(const std::string& path) {
 
 void Simulator::init() {
     state->rgb.create(height, width, CV_8UC3);
-
 #ifdef OSMESA_RENDERING
     ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
     buffer = malloc(width * height * 4 * sizeof(GLubyte));
     if (!buffer) {
-      throw std::runtime_error( "Malloc image buffer failed" );
+        throw std::runtime_error( "Malloc image buffer failed" );
     }
     if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)) {
-      throw std::runtime_error( "OSMesaMakeCurrent failed" );
+        throw std::runtime_error( "OSMesaMakeCurrent failed" );
     }
 #else
     cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
@@ -194,6 +212,7 @@ void Simulator::init() {
     glGenBuffers(1, &ibo_cube_indices);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_indices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
+    initialized = true;
 }
 
 void Simulator::clearLocationGraph() {
@@ -209,7 +228,7 @@ void Simulator::loadLocationGraph() {
     std::ifstream ifs(navGraphFile, std::ifstream::in);
     if (ifs.fail()){
         throw std::invalid_argument( "Could not open navigation graph file: " + 
-            navGraphFile + ", is scan id valid?" );
+                navGraphFile + ", is scan id valid?" );
     }
     ifs >> root;
     for (auto viewpoint : root) {
@@ -236,19 +255,19 @@ void Simulator::loadLocationGraph() {
 void Simulator::populateNavigable() {
     std::vector<ViewpointPtr> updatedNavigable;
     updatedNavigable.push_back(state->location);
-    unsigned int idx = state->location->id;
+    unsigned int idx = state->location->ix;
     unsigned int i = 0;
-    cv::Point3f curPos = state->location->location;
-    float adjustedheading = state->heading + M_PI / 2;
+    cv::Point3f curPos = state->location->point;
+    double adjustedheading = state->heading + M_PI / 2;
     for (auto u : locations[idx]->unobstructed) {
         if (u) {
-            if (i == state->location->id) {
+            if (i == state->location->ix) {
                 std::cout << "self-reachable" << std::endl;
                 continue;
             }
             glm::vec3 pos(locations[i]->pos);
-            float bearing = atan2(pos[1] - curPos.y, pos[0] - curPos.x);
-            float headingDelta = bearing - adjustedheading;
+            double bearing = atan2(pos[1] - curPos.y, pos[0] - curPos.x);
+            double headingDelta = bearing - adjustedheading;
             while (headingDelta > M_PI) {
                 headingDelta -= 2 * M_PI;
             }
@@ -256,7 +275,7 @@ void Simulator::populateNavigable() {
                 headingDelta += 2 * M_PI;
             }
             if (fabs(headingDelta) < M_PI / 4) {
-                Viewpoint v{i, cv::Point3f(pos[0], pos[1], pos[2])};
+                Viewpoint v{locations[i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2])};
                 updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
             }
         }
@@ -266,14 +285,14 @@ void Simulator::populateNavigable() {
     for (auto v : state->navigableLocations) {
         bool retained = false;
         for (auto updatedV : updatedNavigable) {
-            if (v->id == updatedV->id) {
+            if (v->ix == updatedV->ix) {
                 retained = true;
                 break;
             }
         }
         if (!retained) {
-            glDeleteTextures(1, &locations[v->id]->cubemap_texture);
-            locations[v->id]->cubemap_texture = 0;
+            glDeleteTextures(1, &locations[v->ix]->cubemap_texture);
+            locations[v->ix]->cubemap_texture = 0;
         }
     }
     state->navigableLocations = updatedNavigable;
@@ -301,16 +320,19 @@ void Simulator::loadTexture(int locationId) {
     }
 }
 
-void Simulator::setHeading(float heading) {
+void Simulator::setHeading(double heading) {
   // Normalize to range [0, 360]
-  state->heading = heading - floor( heading / M_PI*2.f ) * M_PI*2.f;
+  state->heading = fmod(heading, M_PI*2.f);
+  while (state->heading < 0) {
+    state->heading += M_PI*2.f;
+  }
 }
 
-void Simulator::setElevation(float elevation) {
+void Simulator::setElevation(double elevation) {
   state->elevation = std::max(std::min(elevation, maxElevation), minElevation);
 }
 
-bool Simulator::setElevationLimits(float min, float max) {
+bool Simulator::setElevationLimits(double min, double max) {
   if (min < 0 && min > -M_PI/2.f && max > 0 && max < M_PI/2.f) {
     minElevation = min;
     maxElevation = max;
@@ -322,41 +344,44 @@ bool Simulator::setElevationLimits(float min, float max) {
 
 void Simulator::newEpisode(const std::string& scanId, 
                            const std::string& viewpointId, 
-                           float heading, 
-                           float elevation) {
+                           double heading, 
+                           double elevation) {
     totalTimer.Start();
+    if (!initialized) {
+        init();
+    }
     state->step = 0;
     setHeading(heading);
     setElevation(elevation); 
     if (state->scanId != scanId) {
-      // Moving to a new building...
-      state->scanId = scanId;
-      clearLocationGraph();
-      loadLocationGraph();
+        // Moving to a new building...
+        state->scanId = scanId;
+        clearLocationGraph();
+        loadLocationGraph();
     }
     int ix = -1;
     if (viewpointId.empty()) {
-      // Generate a random starting viewpoint
-      std::uniform_int_distribution<int> distribution(0,locations.size()-1);
-      ix = distribution(generator);  // generates random starting index
+        // Generate a random starting viewpoint
+        std::uniform_int_distribution<int> distribution(0,locations.size()-1);
+        ix = distribution(generator);  // generates random starting index
     } else {
-      // Find index of selected viewpoint
-      for (int i = 0; i < locations.size(); ++i) {
-        if (locations[i]->viewpointId == viewpointId) {
-          ix = i;
-          break;
+        // Find index of selected viewpoint
+        for (int i = 0; i < locations.size(); ++i) {
+            if (locations[i]->viewpointId == viewpointId) {
+                ix = i;
+                break;
+            }
         }
-      }
-      if (ix < 0) {
-        throw std::invalid_argument( "Could not find viewpointId: " + 
-            viewpointId + ", is viewpoint id valid?" );
-      }
+        if (ix < 0) {
+            throw std::invalid_argument( "Could not find viewpointId: " + 
+                    viewpointId + ", is viewpoint id valid?" );
+        }
     }
     glm::vec3 pos(locations[ix]->pos);
-    Viewpoint v{(unsigned int)ix, cv::Point3f(pos[0], pos[1], pos[2])};
+    Viewpoint v{locations[ix]->viewpointId, (unsigned int)ix, cv::Point3f(pos[0], pos[1], pos[2])};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
-    loadTexture(state->location->id);
+    loadTexture(state->location->ix);
     renderScene();
     totalTimer.Stop();
 }
@@ -368,16 +393,16 @@ SimStatePtr Simulator::getState() {
 void Simulator::renderScene() {
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), state->elevation - (float)M_PI / 2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
-    glm::mat4 RotateY = glm::rotate(RotateX, state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 M = Projection * View * Model * RotateY * locations[state->location->id]->pose;
+    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), (float)state->elevation - (float)M_PI / 2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
+    glm::mat4 RotateY = glm::rotate(RotateX, (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 M = Projection * View * Model * RotateY * locations[state->location->ix]->pose;
     glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
 #ifndef OSMESA_RENDERING
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 #endif
     glViewport(0, 0, width, height);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, locations[state->location->id]->cubemap_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, locations[state->location->ix]->cubemap_texture);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
     cv::Mat img(height, width, CV_8UC3);
     //use fast 4-byte alignment (default anyway) if possible
@@ -390,26 +415,27 @@ void Simulator::renderScene() {
     renderTimer.Stop();
 }
 
-void Simulator::makeAction(int index, float heading, float elevation) {
+void Simulator::makeAction(int index, double heading, double elevation) {
     totalTimer.Start();
     // move
-    if (index < 0 || index >= state->navigableLocations.size() ){
+    if (!initialized || index < 0 || index >= state->navigableLocations.size() ){
         throw std::domain_error( "Invalid action index: " + index );
     }
     state->location = state->navigableLocations[index];
+    state->step += 1;
     populateNavigable();
     setHeading(state->heading + heading);
     setElevation(state->elevation + elevation);
     // loading cubemap
-    if (!glIsTexture(locations[state->location->id]->cubemap_texture)) {
-        loadTexture(state->location->id);
+    if (!glIsTexture(locations[state->location->ix]->cubemap_texture)) {
+        loadTexture(state->location->ix);
     }
     renderScene();
     totalTimer.Stop();
-    std::cout << "\ntotalTimer: " << totalTimer.MilliSeconds() << " ms" << std::endl;
-    std::cout << "cpuLoadTimer: " << cpuLoadTimer.MilliSeconds() << " ms" << std::endl;
-    std::cout << "gpuLoadTimer: " << gpuLoadTimer.MilliSeconds() << " ms" << std::endl;
-    std::cout << "renderTimer: " << renderTimer.MilliSeconds() << " ms" << std::endl;
+    //std::cout << "\ntotalTimer: " << totalTimer.MilliSeconds() << " ms" << std::endl;
+    //std::cout << "cpuLoadTimer: " << cpuLoadTimer.MilliSeconds() << " ms" << std::endl;
+    //std::cout << "gpuLoadTimer: " << gpuLoadTimer.MilliSeconds() << " ms" << std::endl;
+    //std::cout << "renderTimer: " << renderTimer.MilliSeconds() << " ms" << std::endl;
     //cpuLoadTimer.Reset();
     //gpuLoadTimer.Reset();
     //renderTimer.Reset();
@@ -417,22 +443,26 @@ void Simulator::makeAction(int index, float heading, float elevation) {
 }
 
 void Simulator::close() {
-    // delete textures
-    clearLocationGraph();
-    // release vertex and index buffer object
-    glDeleteBuffers(1, &ibo_cube_indices);
-    glDeleteBuffers(1, &vbo_cube_vertices);
-    // detach shaders from program and release
-    glDetachShader(glProgram, glShaderF);
-    glDetachShader(glProgram, glShaderV);
-    glDeleteShader(glShaderF);
-    glDeleteShader(glShaderV);
-    glDeleteProgram(glProgram);
+    if (initialized) {
+        // delete textures
+        clearLocationGraph();
+        // release vertex and index buffer object
+        glDeleteBuffers(1, &ibo_cube_indices);
+        glDeleteBuffers(1, &vbo_cube_vertices);
+        // detach shaders from program and release
+        glDetachShader(glProgram, glShaderF);
+        glDetachShader(glProgram, glShaderV);
+        glDeleteShader(glShaderF);
+        glDeleteShader(glShaderV);
+        glDeleteProgram(glProgram);
 #ifdef OSMESA_RENDERING
-    free( buffer );
-    OSMesaDestroyContext( ctx );
+        free( buffer );
+        buffer = NULL;
+        OSMesaDestroyContext( ctx );
 #else
-    cv::destroyAllWindows();
+        cv::destroyAllWindows();
 #endif
+        initialized = false;
+    }
 }
 }
