@@ -76,7 +76,9 @@ Simulator::Simulator() :state{new SimState()},
                         maxElevation(0.94),
                         navGraphPath("./connectivity"),
                         datasetPath("./data"),
+#ifdef OSMESA_RENDERING
                         buffer(NULL),
+#endif
                         initialized(false) { 
     generator.seed(time(NULL));
 };
