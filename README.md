@@ -55,7 +55,7 @@ git clone --recursive https://github.com/peteanderson80/Matterport3DSimulator.gi
 cd Matterport3DSimulator
 ```
 
-If you didn't clone with the `--recursive` flat, then you'll need to manually clone the pybind submodule from the top-level directory:
+If you didn't clone with the `--recursive` flag, then you'll need to manually clone the pybind submodule from the top-level directory:
 ```
 git submodule update --init --recursive
 ```
