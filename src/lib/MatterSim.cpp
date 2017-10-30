@@ -3,10 +3,6 @@
 #include <cmath>
 #include <opencv2/opencv.hpp>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include <json/json.h>
 #include "MatterSim.hpp"
 #include "Benchmark.hpp"
