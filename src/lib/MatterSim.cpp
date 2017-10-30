@@ -68,7 +68,7 @@ void setupCubeMap(GLuint& texture, cv::Mat &xpos, cv::Mat &xneg, cv::Mat &ypos, 
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, zneg.rows, zneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zneg.ptr());
 }
 
-Simulator::Simulator() :state{new SimState()}, 
+Simulator::Simulator() :state{new SimState()},
                         width(320),
                         height(240),
                         vfov(45.0),
@@ -79,10 +79,10 @@ Simulator::Simulator() :state{new SimState()},
 #ifdef OSMESA_RENDERING
                         buffer(NULL),
 #endif
-                        initialized(false) { 
+                        initialized(false) {
     generator.seed(time(NULL));
 };
-                      
+
 Simulator::~Simulator() {
     close();
 }
@@ -229,7 +229,7 @@ void Simulator::loadLocationGraph() {
     auto navGraphFile =  navGraphPath + "/" + state->scanId + "_connectivity.json";
     std::ifstream ifs(navGraphFile, std::ifstream::in);
     if (ifs.fail()){
-        throw std::invalid_argument( "Could not open navigation graph file: " + 
+        throw std::invalid_argument( "Could not open navigation graph file: " +
                 navGraphFile + ", is scan id valid?" );
     }
     ifs >> root;
@@ -344,9 +344,9 @@ bool Simulator::setElevationLimits(double min, double max) {
   }
 }
 
-void Simulator::newEpisode(const std::string& scanId, 
-                           const std::string& viewpointId, 
-                           double heading, 
+void Simulator::newEpisode(const std::string& scanId,
+                           const std::string& viewpointId,
+                           double heading,
                            double elevation) {
     totalTimer.Start();
     if (!initialized) {
@@ -354,7 +354,7 @@ void Simulator::newEpisode(const std::string& scanId,
     }
     state->step = 0;
     setHeading(heading);
-    setElevation(elevation); 
+    setElevation(elevation);
     if (state->scanId != scanId) {
         // Moving to a new building...
         state->scanId = scanId;
@@ -375,7 +375,7 @@ void Simulator::newEpisode(const std::string& scanId,
             }
         }
         if (ix < 0) {
-            throw std::invalid_argument( "Could not find viewpointId: " + 
+            throw std::invalid_argument( "Could not find viewpointId: " +
                     viewpointId + ", is viewpoint id valid?" );
         }
     }
