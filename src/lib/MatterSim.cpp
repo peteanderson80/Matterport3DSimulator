@@ -417,7 +417,9 @@ void Simulator::makeAction(int index, double heading, double elevation) {
     totalTimer.Start();
     // move
     if (!initialized || index < 0 || index >= state->navigableLocations.size() ){
-        throw std::domain_error( "Invalid action index: " + index );
+        std::stringstream msg;
+        msg << "Invalid action index: " << index;
+        throw std::domain_error( msg.str() );
     }
     state->location = state->navigableLocations[index];
     state->step += 1;
