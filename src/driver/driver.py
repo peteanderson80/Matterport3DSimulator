@@ -9,10 +9,9 @@ cv2.namedWindow('displaywin')
 sim = MatterSim.Simulator()
 sim.setDatasetPath('../data')
 sim.setNavGraphPath('connectivity')
-sim.setScanId('2t7WUuJeko7')
-sim.setScreenResolution(640, 480)
+sim.setCameraResolution(640, 480)
 sim.init()
-sim.newEpisode()
+sim.newEpisode('2t7WUuJeko7', '', 0, 0)
 
 heading = 0
 elevation = 0
@@ -26,17 +25,17 @@ while True:
     state = sim.getState()
     locations = state.navigableLocations
     im = state.rgb
-    origin = locations[0].location
+    origin = locations[0].point
     adjustedheading = state.heading + math.pi / 2
     for idx, loc in enumerate(locations[1:]):
-        angle = math.atan2(loc.location[1] - origin[1], loc.location[0] - origin[0])
+        angle = math.atan2(loc.point[1] - origin[1], loc.point[0] - origin[0])
         anglediff = angle - adjustedheading
         while anglediff > math.pi:
             anglediff -= 2 * math.pi
         while anglediff < -math.pi:
             anglediff += 2 * math.pi
         if abs(anglediff) < math.pi / 4:
-            dist = math.sqrt((loc.location[0] - origin[0]) ** 2 + (loc.location[1] - origin[1]) ** 2)
+            dist = math.sqrt((loc.point[0] - origin[0]) ** 2 + (loc.point[1] - origin[1]) ** 2)
             colour = [230, 40, 40]
             cv2.putText(im, str(idx + 1), (320 + int(320 * anglediff * 4 / math.pi), 480 - int(dist * 100)), cv2.FONT_HERSHEY_SIMPLEX, 2, colour, thickness=3)
     cv2.imshow('displaywin', im)
