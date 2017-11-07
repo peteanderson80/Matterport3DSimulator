@@ -89,8 +89,8 @@ namespace mattersim {
         void setSeed(int seed) {
             sim.setSeed(seed);
         }
-        void setElevationLimits(double min, double max) {
-            sim.setElevationLimits(min, max);
+        bool setElevationLimits(double min, double max) {
+            return sim.setElevationLimits(min, max);
         }
         void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
               double heading=0, double elevation=0) {
