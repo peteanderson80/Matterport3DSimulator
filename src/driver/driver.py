@@ -30,10 +30,9 @@ while True:
     locations = state.navigableLocations
     im = state.rgb
     origin = locations[0].point
-    adjustedheading = state.heading + math.pi / 2
     for idx, loc in enumerate(locations[1:]):
-        angle = math.atan2(loc.point[1] - origin[1], loc.point[0] - origin[0])
-        anglediff = angle - adjustedheading
+        angle = math.pi/2 - math.atan2(loc.point[1] - origin[1], loc.point[0] - origin[0])
+        anglediff = angle - state.heading
         while anglediff > math.pi:
             anglediff -= 2 * math.pi
         while anglediff < -math.pi:
