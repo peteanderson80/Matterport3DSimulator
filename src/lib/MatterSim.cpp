@@ -220,7 +220,7 @@ void Simulator::init() {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
     } else {
         // no rendering, e.g. for unit testing
-        state->rgb.setTo(cv::Scalar(0, 0, 0)); 
+        state->rgb.setTo(cv::Scalar(0, 0, 0));
     }
     initialized = true;
 }
@@ -247,7 +247,7 @@ void Simulator::loadLocationGraph() {
         for (auto f : viewpoint["pose"]) {
             posearr[i++] = f.asFloat();
         }
-        // glm uses column-major order. Inputs are in row-major order. 
+        // glm uses column-major order. Inputs are in row-major order.
         glm::mat4 mattPose = glm::transpose(glm::make_mat4(posearr));
         // glm access is col,row
         glm::vec3 pos{mattPose[3][0], mattPose[3][1], mattPose[3][2]};
@@ -380,7 +380,7 @@ void Simulator::newEpisode(const std::string& scanId,
         // Generate a random starting viewpoint
         std::uniform_int_distribution<int> distribution(0,locations.size()-1);
         int start_ix = distribution(generator);  // generates random starting index
-        ix = start_ix; 
+        ix = start_ix;
         while (!locations[ix]->included) { // Don't start at an excluded viewpoint
             ix++;
             if (ix >= locations.size()) ix = 0;

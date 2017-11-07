@@ -26,14 +26,14 @@ double radians(float deg) {
     return deg * M_PI / 180.f;
 }
 
-float heading[10] =     {  10,  350, 350,  1, 90, 180,   90,  270,   90, 270 }; 
+float heading[10] =     {  10,  350, 350,  1, 90, 180,   90,  270,   90, 270 };
 float heading_chg[10] = { -20, -360, 371, 89, 90, -90, -180, -180, -180,   0 };
 float elevation[10] =     {  10,   10, -26, -40, -40, -40,  50,  50,  40,  0 };
 float elevation_chg[10] = {   0,  -36, -30, -10,   0,  90,   5, -10, -40,  0 };
-    
+
 
 TEST_CASE( "Simulator can start new episodes and do simple motion", "[Simulator]" ) {
-  
+
     std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
     std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
     Simulator sim;
@@ -147,7 +147,7 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
                     navigableCount++;
                 } else if (!currentViewpoint["unobstructed"][i].asBool()) {
                     // obstructed
-                    INFO("Viewpoint " << target << " is obstructed from " 
+                    INFO("Viewpoint " << target << " is obstructed from "
                           << curr << ", can't be a navigableLocation");
                     CHECK(locs.find(target) == locs.end());
                 } else if (!included[i]) {
@@ -157,7 +157,7 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
                 } else {
                     // check if this viewpoint is visible
                     INFO("atan2 " << atan2(tar_y - y, tar_x - x));
-                    float viewpointHeading = M_PI/2 - atan2(tar_y - y, tar_x - x); 
+                    float viewpointHeading = M_PI/2 - atan2(tar_y - y, tar_x - x);
                     // convert interval [-0.5pi, 1.5pi] to interval [0, 2pi]
                     if (viewpointHeading < 0) {
                         viewpointHeading += 2*M_PI;
@@ -198,7 +198,7 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
 
 
 TEST_CASE( "Simulator state->rgb is correct", "[Simulator, Rendering]" ) {
-  
+
   //TODO - switching lots of different episodes on the same simulator
 }
 

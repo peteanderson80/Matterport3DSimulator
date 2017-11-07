@@ -95,8 +95,8 @@ namespace mattersim {
         /**
          * Enable or disable rendering. Useful for testing. Default is true (enabled).
          */
-        void setRenderingEnabled(bool value); 
-        
+        void setRenderingEnabled(bool value);
+
         /**
          * Initialize the simulator. Further camera configuration won't take any effect from now on.
          */

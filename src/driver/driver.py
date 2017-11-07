@@ -11,7 +11,7 @@ sim.setDatasetPath('../data')
 sim.setNavGraphPath('connectivity')
 sim.setCameraResolution(640, 480)
 sim.init()
-#sim.newEpisode('2t7WUuJeko7', 'ee3c278732514701bacdfdacf81f4915', 0, 0)  
+#sim.newEpisode('2t7WUuJeko7', 'ee3c278732514701bacdfdacf81f4915', 0, 0)
 #sim.newEpisode('2t7WUuJeko7', '8d51f41d9ce04dfdaae944da9c6d3847', 0, 0)
 sim.newEpisode('2t7WUuJeko7', '1e6b606b44df4a6086c0f97e826d4d15', 0, 0)
 
