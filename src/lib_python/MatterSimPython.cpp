@@ -80,8 +80,8 @@ namespace mattersim {
         void setCameraResolution(int width, int height) {
             sim.setCameraResolution(width, height);
         }
-        void setCameraFOV(double vfov) {
-            sim.setCameraFOV(vfov);
+        void setCameraVFOV(double vfov) {
+            sim.setCameraVFOV(vfov);
         }
         void init() {
             sim.init();
@@ -130,7 +130,7 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setDatasetPath", &SimulatorPython::setDatasetPath)
         .def("setNavGraphPath", &SimulatorPython::setNavGraphPath)
         .def("setCameraResolution", &SimulatorPython::setCameraResolution)
-        .def("setCameraFOV", &SimulatorPython::setCameraFOV)
+        .def("setCameraFOV", &SimulatorPython::setCameraVFOV)
         .def("init", &SimulatorPython::init)
         .def("setSeed", &SimulatorPython::setSeed)
         .def("setElevationLimits", &SimulatorPython::setElevationLimits)

@@ -39,7 +39,7 @@ TEST_CASE( "Simulator can start new episodes and do simple motion", "[Simulator]
     std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
     Simulator sim;
     sim.setCameraResolution(200,100); // width,height
-    sim.setCameraFOV(45); // 45deg vfov, 90deg hfov
+    sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
     sim.setRenderingEnabled(false);
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
     REQUIRE_NOTHROW(sim.init());
@@ -75,7 +75,7 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
     }
     Simulator sim;
     sim.setCameraResolution(20,20); // don't really care about the image
-    sim.setCameraFOV(90); // 90deg vfov, 90deg hfov
+    sim.setCameraVFOV(radians(90)); // 90deg vfov, 90deg hfov
     double half_hfov = M_PI/4;
     sim.setRenderingEnabled(false);
     sim.setSeed(1);
@@ -201,8 +201,8 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
 TEST_CASE( "Simulator state->rgb is correct", "[Simulator, Rendering]" ) {
 
     Simulator sim;
-    sim.setCameraResolution(200,100); // width,height
-    sim.setCameraFOV(45); // 45deg vfov, 90deg hfov
+    sim.setCameraResolution(640,480); // width,height
+    sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
     REQUIRE_NOTHROW(sim.init());
     Json::Value root;
@@ -219,10 +219,15 @@ TEST_CASE( "Simulator state->rgb is correct", "[Simulator, Rendering]" ) {
         auto heading = testcase["heading"].asFloat();
         auto elevation = testcase["elevation"].asFloat();
 
-        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading), radians(elevation)));
+        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, heading, elevation));
 
         SimStatePtr state = sim.getState();
-        auto reference_image = cv::imread(imgfile);
+        cv::imwrite("sim_imgs/"+imgfile, state->rgb);
+        
+        //cv::imshow("displaywin", state->rgb);
+        //int key = cv::waitKey(1000);
+        
+        auto reference_image = cv::imread("webgl_imgs/"+imgfile);
         double err = cv::norm(reference_image, state->rgb, CV_L2);
         err /= reference_image.rows * reference_image.cols;
         CHECK(err < 0.1);

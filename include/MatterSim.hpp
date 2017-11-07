@@ -88,9 +88,9 @@ namespace mattersim {
         void setCameraResolution(int width, int height);
         
         /**
-         * Sets camera vertical field-of-view in degrees. Default is 45 degrees.
+         * Sets camera vertical field-of-view in radians. Default is 0.8, approx 46 degrees.
          */
-        void setCameraFOV(double vfov);
+        void setCameraVFOV(double vfov);
         
         /**
          * Enable or disable rendering. Useful for testing. Default is true (enabled).

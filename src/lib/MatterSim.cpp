@@ -67,7 +67,7 @@ void setupCubeMap(GLuint& texture, cv::Mat &xpos, cv::Mat &xneg, cv::Mat &ypos, 
 Simulator::Simulator() :state{new SimState()},
                         width(320),
                         height(240),
-                        vfov(45.0),
+                        vfov(0.8),
                         minElevation(-0.94),
                         maxElevation(0.94),
                         navGraphPath("./connectivity"),
@@ -90,7 +90,7 @@ void Simulator::setCameraResolution(int width, int height) {
     this->height = height;
 }
 
-void Simulator::setCameraFOV(double vfov) {
+void Simulator::setCameraVFOV(double vfov) {
     this->vfov = vfov;
 }
 
@@ -273,7 +273,7 @@ void Simulator::populateNavigable() {
     cv::Point3f curPos = state->location->point;
     double adjustedheading = M_PI / 2 - state->heading;
     glm::vec3 camera_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
-    double cos_half_hfov = cos(vfov * width / height * M_PI / 180.f / 2.f);
+    double cos_half_hfov = cos(vfov * width / height / 2.f);
     for (unsigned int i = 0; i < locations.size(); ++i) {
         if (i == idx) {
             // Current location is pushed first
