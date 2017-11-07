@@ -311,11 +311,11 @@ void Simulator::populateNavigable() {
 }
 
 void Simulator::loadTexture(int locationId) {
-    cpuLoadTimer.Start();
     if (glIsTexture(locations[locationId]->cubemap_texture)){
         // Check if it's already loaded
         return;
     }
+    cpuLoadTimer.Start();
     auto datafolder = datasetPath + "/v1/scans/" + state->scanId + "/matterport_skybox_images/";
     auto viewpointId = locations[locationId]->viewpointId;
     auto xpos = cv::imread(datafolder + viewpointId + "_skybox2_sami.jpg");
