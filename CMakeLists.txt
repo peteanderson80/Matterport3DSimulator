@@ -33,7 +33,8 @@ target_include_directories(MatterSim PRIVATE ${JSONCPP_INCLUDE_DIRS})
 target_link_libraries(MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS} ${GL_LIBS})
 
 add_executable(tests src/test/main.cpp)
-target_link_libraries(tests MatterSim)
+target_include_directories(tests PRIVATE ${JSONCPP_INCLUDE_DIRS})
+target_link_libraries(tests MatterSim ${JSONCPP_LIBRARIES})
 
 add_executable(mattersim_main src/driver/mattersim_main.cpp)
 target_link_libraries(mattersim_main MatterSim)
@@ -43,7 +44,7 @@ target_link_libraries(random_agent MatterSim)
 
 add_subdirectory(pybind11)
 
-find_package(PythonInterp)
+find_package(PythonInterp 2.7)
 message(${PYTHON_EXECUTABLE})
 
 # Need to search for python executable again to pick up an activated

@@ -21,3 +21,5 @@ Each json file contains an array of annotations, one for each viewpoint in the s
 - height: estimated height of the viewpoint above the floor. Not required for the simulator.
 
 Units are in metres.
+
+scans.txt contains a list of all the scan ids in the dataset.

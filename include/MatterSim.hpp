@@ -27,7 +27,7 @@ namespace mattersim {
     struct Viewpoint {
         //! Viewpoint identifier
         std::string viewpointId;
-        //! Viewpoint index
+        //! Viewpoint index into connectivity graph
         unsigned int ix;
         //! 3D position
         cv::Point3f point;
@@ -65,8 +65,8 @@ namespace mattersim {
     struct Location {
         bool included;
         std::string viewpointId;
-        glm::mat4 pose;
-        glm::vec3 pos;
+        glm::mat4 rot; // rotation component
+        glm::vec3 pos; // translation component
         std::vector<bool> unobstructed;
         GLuint cubemap_texture;
     };
@@ -91,6 +91,11 @@ namespace mattersim {
          * Sets camera vertical field-of-view in degrees. Default is 45 degrees.
          */
         void setCameraFOV(double vfov);
+        
+        /**
+         * Enable or disable rendering. Useful for testing. Default is true (enabled).
+         */
+        void setRenderingEnabled(bool value); 
         
         /**
          * Initialize the simulator. Further camera configuration won't take any effect from now on.
@@ -142,8 +147,8 @@ namespace mattersim {
          * An RL agent will sample an action here. A task-specific reward can be determined 
          * based on the location, heading, elevation, etc. of the resulting state.
          * @param index - an index into the set of feasible actions defined by getState()->navigableLocations.
-         * @param heading - desired heading change in radians
-         * @param elevation - desired elevation change in radians
+         * @param heading - desired heading change in radians. With z-axis up, heading is defined relative to the y-axis (turning right is positive)
+         * @param elevation - desired elevation change in radians, measured from the horizon defined by the x-y plane (up is positive)
          */
         void makeAction(int index, double heading, double elevation);
         
@@ -167,6 +172,7 @@ namespace mattersim {
 #endif
         SimStatePtr state;
         bool initialized;
+        bool renderingEnabled;
         int width;
         int height;
         double vfov;
@@ -175,6 +181,9 @@ namespace mattersim {
         glm::mat4 Projection;
         glm::mat4 View;
         glm::mat4 Model;
+        glm::mat4 Scale;
+        glm::mat4 RotateX;
+        glm::mat4 RotateZ;
         GLint PVM;
         GLint vertex;
         GLuint ibo_cube_indices;

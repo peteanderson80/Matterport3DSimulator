@@ -75,7 +75,8 @@ Simulator::Simulator() :state{new SimState()},
 #ifdef OSMESA_RENDERING
                         buffer(NULL),
 #endif
-                        initialized(false) {
+                        initialized(false),
+                        renderingEnabled(true) {
     generator.seed(time(NULL));
 };
 
@@ -93,6 +94,13 @@ void Simulator::setCameraFOV(double vfov) {
     this->vfov = vfov;
 }
 
+void Simulator::setRenderingEnabled(bool value) {
+    if (!initialized) {
+        renderingEnabled = value;
+    }
+}
+
+
 void Simulator::setDatasetPath(const std::string& path) {
     datasetPath = path;
 }
@@ -103,113 +111,117 @@ void Simulator::setNavGraphPath(const std::string& path) {
 
 void Simulator::init() {
     state->rgb.create(height, width, CV_8UC3);
+    if (renderingEnabled) {
 #ifdef OSMESA_RENDERING
-    ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
-    buffer = malloc(width * height * 4 * sizeof(GLubyte));
-    if (!buffer) {
-        throw std::runtime_error( "Malloc image buffer failed" );
-    }
-    if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)) {
-        throw std::runtime_error( "OSMesaMakeCurrent failed" );
-    }
+        ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
+        buffer = malloc(width * height * 4 * sizeof(GLubyte));
+        if (!buffer) {
+            throw std::runtime_error( "Malloc image buffer failed" );
+        }
+        if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)) {
+            throw std::runtime_error( "OSMesaMakeCurrent failed" );
+        }
 #else
-    cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
-    cv::setOpenGlContext("renderwin");
-    // initialize the extension wrangler
-    glewInit();
+        cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
+        cv::setOpenGlContext("renderwin");
+        // initialize the extension wrangler
+        glewInit();
 #endif
 
 #ifndef OSMESA_RENDERING
-    FramebufferName = 0;
-    glGenFramebuffers(1, &FramebufferName);
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+        FramebufferName = 0;
+        glGenFramebuffers(1, &FramebufferName);
+        glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 
-    // The texture we're going to render to
-    GLuint renderedTexture;
-    glGenTextures(1, &renderedTexture);
+        // The texture we're going to render to
+        GLuint renderedTexture;
+        glGenTextures(1, &renderedTexture);
 
-    // "Bind" the newly created texture : all future texture functions will modify this texture
-    glBindTexture(GL_TEXTURE_2D, renderedTexture);
+        // "Bind" the newly created texture : all future texture functions will modify this texture
+        glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
-    // Give an empty image to OpenGL ( the last "0" )
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+        // Give an empty image to OpenGL ( the last "0" )
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-    // Poor filtering. Needed !
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        // Poor filtering. Needed !
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    // Set "renderedTexture" as our colour attachement #0
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderedTexture, 0);
+        // Set "renderedTexture" as our colour attachement #0
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderedTexture, 0);
 
-    // Set the list of draw buffers.
-    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+        // Set the list of draw buffers.
+        GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+        glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 
-    // Always check that our framebuffer is ok
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        throw std::runtime_error( "GL_FRAMEBUFFER failure" );
-    }
+        // Always check that our framebuffer is ok
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            throw std::runtime_error( "GL_FRAMEBUFFER failure" );
+        }
 #endif
 
-    // set our viewport, clear color and depth, and enable depth testing
-    glViewport(0, 0, this->width, this->height);
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-    glClearDepth(1.0f);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+        // set our viewport, clear color and depth, and enable depth testing
+        glViewport(0, 0, this->width, this->height);
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        glClearDepth(1.0f);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
 
-    // load our shaders and compile them.. create a program and link it
-    glShaderV = glCreateShader(GL_VERTEX_SHADER);
-    glShaderF = glCreateShader(GL_FRAGMENT_SHADER);
-    const GLchar* vShaderSource = loadFile("src/lib/vertex.sh");
-    const GLchar* fShaderSource = loadFile("src/lib/fragment.sh");
-    glShaderSource(glShaderV, 1, &vShaderSource, NULL);
-    glShaderSource(glShaderF, 1, &fShaderSource, NULL);
-    delete [] vShaderSource;
-    delete [] fShaderSource;
-    glCompileShader(glShaderV);
-    glCompileShader(glShaderF);
-    glProgram = glCreateProgram();
-    glAttachShader(glProgram, glShaderV);
-    glAttachShader(glProgram, glShaderF);
-    glLinkProgram(glProgram);
-    glUseProgram(glProgram);
+        // load our shaders and compile them.. create a program and link it
+        glShaderV = glCreateShader(GL_VERTEX_SHADER);
+        glShaderF = glCreateShader(GL_FRAGMENT_SHADER);
+        const GLchar* vShaderSource = loadFile("src/lib/vertex.sh");
+        const GLchar* fShaderSource = loadFile("src/lib/fragment.sh");
+        glShaderSource(glShaderV, 1, &vShaderSource, NULL);
+        glShaderSource(glShaderF, 1, &fShaderSource, NULL);
+        delete [] vShaderSource;
+        delete [] fShaderSource;
+        glCompileShader(glShaderV);
+        glCompileShader(glShaderF);
+        glProgram = glCreateProgram();
+        glAttachShader(glProgram, glShaderV);
+        glAttachShader(glProgram, glShaderF);
+        glLinkProgram(glProgram);
+        glUseProgram(glProgram);
 
-    // shader logs
-    int  vlength,    flength;
-    char vlog[2048], flog[2048];
-    glGetShaderInfoLog(glShaderV, 2048, &vlength, vlog);
-    glGetShaderInfoLog(glShaderF, 2048, &flength, flog);
+        // shader logs
+        int  vlength,    flength;
+        char vlog[2048], flog[2048];
+        glGetShaderInfoLog(glShaderV, 2048, &vlength, vlog);
+        glGetShaderInfoLog(glShaderF, 2048, &flength, flog);
 
-    // grab the pvm matrix and vertex location from our shader program
-    PVM    = glGetUniformLocation(glProgram, "PVM");
-    vertex = glGetAttribLocation(glProgram, "vertex");
+        // grab the pvm matrix and vertex location from our shader program
+        PVM    = glGetUniformLocation(glProgram, "PVM");
+        vertex = glGetAttribLocation(glProgram, "vertex");
 
-    // these won't change for now
-    Projection = glm::perspective((float)vfov, (float)width / (float)height, 0.1f, 100.0f);
-    View       = glm::mat4(1.0f);
-    Model      = glm::scale(glm::mat4(1.0f),glm::vec3(-50,50,50));
+        // these won't change
+        Projection = glm::perspective((float)vfov, (float)width / (float)height, 0.1f, 100.0f);
+        Scale      = glm::scale(glm::mat4(1.0f),glm::vec3(10,10,10)); // Scale cube to 10m
 
-    // cube vertices for vertex buffer object
-    GLfloat cube_vertices[] = {
-       -1.0,  1.0,  1.0,
-       -1.0, -1.0,  1.0,
-        1.0, -1.0,  1.0,
-        1.0,  1.0,  1.0,
-       -1.0,  1.0, -1.0,
-       -1.0, -1.0, -1.0,
-        1.0, -1.0, -1.0,
-        1.0,  1.0, -1.0,
-    };
-    glGenBuffers(1, &vbo_cube_vertices);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_cube_vertices);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(vertex);
-    glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        // cube vertices for vertex buffer object
+        GLfloat cube_vertices[] = {
+          -1.0,  1.0,  1.0,
+          -1.0, -1.0,  1.0,
+            1.0, -1.0,  1.0,
+            1.0,  1.0,  1.0,
+          -1.0,  1.0, -1.0,
+          -1.0, -1.0, -1.0,
+            1.0, -1.0, -1.0,
+            1.0,  1.0, -1.0,
+        };
+        glGenBuffers(1, &vbo_cube_vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_cube_vertices);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(vertex);
+        glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glGenBuffers(1, &ibo_cube_indices);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_indices);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
+        glGenBuffers(1, &ibo_cube_indices);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_indices);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
+    } else {
+        // no rendering, e.g. for unit testing
+        state->rgb.setTo(cv::Scalar(0, 0, 0)); 
+    }
     initialized = true;
 }
 
@@ -235,17 +247,20 @@ void Simulator::loadLocationGraph() {
         for (auto f : viewpoint["pose"]) {
             posearr[i++] = f.asFloat();
         }
-        glm::mat4 pose = glm::transpose(glm::make_mat4(posearr));
-        glm::vec3 pos{pose[3][0], pose[3][1], pose[3][2]};
-        pos[0] = -pos[0]; // Flip x coordinate since we flip x in the model matrix.
-        pose[3] = {0,0,0,1};
+        // glm uses column-major order. Inputs are in row-major order. 
+        glm::mat4 mattPose = glm::transpose(glm::make_mat4(posearr));
+        // glm access is col,row
+        glm::vec3 pos{mattPose[3][0], mattPose[3][1], mattPose[3][2]};
+        mattPose[3] = {0,0,0,1}; // remove translation component
+        // Matterport camera looks down z axis. Opengl camera looks down -z axis. Rotate around x by 180 deg.
+        glm::mat4 openglPose = glm::rotate(mattPose, (float)M_PI, glm::vec3(1.0f, 0.0f, 0.0f));
         std::vector<bool> unobstructed;
         for (auto u : viewpoint["unobstructed"]) {
             unobstructed.push_back(u.asBool());
         }
         auto viewpointId = viewpoint["image_id"].asString();
         GLuint cubemap_texture = 0;
-        Location l{viewpoint["included"].asBool(), viewpointId, pose, pos, unobstructed, cubemap_texture};
+        Location l{viewpoint["included"].asBool(), viewpointId, openglPose, pos, unobstructed, cubemap_texture};
         locations.push_back(std::make_shared<Location>(l));
     }
 }
@@ -256,30 +271,29 @@ void Simulator::populateNavigable() {
     unsigned int idx = state->location->ix;
     unsigned int i = 0;
     cv::Point3f curPos = state->location->point;
-    double adjustedheading = state->heading + M_PI / 2;
-    for (auto u : locations[idx]->unobstructed) {
-        if (u) {
-            if (i == state->location->ix) {
-                std::cout << "self-reachable" << std::endl;
-                continue;
-            }
-            glm::vec3 pos(locations[i]->pos);
-            double bearing = atan2(pos[1] - curPos.y, pos[0] - curPos.x);
-            double headingDelta = bearing - adjustedheading;
-            while (headingDelta > M_PI) {
-                headingDelta -= 2 * M_PI;
-            }
-            while (headingDelta < -M_PI) {
-                headingDelta += 2 * M_PI;
-            }
-            if (fabs(headingDelta) < M_PI / 4) {
+    double adjustedheading = M_PI / 2 - state->heading;
+    glm::vec3 camera_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
+    double cos_half_hfov = cos(vfov * width / height * M_PI / 180.f / 2.f);
+    for (unsigned int i = 0; i < locations.size(); ++i) {
+        if (i == idx) {
+            // Current location is pushed first
+            continue;
+        }
+        if (locations[idx]->unobstructed[i] && locations[i]->included) {
+            // Check if visible between camera left and camera right
+            glm::vec3 target_dir = locations[i]->pos - locations[idx]->pos;
+            target_dir.z = 0.f; // project to xy plane
+            glm::vec3 normed_target_dir = glm::normalize(target_dir);
+            double cos_angle = glm::dot(normed_target_dir, camera_dir);
+            if (cos_angle >= cos_half_hfov) {
+                glm::vec3 pos(locations[i]->pos);
                 Viewpoint v{locations[i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2])};
                 updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
             }
         }
-        i++;
     }
-
+    /*
+    // Flush textures for locations that can no longer be reached - not sure if we should be this aggressive
     for (auto v : state->navigableLocations) {
         bool retained = false;
         for (auto updatedV : updatedNavigable) {
@@ -292,12 +306,16 @@ void Simulator::populateNavigable() {
             glDeleteTextures(1, &locations[v->ix]->cubemap_texture);
             locations[v->ix]->cubemap_texture = 0;
         }
-    }
+    }*/
     state->navigableLocations = updatedNavigable;
 }
 
 void Simulator::loadTexture(int locationId) {
     cpuLoadTimer.Start();
+    if (glIsTexture(locations[locationId]->cubemap_texture)){
+        // Check if it's already loaded
+        return;
+    }
     auto datafolder = datasetPath + "/v1/scans/" + state->scanId + "/matterport_skybox_images/";
     auto viewpointId = locations[locationId]->viewpointId;
     auto xpos = cv::imread(datafolder + viewpointId + "_skybox2_sami.jpg");
@@ -307,37 +325,37 @@ void Simulator::loadTexture(int locationId) {
     auto zpos = cv::imread(datafolder + viewpointId + "_skybox1_sami.jpg");
     auto zneg = cv::imread(datafolder + viewpointId + "_skybox3_sami.jpg");
     if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
-      throw std::invalid_argument( "Could not open skybox files at: " + datafolder + viewpointId + "_skybox*_sami.jpg");
+        throw std::invalid_argument( "Could not open skybox files at: " + datafolder + viewpointId + "_skybox*_sami.jpg");
     }
     cpuLoadTimer.Stop();
     gpuLoadTimer.Start();
     setupCubeMap(locations[locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
     gpuLoadTimer.Stop();
     if (!glIsTexture(locations[locationId]->cubemap_texture)){
-      throw std::runtime_error( "loadTexture failed" );
+        throw std::runtime_error( "loadTexture failed" );
     }
 }
 
 void Simulator::setHeading(double heading) {
-  // Normalize to range [0, 360]
-  state->heading = fmod(heading, M_PI*2.f);
-  while (state->heading < 0) {
-    state->heading += M_PI*2.f;
-  }
+    // Normalize to range [0, 360]
+    state->heading = fmod(heading, M_PI*2.f);
+    while (state->heading < 0) {
+        state->heading += M_PI*2.f;
+    }
 }
 
 void Simulator::setElevation(double elevation) {
-  state->elevation = std::max(std::min(elevation, maxElevation), minElevation);
+    state->elevation = std::max(std::min(elevation, maxElevation), minElevation);
 }
 
 bool Simulator::setElevationLimits(double min, double max) {
-  if (min < 0 && min > -M_PI/2.f && max > 0 && max < M_PI/2.f) {
-    minElevation = min;
-    maxElevation = max;
-    return true;
-  } else {
-    return false;
-  }
+    if (min < 0 && min > -M_PI/2.f && max > 0 && max < M_PI/2.f) {
+        minElevation = min;
+        maxElevation = max;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void Simulator::newEpisode(const std::string& scanId,
@@ -361,11 +379,23 @@ void Simulator::newEpisode(const std::string& scanId,
     if (viewpointId.empty()) {
         // Generate a random starting viewpoint
         std::uniform_int_distribution<int> distribution(0,locations.size()-1);
-        ix = distribution(generator);  // generates random starting index
+        int start_ix = distribution(generator);  // generates random starting index
+        ix = start_ix; 
+        while (!locations[ix]->included) { // Don't start at an excluded viewpoint
+            ix++;
+            if (ix >= locations.size()) ix = 0;
+            if (ix == start_ix) {
+                throw std::logic_error( "ScanId: " + scanId + " has no included viewpoints!");
+            }
+        }
     } else {
         // Find index of selected viewpoint
         for (int i = 0; i < locations.size(); ++i) {
             if (locations[i]->viewpointId == viewpointId) {
+                if (!locations[i]->included) {
+                    throw std::invalid_argument( "ViewpointId: " +
+                            viewpointId + ", is excluded from the connectivity graph." );
+                }
                 ix = i;
                 break;
             }
@@ -379,8 +409,10 @@ void Simulator::newEpisode(const std::string& scanId,
     Viewpoint v{locations[ix]->viewpointId, (unsigned int)ix, cv::Point3f(pos[0], pos[1], pos[2])};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
-    loadTexture(state->location->ix);
-    renderScene();
+    if (renderingEnabled) {
+        loadTexture(state->location->ix);
+        renderScene();
+    }
     totalTimer.Stop();
 }
 
@@ -391,9 +423,13 @@ SimStatePtr Simulator::getState() {
 void Simulator::renderScene() {
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), (float)state->elevation - (float)M_PI / 2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
-    glm::mat4 RotateY = glm::rotate(RotateX, (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 M = Projection * View * Model * RotateY * locations[state->location->ix]->pose;
+    // Scale and move the cubemap model into position
+    Model = locations[state->location->ix]->rot * Scale;
+    // Opengl camera looking down -z axis. Rotate around x by 90deg (now looking down +y). Keep rotating for - elevation.
+    RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f - (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
+    // Rotate camera for heading, positive heading will turn right.
+    View = glm::rotate(RotateX, (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 M = Projection * View * Model;
     glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
 #ifndef OSMESA_RENDERING
     // Render to our framebuffer
@@ -423,14 +459,16 @@ void Simulator::makeAction(int index, double heading, double elevation) {
     }
     state->location = state->navigableLocations[index];
     state->step += 1;
-    populateNavigable();
     setHeading(state->heading + heading);
     setElevation(state->elevation + elevation);
-    // loading cubemap
-    if (!glIsTexture(locations[state->location->ix]->cubemap_texture)) {
-        loadTexture(state->location->ix);
+    populateNavigable();
+    if (renderingEnabled) {
+        // loading cubemap
+        if (!glIsTexture(locations[state->location->ix]->cubemap_texture)) {
+            loadTexture(state->location->ix);
+        }
+        renderScene();
     }
-    renderScene();
     totalTimer.Stop();
     //std::cout << "\ntotalTimer: " << totalTimer.MilliSeconds() << " ms" << std::endl;
     //std::cout << "cpuLoadTimer: " << cpuLoadTimer.MilliSeconds() << " ms" << std::endl;
@@ -444,24 +482,26 @@ void Simulator::makeAction(int index, double heading, double elevation) {
 
 void Simulator::close() {
     if (initialized) {
-        // delete textures
-        clearLocationGraph();
-        // release vertex and index buffer object
-        glDeleteBuffers(1, &ibo_cube_indices);
-        glDeleteBuffers(1, &vbo_cube_vertices);
-        // detach shaders from program and release
-        glDetachShader(glProgram, glShaderF);
-        glDetachShader(glProgram, glShaderV);
-        glDeleteShader(glShaderF);
-        glDeleteShader(glShaderV);
-        glDeleteProgram(glProgram);
+        if (renderingEnabled) {
+            // delete textures
+            clearLocationGraph();
+            // release vertex and index buffer object
+            glDeleteBuffers(1, &ibo_cube_indices);
+            glDeleteBuffers(1, &vbo_cube_vertices);
+            // detach shaders from program and release
+            glDetachShader(glProgram, glShaderF);
+            glDetachShader(glProgram, glShaderV);
+            glDeleteShader(glShaderF);
+            glDeleteShader(glShaderV);
+            glDeleteProgram(glProgram);
 #ifdef OSMESA_RENDERING
-        free( buffer );
-        buffer = NULL;
-        OSMesaDestroyContext( ctx );
+            free( buffer );
+            buffer = NULL;
+            OSMesaDestroyContext( ctx );
 #else
-        cv::destroyAllWindows();
+            cv::destroyAllWindows();
 #endif
+        }
         initialized = false;
     }
 }
