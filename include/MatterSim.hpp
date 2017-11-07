@@ -110,7 +110,7 @@ namespace mattersim {
         void setDatasetPath(const std::string& path);
         
         /**
-         * Set a non-standard path to the viewpoint connectivity graphs. The provided directory must contain subdirectories
+         * Set a non-standard path to the viewpoint connectivity graphs. The provided directory must contain files
          * of the form "/<scanId>_connectivity.json". Default is "./connectivity" (the graphs provided
          * by this repo).
          */
