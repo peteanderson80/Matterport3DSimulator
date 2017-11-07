@@ -130,7 +130,7 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setDatasetPath", &SimulatorPython::setDatasetPath)
         .def("setNavGraphPath", &SimulatorPython::setNavGraphPath)
         .def("setCameraResolution", &SimulatorPython::setCameraResolution)
-        .def("setCameraFOV", &SimulatorPython::setCameraVFOV)
+        .def("setCameraVFOV", &SimulatorPython::setCameraVFOV)
         .def("init", &SimulatorPython::init)
         .def("setSeed", &SimulatorPython::setSeed)
         .def("setElevationLimits", &SimulatorPython::setElevationLimits)
