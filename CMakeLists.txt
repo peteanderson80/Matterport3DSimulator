@@ -34,7 +34,7 @@ target_link_libraries(MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS} ${GL_LIBS})
 
 add_executable(tests src/test/main.cpp)
 target_include_directories(tests PRIVATE ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(tests MatterSim ${JSONCPP_LIBRARIES})
+target_link_libraries(tests MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS})
 
 add_executable(mattersim_main src/driver/mattersim_main.cpp)
 target_link_libraries(mattersim_main MatterSim)

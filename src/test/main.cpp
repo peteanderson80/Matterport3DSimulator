@@ -6,6 +6,7 @@
 #include <cmath>
 
 #include <json/json.h>
+#include <opencv2/opencv.hpp>
 
 #include "Catch.hpp"
 #include "MatterSim.hpp"
@@ -199,7 +200,32 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
 
 TEST_CASE( "Simulator state->rgb is correct", "[Simulator, Rendering]" ) {
 
-  //TODO - switching lots of different episodes on the same simulator
+    Simulator sim;
+    sim.setCameraResolution(200,100); // width,height
+    sim.setCameraFOV(45); // 45deg vfov, 90deg hfov
+    CHECK(sim.setElevationLimits(radians(-40),radians(50)));
+    REQUIRE_NOTHROW(sim.init());
+    Json::Value root;
+    std::string testSpecFile{"src/test/rendertest_spec.json"};
+    std::ifstream ifs(testSpecFile, std::ifstream::in);
+    if (ifs.fail()){
+        throw std::invalid_argument( "Could not open test spec file: " + testSpecFile );
+    }
+    ifs >> root;
+    for (auto testcase : root) {
+        auto imgfile = testcase["reference_image"].asString();
+        auto scanId = testcase["scanId"].asString();
+        auto viewpointId = testcase["viewpointId"].asString();
+        auto heading = testcase["heading"].asFloat();
+        auto elevation = testcase["elevation"].asFloat();
+
+        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading), radians(elevation)));
+
+        SimStatePtr state = sim.getState();
+        auto reference_image = cv::imread(imgfile);
+        double err = cv::norm(reference_image, state->rgb, CV_L2);
+        err /= reference_image.rows * reference_image.cols;
+        CHECK(err < 0.1);
+    }
+    REQUIRE_NOTHROW(sim.close());
 }
-
-
