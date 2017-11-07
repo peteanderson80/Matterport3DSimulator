@@ -33,7 +33,7 @@ float elevation[10] =     {  10,   10, -26, -40, -40, -40,  50,  50,  40,  0 };
 float elevation_chg[10] = {   0,  -36, -30, -10,   0,  90,   5, -10, -40,  0 };
 
 
-TEST_CASE( "Simulator can start new episodes and do simple motion", "[Simulator]" ) {
+TEST_CASE( "Simulator can start new episodes and do simple motion", "[Actions]" ) {
 
     std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
     std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
@@ -65,7 +65,7 @@ TEST_CASE( "Simulator can start new episodes and do simple motion", "[Simulator]
     REQUIRE_NOTHROW(sim.close());
 }
 
-TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
+TEST_CASE( "Simulator state->navigableLocations is correct", "[Actions]" ) {
 
     std::vector<std::string> scanIds;
     std::ifstream infile ("./connectivity/scans.txt", std::ios_base::in);
@@ -198,7 +198,7 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Simulator]" ) {
 }
 
 
-TEST_CASE( "Simulator state->rgb is correct", "[Simulator, Rendering]" ) {
+TEST_CASE( "Simulator state->rgb is correct", "[Rendering]" ) {
 
     Simulator sim;
     sim.setCameraResolution(640,480); // width,height
@@ -222,15 +222,16 @@ TEST_CASE( "Simulator state->rgb is correct", "[Simulator, Rendering]" ) {
         REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, heading, elevation));
 
         SimStatePtr state = sim.getState();
-        cv::imwrite("sim_imgs/"+imgfile, state->rgb);
-        
-        //cv::imshow("displaywin", state->rgb);
-        //int key = cv::waitKey(1000);
-        
         auto reference_image = cv::imread("webgl_imgs/"+imgfile);
+        cv::imwrite("sim_imgs/"+imgfile, state->rgb); // save for later comparison
+        
+        //cv::imshow("WebGL", reference_image);
+        //cv::imshow("MatterSim", state->rgb);
+        //int key = cv::waitKey(100);
+        
         double err = cv::norm(reference_image, state->rgb, CV_L2);
         err /= reference_image.rows * reference_image.cols;
-        CHECK(err < 0.1);
+        CHECK(err < 0.15);
     }
     REQUIRE_NOTHROW(sim.close());
 }
