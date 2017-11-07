@@ -96,13 +96,21 @@ doxygen
 ```
 
 ### Demo
+
 ```
 build/mattersim_main
 ```
 
 ### Running Tests
+
 ```
 build/tests
 ```
-Refer to the [Catch](https://github.com/philsquared/Catch) documentation for usage and configuration options etc.
+
+Or if you haven't downloaded and linked the dataset yet:
+```
+build/tests exclude:[Rendering]
+```
+
+Refer to the [Catch](https://github.com/philsquared/Catch) documentation for additional usage and configuration options.
 

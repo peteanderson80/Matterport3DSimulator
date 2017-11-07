@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <cmath>
 #include <opencv2/opencv.hpp>
 
 #include <json/json.h>
@@ -76,7 +75,8 @@ Simulator::Simulator() :state{new SimState()},
                         buffer(NULL),
 #endif
                         initialized(false),
-                        renderingEnabled(true) {
+                        renderingEnabled(true),
+                        discretizeViews(false) {
     generator.seed(time(NULL));
 };
 
@@ -100,6 +100,11 @@ void Simulator::setRenderingEnabled(bool value) {
     }
 }
 
+void Simulator::setDiscretizedViewingAngles(bool value) {
+    if (!initialized) {
+        discretizeViews = value;
+    }
+}
 
 void Simulator::setDatasetPath(const std::string& path) {
     datasetPath = path;
@@ -271,9 +276,9 @@ void Simulator::populateNavigable() {
     unsigned int idx = state->location->ix;
     unsigned int i = 0;
     cv::Point3f curPos = state->location->point;
-    double adjustedheading = M_PI / 2 - state->heading;
+    double adjustedheading = M_PI/2.0 - state->heading;
     glm::vec3 camera_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
-    double cos_half_hfov = cos(vfov * width / height / 2.f);
+    double cos_half_hfov = cos(vfov * width / height / 2.0);
     for (unsigned int i = 0; i < locations.size(); ++i) {
         if (i == idx) {
             // Current location is pushed first
@@ -336,20 +341,38 @@ void Simulator::loadTexture(int locationId) {
     }
 }
 
-void Simulator::setHeading(double heading) {
-    // Normalize to range [0, 360]
-    state->heading = fmod(heading, M_PI*2.f);
-    while (state->heading < 0) {
-        state->heading += M_PI*2.f;
+void Simulator::setHeadingElevation(double heading, double elevation) {
+    // Normalize heading to range [0, 360]
+    state->heading = fmod(heading, M_PI*2.0);
+    while (state->heading < 0.0) {
+        state->heading += M_PI*2.0;
+    }   
+    if (discretizeViews) {
+        // Snap heading to nearest discrete value
+        double headingIncrement = M_PI*2.0/headingCount;
+        int heading_step = std::lround(state->heading/headingIncrement);
+        if (heading_step == headingCount) heading_step = 0;
+        state->heading = (double)heading_step * headingIncrement;
+        // Snap elevation to nearest discrete value (disregarding elevation limits)
+        state->elevation = elevation;
+        if (state->elevation < -elevationIncrement/2.0) {
+          state->elevation = -elevationIncrement;
+          state->viewIndex = heading_step;
+        } else if (state->elevation > elevationIncrement/2.0) {
+          state->elevation = elevationIncrement;
+          state->viewIndex = heading_step + 2*headingCount;
+        } else {
+          state->elevation = 0.0;
+          state->viewIndex = heading_step + headingCount;
+        }
+    } else {
+        // Set elevation with limits
+        state->elevation = std::max(std::min(elevation, maxElevation), minElevation);
     }
 }
 
-void Simulator::setElevation(double elevation) {
-    state->elevation = std::max(std::min(elevation, maxElevation), minElevation);
-}
-
 bool Simulator::setElevationLimits(double min, double max) {
-    if (min < 0 && min > -M_PI/2.f && max > 0 && max < M_PI/2.f) {
+    if (min < 0.0 && min > -M_PI/2.0 && max > 0.0 && max < M_PI/2.0) {
         minElevation = min;
         maxElevation = max;
         return true;
@@ -367,8 +390,7 @@ void Simulator::newEpisode(const std::string& scanId,
         init();
     }
     state->step = 0;
-    setHeading(heading);
-    setElevation(elevation);
+    setHeadingElevation(heading, elevation);
     if (state->scanId != scanId) {
         // Moving to a new building...
         state->scanId = scanId;
@@ -459,8 +481,14 @@ void Simulator::makeAction(int index, double heading, double elevation) {
     }
     state->location = state->navigableLocations[index];
     state->step += 1;
-    setHeading(state->heading + heading);
-    setElevation(state->elevation + elevation);
+    if (discretizeViews) {
+        // Increments based on sign of input
+        if (heading > 0.0) heading = M_PI*2.0/headingCount;
+        if (heading < 0.0) heading = -M_PI*2.0/headingCount;
+        if (elevation > 0.0) elevation =  elevationIncrement;
+        if (elevation < 0.0) elevation = -elevationIncrement;
+    }
+    setHeadingElevation(state->heading + heading, state->elevation + elevation);
     populateNavigable();
     if (renderingEnabled) {
         // loading cubemap

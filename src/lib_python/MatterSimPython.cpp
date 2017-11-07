@@ -36,6 +36,7 @@ namespace mattersim {
         }
         std::string scanId;
         unsigned int step;
+        unsigned int viewIndex;
         py::object rgb;
         ViewPointPython location;
         double heading;
@@ -83,6 +84,12 @@ namespace mattersim {
         void setCameraVFOV(double vfov) {
             sim.setCameraVFOV(vfov);
         }
+        void setRenderingEnabled(bool value){
+            sim.setRenderingEnabled(value);
+        }
+        void setDiscretizedViewingAngles(bool value){
+            sim.setDiscretizedViewingAngles(value);
+        }
         void init() {
             sim.init();
         }
@@ -124,6 +131,7 @@ PYBIND11_MODULE(MatterSim, m) {
         .def_readonly("location", &SimStatePython::location)
         .def_readonly("heading", &SimStatePython::heading)
         .def_readonly("elevation", &SimStatePython::elevation)
+        .def_readonly("viewIndex", &SimStatePython::viewIndex)
         .def_readonly("navigableLocations", &SimStatePython::navigableLocations);
     py::class_<SimulatorPython>(m, "Simulator")
         .def(py::init<>())
@@ -131,6 +139,8 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setNavGraphPath", &SimulatorPython::setNavGraphPath)
         .def("setCameraResolution", &SimulatorPython::setCameraResolution)
         .def("setCameraVFOV", &SimulatorPython::setCameraVFOV)
+        .def("setRenderingEnabled", &SimulatorPython::setRenderingEnabled)
+        .def("setDiscretizedViewingAngles", &SimulatorPython::setDiscretizedViewingAngles)
         .def("init", &SimulatorPython::init)
         .def("setSeed", &SimulatorPython::setSeed)
         .def("setElevationLimits", &SimulatorPython::setElevationLimits)

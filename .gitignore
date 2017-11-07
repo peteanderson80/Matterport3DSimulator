@@ -3,3 +3,4 @@ data
 build
 sim_imgs
 *.so
+*kdev4*

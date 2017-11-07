@@ -23,17 +23,19 @@ using namespace mattersim;
 //      $ ./build/tests exclude:[Rendering]
 
 
-double radians(float deg) {
-    return deg * M_PI / 180.f;
+double radians(double deg) {
+    return deg * M_PI / 180.0;
 }
 
-float heading[10] =     {  10,  350, 350,  1, 90, 180,   90,  270,   90, 270 };
-float heading_chg[10] = { -20, -360, 371, 89, 90, -90, -180, -180, -180,   0 };
-float elevation[10] =     {  10,   10, -26, -40, -40, -40,  50,  50,  40,  0 };
-float elevation_chg[10] = {   0,  -36, -30, -10,   0,  90,   5, -10, -40,  0 };
+float heading[10] =           {  10,  350, 350,   1,  90, 180,   90,  270,   90, 270 };
+float heading_chg[10] =       { -20, -360, 371,  89,  90, -90, -180, -180, -180,   0 };
+float discreteHeading[10] =   {   0,  330, 300, 330,   0,  30,    0,  330,  300, 270 };
+float elevation[10] =         {  10,   10, -26, -40, -40, -40,   50,   50,   40,   0 };
+float elevation_chg[10] =     {   0,  -36, -30, -10,   0,  90,    5,  -10,  -40,   0 };
+float discreteElevation[10] = {   0,    0, -30, -30, -30, -30,    0,   30,    0, -30 };
+unsigned int viewIndex[10] =  {  12,   23,  10,  11,   0,   1,   12,   35,   22,   9 };
 
-
-TEST_CASE( "Simulator can start new episodes and do simple motion", "[Actions]" ) {
+TEST_CASE( "Continuous motion", "[Actions]" ) {
 
     std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
     std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
@@ -48,6 +50,7 @@ TEST_CASE( "Simulator can start new episodes and do simple motion", "[Actions]" 
         std::string viewpointId = viewpointIds[i];
         REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading[0]), radians(elevation[0])));
         for (int t = 0; t < 10; ++t ) {
+            INFO("i=" << i << ", t=" << t);
             SimStatePtr state = sim.getState();
             CHECK( state->scanId == scanId );
             CHECK( state->step == t );
@@ -56,6 +59,7 @@ TEST_CASE( "Simulator can start new episodes and do simple motion", "[Actions]" 
             CHECK( state->rgb.rows == 100 );
             CHECK( state->rgb.cols == 200 );
             CHECK( state->location->viewpointId == viewpointId );
+            CHECK( state->viewIndex == 0 ); // not active
             std::vector<ViewpointPtr> actions = state->navigableLocations;
             int ix = t % actions.size(); // select an action
             sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
@@ -65,7 +69,42 @@ TEST_CASE( "Simulator can start new episodes and do simple motion", "[Actions]" 
     REQUIRE_NOTHROW(sim.close());
 }
 
-TEST_CASE( "Simulator state->navigableLocations is correct", "[Actions]" ) {
+TEST_CASE( "Discrete", "[Actions]" ) {
+
+    std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
+    std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
+    Simulator sim;
+    sim.setCameraResolution(200,100); // width,height
+    sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
+    sim.setRenderingEnabled(false);
+    sim.setDiscretizedViewingAngles(true);
+    CHECK(sim.setElevationLimits(radians(-10),radians(10))); // should be disregarded
+    REQUIRE_NOTHROW(sim.init());
+    for (int i = 0; i < scanIds.size(); ++i) {
+        std::string scanId = scanIds[i];
+        std::string viewpointId = viewpointIds[i];
+        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading[0]), radians(elevation[0])));
+        for (int t = 0; t < 10; ++t ) {
+            INFO("i=" << i << ", t=" << t);
+            SimStatePtr state = sim.getState();
+            CHECK( state->scanId == scanId );
+            CHECK( state->step == t );
+            CHECK( state->heading == Approx(radians(discreteHeading[t])) );
+            CHECK( state->elevation == Approx(radians(discreteElevation[t])) );
+            CHECK( state->rgb.rows == 100 );
+            CHECK( state->rgb.cols == 200 );
+            CHECK( state->location->viewpointId == viewpointId );
+            CHECK( state->viewIndex == viewIndex[t] );
+            std::vector<ViewpointPtr> actions = state->navigableLocations;
+            int ix = t % actions.size(); // select an action
+            sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
+            viewpointId = actions[ix]->viewpointId;
+        }
+    }
+    REQUIRE_NOTHROW(sim.close());
+}
+
+TEST_CASE( "Navigable Locations", "[Actions]" ) {
 
     std::vector<std::string> scanIds;
     std::ifstream infile ("./connectivity/scans.txt", std::ios_base::in);
@@ -198,7 +237,7 @@ TEST_CASE( "Simulator state->navigableLocations is correct", "[Actions]" ) {
 }
 
 
-TEST_CASE( "Simulator state->rgb is correct", "[Rendering]" ) {
+TEST_CASE( "RGB Image", "[Rendering]" ) {
 
     Simulator sim;
     sim.setCameraResolution(640,480); // width,height

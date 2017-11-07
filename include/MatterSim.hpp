@@ -5,6 +5,7 @@
 #include <vector>
 #include <random>
 #include <time.h>
+#include <cmath>
 
 #include <opencv2/opencv.hpp>
 
@@ -53,6 +54,9 @@ namespace mattersim {
         double heading = 0;
         //! Agent's current camera elevation in radians
         double elevation = 0;
+        //! Agent's current view [0-35] (set only when viewing angles are discretized)
+        //! [0-11] looking down, [12-23] looking at horizon, [24-35] looking up
+        unsigned int viewIndex = 0;
         //! Vector of nearby navigable locations representing action candidates
         std::vector<ViewpointPtr> navigableLocations;
     };
@@ -98,6 +102,14 @@ namespace mattersim {
         void setRenderingEnabled(bool value);
 
         /**
+         * Enable or disable discretized viewing angles. When enabled, heading and 
+         * elevation changes will be restricted to 30 degree increments from zero, 
+         * with left/right/up/down movement triggered by the sign of the makeAction 
+         * heading and elevation parameters. Default is false (disabled).
+         */
+        void setDiscretizedViewingAngles(bool value);
+
+        /**
          * Initialize the simulator. Further camera configuration won't take any effect from now on.
          */
         void init();
@@ -131,7 +143,7 @@ namespace mattersim {
          * Starts a new episode. If a viewpoint is not provided initialization will be random.
          * @param scanId - sets which scene is used, e.g. "2t7WUuJeko7"
          * @param viewpointId - sets the initial viewpoint location, e.g. "cc34e9176bfe47ebb23c58c165203134"
-         * @param heading - set the agent's initial heading in radians
+         * @param heading - set the agent's initial camera heading in radians
          * @param elevation - set the initial camera elevation in radians
          */
         void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
@@ -157,12 +169,13 @@ namespace mattersim {
          */
         void close();
     private:
+        const int headingCount = 12; // 12 heading values in discretized views
+        const double elevationIncrement = M_PI/6.0; // 30 degrees discretized up/down
         void loadLocationGraph();
         void clearLocationGraph();
         void populateNavigable();
         void loadTexture(int locationId);
-        void setHeading(double heading);
-        void setElevation(double elevation);
+        void setHeadingElevation(double heading, double elevation);
         void renderScene();
 #ifdef OSMESA_RENDERING
         void *buffer;
@@ -173,6 +186,7 @@ namespace mattersim {
         SimStatePtr state;
         bool initialized;
         bool renderingEnabled;
+        bool discretizeViews;
         int width;
         int height;
         double vfov;
