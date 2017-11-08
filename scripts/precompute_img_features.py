@@ -154,8 +154,6 @@ def read_tsv(infile):
 if __name__ == "__main__":
 
     build_tsv()
-    #data = read_tsv(OUTFILE)
-    #print data[0]
-
-
+    data = read_tsv(OUTFILE)
+    print 'Completed %d viewpoints' % len(data)
 
