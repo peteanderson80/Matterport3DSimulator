@@ -137,3 +137,8 @@ build/tests exclude:[Rendering]
 ```
 Refer to the [Catch](https://github.com/philsquared/Catch) documentation for additional usage and configuration options.
 
+
+## License
+
+The Matterport3D dataset, and data derived from it, is released under the [Matterport3D Terms of Use](http://dovahkiin.stanford.edu/matterport/public/MP_TOS.pdf). Our code is released under the MIT license.
+
