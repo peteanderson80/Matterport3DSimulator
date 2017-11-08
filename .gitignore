@@ -1,9 +1,11 @@
 *~
 data
 build
-img_features
+*.tsv
 sim_imgs
 *.so
 *kdev4*
 *.caffemodel
 *.caffemodel.h5
+*.pyc
+*.out
