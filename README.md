@@ -8,7 +8,7 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 - All images are real, not synthetic (providing much more visual complexity),
 - API for C++ and Python
 - Customizable image resolution, camera parameters, etc,
-- Supports GPU rendering using OpenGL, as well as off-screen CPU rendering using MESA,
+- Supports GPU rendering using OpenGL, as well as off-screen CPU rendering using OSMESA,
 - Future releases will include depth data (RGB-D).
 
 ## Cite as
@@ -28,7 +28,7 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are configurable.
 
-## Installation/Building instructions
+## Installation / Build Instructions
 
 ### Prerequisites
 
@@ -77,10 +77,10 @@ To use the simulator you must first download **either** the [Matterport3D Datase
 
 #### Matterport3D Dataset
 
-Download the Matterport3D dataset which is available after requesting access [here](https://niessner.github.io/Matterport/). The provided download script allows for downloading of selected data types. Note that for the Matterport3D Simulator, only the following data types are required:
+Download the Matterport3D dataset which is available after requesting access [here](https://niessner.github.io/Matterport/). The provided download script allows for downloading of selected data types. Note that for the Matterport3D Simulator, only the following data types are required (and can be selected with the download script):
 - `matterport_skybox_images`
 
-Create a symlink to the Matterport3D Dataset, where <Matterdata> should be a directory structured as ```<Matterdata>/v1/scans/<scanId>/matterport_skybox_images/*.jpg```:
+Create a symlink to the Matterport3D Dataset, which should be structured as ```<Matterdata>/v1/scans/<scanId>/matterport_skybox_images/*.jpg```:
 ```
 ln -s <Matterdata> data
 ```
@@ -89,16 +89,15 @@ Using symlinks will allow the same Matterport3D dataset installation to be used 
 
 #### Precomputing ResNet Image Features
 
-To speed up model training times, it is convenient to discretize heading and elevation at 30 degree increments, and to precomputed image features for each view. 
+To speed up model training times, it is convenient to discretize heading and elevation into 30 degree increments, and to precompute image features for each view. 
 
-To generate image features using Caffe, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-101 features. Features are saved in tsv format in the `img_features` directory. 
+We generate image features using Caffe. To replicate our approach, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-101 features. Features are saved in tsv format in the `img_features` directory. 
 
 Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
 - [ResNet-152-imagenet features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip) - 2.9GB
 - [ResNet-152-places365 features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-places365.zip) - 2.9GB
 
 ### Compiling
-
 Build OpenGL version using CMake:
 ```
 mkdir build && cd build
@@ -106,7 +105,6 @@ cmake ..
 make
 cd ../
 ```
-
 Or build headless OSMESA version using CMake:
 ```
 mkdir build && cd build
@@ -114,34 +112,28 @@ cmake -DOSMESA_RENDERING=ON ..
 make
 cd ../
 ```
-
 To build html docs for C++ classes in the `doxygen` directory, run this command and navigate to `doxygen/html/index.html`:
 ```
 doxygen
 ```
 
 ### Demo
-
 Python demo:
 ```
 python src/driver/driver.py
 ```
-
 C++ demo:
 ```
 build/mattersim_main
 ```
 
 ### Running Tests
-
 ```
 build/tests
 ```
-
-Or if you haven't downloaded and linked the dataset yet:
+Or, if you haven't installed the Matterport3D dataset, you will need to skip the rendering tests:
 ```
 build/tests exclude:[Rendering]
 ```
-
 Refer to the [Catch](https://github.com/philsquared/Catch) documentation for additional usage and configuration options.
 
