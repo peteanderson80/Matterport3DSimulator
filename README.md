@@ -33,7 +33,7 @@ At each viewpoint location, the agent can pan and elevate the camera. The agent 
 ### Prerequisites
 
 Matterport3D Simulator has several dependencies:
-- [OpenCV](http://opencv.org/) >= 2.4 including 3.0 
+- [OpenCV](http://opencv.org/) >= 2.4 including 3.x 
 - [OpenGL](https://www.opengl.org/)
 - [OSMesa](https://www.mesa3d.org/osmesa.html)
 - [GLM](https://glm.g-truc.net/0.9.8/index.html)
