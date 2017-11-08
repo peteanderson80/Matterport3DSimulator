@@ -1,6 +1,9 @@
 *~
 data
 build
+img_features
 sim_imgs
 *.so
 *kdev4*
+*.caffemodel
+*.caffemodel.h5

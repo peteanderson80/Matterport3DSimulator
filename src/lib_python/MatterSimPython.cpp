@@ -24,6 +24,7 @@ namespace mattersim {
     class SimStatePython {
     public:
         SimStatePython(SimStatePtr state) : step{state->step},
+                                            viewIndex{state->viewIndex},
                                             location{state->location},
                                             heading{state->heading},
                                             elevation{state->elevation} {

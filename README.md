@@ -60,6 +60,17 @@ If you didn't clone with the `--recursive` flag, then you'll need to manually cl
 git submodule update --init --recursive
 ```
 
+### Directory Structure
+
+- connectivity: Json navigation graphs.
+- webgl_imgs: Contains dataset views rendered with javascript (for test comparisons).
+- sim_imgs: Will contain simulator rendered images after running tests.
+- models: Caffe models for precomputing ResNet image features.
+- img_features: Storage for precomputed image features.
+- data: You create a symlink to the Matterport3D dataset.
+
+Other directories are mostly self-explanatory.
+
 ### Dataset Download
 
 Download the Matterport3D dataset which is available after requesting access [here](https://niessner.github.io/Matterport/). The provided download script allows for downloading of selected data types. Note that for the Matterport3D Simulator, only the following data types are required:
@@ -100,6 +111,12 @@ doxygen
 ```
 build/mattersim_main
 ```
+
+### Precomputing Image Features
+
+To speed up model training times, it is convenient to discretize heading and elevation at 30 degree increments, and to precomputed image features for each view. First, download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset.
+
+The script `scripts/precompute_features.py` can be used to precompute ResNet-101 features (you must have Caffe installed). Features are saved in tsv format in the `img_features` directory. Alternatively, download our tsv files and extract into `img_features`.
 
 ### Running Tests
 
