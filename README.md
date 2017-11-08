@@ -91,11 +91,11 @@ Using symlinks will allow the same Matterport3D dataset installation to be used 
 
 To speed up model training times, it is convenient to discretize heading and elevation into 30 degree increments, and to precompute image features for each view. 
 
-We generate image features using Caffe. To replicate our approach, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-101 features. Features are saved in tsv format in the `img_features` directory. 
+We generate image features using Caffe. To replicate our approach, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-152 features. Features are saved in tsv format in the `img_features` directory. 
 
 Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
-- [ResNet-152-imagenet features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip) - 2.9GB
-- [ResNet-152-places365 features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-places365.zip) - 2.9GB
+- [ResNet-152-imagenet features [380K/2.9GB]](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip)
+- [ResNet-152-places365 features [380K/2.9GB]](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-places365.zip)
 
 ### Compiling
 Build OpenGL version using CMake:
