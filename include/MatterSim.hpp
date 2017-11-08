@@ -30,11 +30,23 @@ namespace mattersim {
         std::string viewpointId;
         //! Viewpoint index into connectivity graph
         unsigned int ix;
-        //! 3D position
+        //! 3D position in world coordinates
         cv::Point3f point;
+        //! Heading relative to the camera
+        double rel_heading;
+        //! Elevation relative to the camera
+        double rel_elevation;
+        //! Distance from the agent
+        double rel_distance;
     };
 
     typedef std::shared_ptr<Viewpoint> ViewpointPtr;
+    struct ViewpointPtrComp {
+        inline bool operator() (const ViewpointPtr& l, const ViewpointPtr& r){
+            return sqrt(l->rel_heading*l->rel_heading+l->rel_elevation*l->rel_elevation) 
+                < sqrt(r->rel_heading*r->rel_heading+r->rel_elevation*r->rel_elevation);
+        }
+    };
 
     /**
      * Simulator state class.
@@ -57,20 +69,26 @@ namespace mattersim {
         //! Agent's current view [0-35] (set only when viewing angles are discretized)
         //! [0-11] looking down, [12-23] looking at horizon, [24-35] looking up
         unsigned int viewIndex = 0;
-        //! Vector of nearby navigable locations representing action candidates
+        //! Vector of nearby navigable locations representing state-dependent action candidates, i.e.
+        //! viewpoints you can move to. Index 0 is always to remain at the current viewpoint.
+        //! The remaining viewpoints are sorted by their angular distance from the centre of the image.
         std::vector<ViewpointPtr> navigableLocations;
     };
 
     typedef std::shared_ptr<SimState> SimStatePtr;
 
     /**
-     * Class for representing nearby candidate locations that can be moved to.
+     * Internal class for representing nearby candidate locations that can be moved to.
      */
     struct Location {
+        //! True if viewpoint is included in the simulator. Sometimes duplicated viewpoints have been excluded.
         bool included;
+        //! Unique Matterport identifier for every pano location
         std::string viewpointId;
-        glm::mat4 rot; // rotation component
-        glm::vec3 pos; // translation component
+        //! Rotation component
+        glm::mat4 rot;
+        //! Translation component
+        glm::vec3 pos;
         std::vector<bool> unobstructed;
         GLuint cubemap_texture;
     };
@@ -143,8 +161,10 @@ namespace mattersim {
          * Starts a new episode. If a viewpoint is not provided initialization will be random.
          * @param scanId - sets which scene is used, e.g. "2t7WUuJeko7"
          * @param viewpointId - sets the initial viewpoint location, e.g. "cc34e9176bfe47ebb23c58c165203134"
-         * @param heading - set the agent's initial camera heading in radians
-         * @param elevation - set the initial camera elevation in radians
+         * @param heading - set the agent's initial camera heading in radians. With z-axis up, 
+         *                  heading is defined relative to the y-axis (turning right is positive).
+         * @param elevation - set the initial camera elevation in radians, measured from the horizon 
+         *                    defined by the x-y plane (up is positive).
          */
         void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
               double heading=0, double elevation=0);
@@ -159,8 +179,10 @@ namespace mattersim {
          * An RL agent will sample an action here. A task-specific reward can be determined 
          * based on the location, heading, elevation, etc. of the resulting state.
          * @param index - an index into the set of feasible actions defined by getState()->navigableLocations.
-         * @param heading - desired heading change in radians. With z-axis up, heading is defined relative to the y-axis (turning right is positive)
-         * @param elevation - desired elevation change in radians, measured from the horizon defined by the x-y plane (up is positive)
+         * @param heading - desired heading change in radians. With z-axis up, heading is defined 
+         *                  relative to the y-axis (turning right is positive).
+         * @param elevation - desired elevation change in radians, measured from the horizon defined 
+         *                    by the x-y plane (up is positive).
          */
         void makeAction(int index, double heading, double elevation);
         

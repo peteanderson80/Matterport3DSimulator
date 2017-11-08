@@ -15,10 +15,16 @@ namespace mattersim {
             point.append(locptr->point.x);
             point.append(locptr->point.y);
             point.append(locptr->point.z);
+            rel_heading = locptr->rel_heading;
+            rel_elevation = locptr->rel_elevation;
+            rel_distance = locptr->rel_distance;
         }
         std::string viewpointId;
         unsigned int ix;
         py::list point;
+        double rel_heading;
+        double rel_elevation;
+        double rel_distance;
     };
 
     class SimStatePython {
@@ -124,7 +130,10 @@ PYBIND11_MODULE(MatterSim, m) {
     py::class_<ViewPointPython>(m, "ViewPoint")
         .def_readonly("viewpointId", &ViewPointPython::viewpointId)
         .def_readonly("ix", &ViewPointPython::ix)
-        .def_readonly("point", &ViewPointPython::point);
+        .def_readonly("point", &ViewPointPython::point)
+        .def_readonly("rel_heading", &ViewPointPython::rel_heading)
+        .def_readonly("rel_elevation", &ViewPointPython::rel_elevation)
+        .def_readonly("rel_distance", &ViewPointPython::rel_distance);
     py::class_<SimStatePython>(m, "SimState")
         .def_readonly("scanId", &SimStatePython::scanId)
         .def_readonly("step", &SimStatePython::step)

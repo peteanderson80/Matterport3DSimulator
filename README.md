@@ -73,6 +73,10 @@ Other directories are mostly self-explanatory.
 
 ### Dataset Download
 
+To use the simulator you must first download either the Matterport3D Dataset, or you can download the precomputed ResNet image features and use discretized viewpoints.
+
+#### Matterport3D Dataset
+
 Download the Matterport3D dataset which is available after requesting access [here](https://niessner.github.io/Matterport/). The provided download script allows for downloading of selected data types. Note that for the Matterport3D Simulator, only the following data types are required:
 - matterport_skybox_images
 
@@ -82,6 +86,12 @@ ln -s <Matterdata> data
 ```
 
 Using symlinks will allow the same Matterport3D dataset installation to be used between multiple projects.
+
+#### Precomputing ResNet Image Features
+
+To speed up model training times, it is convenient to discretize heading and elevation at 30 degree increments, and to precomputed image features for each view. First, download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset.
+
+The script `scripts/precompute_features.py` can be used to precompute ResNet-101 features (you must have Caffe installed). Features are saved in tsv format in the `img_features` directory. Alternatively, download our tsv files and extract into `img_features`.
 
 ### Compiling
 
@@ -101,22 +111,22 @@ make
 cd ../
 ```
 
-To build html docs for C++ classes in the `doxygen` directory, just run:
+To build html docs for C++ classes in the `doxygen` directory, run this command and navigate to `doxygen/html/index.html`:
 ```
 doxygen
 ```
 
 ### Demo
 
+Python demo:
+```
+python src/driver/driver.py
+```
+
+C++ demo:
 ```
 build/mattersim_main
 ```
-
-### Precomputing Image Features
-
-To speed up model training times, it is convenient to discretize heading and elevation at 30 degree increments, and to precomputed image features for each view. First, download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset.
-
-The script `scripts/precompute_features.py` can be used to precompute ResNet-101 features (you must have Caffe installed). Features are saved in tsv format in the `img_features` directory. Alternatively, download our tsv files and extract into `img_features`.
 
 ### Running Tests
 

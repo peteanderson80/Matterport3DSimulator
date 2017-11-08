@@ -27,6 +27,10 @@ double radians(double deg) {
     return deg * M_PI / 180.0;
 }
 
+double degrees(double rad) {
+    return (rad * 180.0) / M_PI;
+}
+
 float heading[10] =           {  10,  350, 350,   1,  90, 180,   90,  270,   90, 270 };
 float heading_chg[10] =       { -20, -360, 371,  89,  90, -90, -180, -180, -180,   0 };
 float discreteHeading[10] =   {   0,  330, 300, 330,   0,  30,    0,  330,  300, 270 };
@@ -35,7 +39,7 @@ float elevation_chg[10] =     {   0,  -36, -30, -10,   0,  90,    5,  -10,  -40,
 float discreteElevation[10] = {   0,    0, -30, -30, -30, -30,    0,   30,    0, -30 };
 unsigned int viewIndex[10] =  {  12,   23,  10,  11,   0,   1,   12,   35,   22,   9 };
 
-TEST_CASE( "Continuous motion", "[Actions]" ) {
+TEST_CASE( "Continuous Motion", "[Actions]" ) {
 
     std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
     std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
@@ -69,7 +73,7 @@ TEST_CASE( "Continuous motion", "[Actions]" ) {
     REQUIRE_NOTHROW(sim.close());
 }
 
-TEST_CASE( "Discrete", "[Actions]" ) {
+TEST_CASE( "Discrete Motion", "[Actions]" ) {
 
     std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
     std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
@@ -96,6 +100,64 @@ TEST_CASE( "Discrete", "[Actions]" ) {
             CHECK( state->location->viewpointId == viewpointId );
             CHECK( state->viewIndex == viewIndex[t] );
             std::vector<ViewpointPtr> actions = state->navigableLocations;
+            int ix = t % actions.size(); // select an action
+            sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
+            viewpointId = actions[ix]->viewpointId;
+        }
+    }
+    REQUIRE_NOTHROW(sim.close());
+}
+
+TEST_CASE( "Robot Relative Coords", "[Actions]" ) {
+
+    std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
+    std::vector<std::string> viewpointIds {"cc34e9176bfe47ebb23c58c165203134", "5b9b2794954e4694a45fc424a8643081"};
+    Simulator sim;
+    sim.setCameraResolution(200,100); // width,height
+    sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
+    sim.setRenderingEnabled(false);
+    CHECK(sim.setElevationLimits(radians(-40),radians(50)));
+    REQUIRE_NOTHROW(sim.init());
+    for (int i = 0; i < scanIds.size(); ++i) {
+        std::string scanId = scanIds[i];
+        std::string viewpointId = viewpointIds[i];
+        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading[0]), radians(elevation[0])));
+        for (int t = 0; t < 10; ++t ) {
+            INFO("i=" << i << ", t=" << t);
+            SimStatePtr state = sim.getState();
+            cv::Point3f curr = state->location->point;
+            std::vector<ViewpointPtr> actions = state->navigableLocations;
+            double last_angle = 0.0;
+            int k = 0;
+            for (auto loc: actions ){
+                if (k == 0) {
+                    CHECK(state->location->rel_heading == Approx(0));
+                    CHECK(state->location->rel_elevation == Approx(0));
+                    CHECK(state->location->rel_distance == Approx(0));
+                    k++;
+                    continue;
+                }
+                double curr_angle = sqrt(loc->rel_heading*loc->rel_heading + loc->rel_elevation*loc->rel_elevation);
+                // Should be getting further from the centre of the image
+                CHECK(curr_angle >= last_angle);
+                last_angle = curr_angle;
+                // Robot rel coordinates should describe the position
+                double h = state->heading + loc->rel_heading;
+                double e = state->elevation + loc->rel_elevation;
+                INFO("k="<< k << ", heading=" << degrees(state->heading) << ", rel_heading=" << degrees(loc->rel_heading));
+                INFO("elevation=" << degrees(state->elevation) << ", rel_elevation=" << degrees(loc->rel_elevation));
+                INFO("rel_distance=" << loc->rel_distance);
+                INFO("curr=(" << curr.x << ", " << curr.y << ", " << curr.z << ")");
+                INFO("targ=(" << loc->point.x << ", " << loc->point.y << ", " << loc->point.z << ")"); 
+                INFO("diff=(" << loc->point.x-curr.x << ", " << loc->point.y-curr.y << ", " << loc->point.z-curr.z << ")"); 
+                cv::Point3f offset(sin(h)*cos(e)*loc->rel_distance, cos(h)*cos(e)*loc->rel_distance, sin(e)*loc->rel_distance);
+                INFO("calc diff=(" << offset.x << ", " << offset.y << ", " << offset.z << ")"); 
+                cv::Point3f target = curr + offset;
+                REQUIRE(loc->point.x == Approx(target.x));
+                REQUIRE(loc->point.y == Approx(target.y));
+                REQUIRE(loc->point.z == Approx(target.z));
+                k++;
+            }
             int ix = t % actions.size(); // select an action
             sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
             viewpointId = actions[ix]->viewpointId;

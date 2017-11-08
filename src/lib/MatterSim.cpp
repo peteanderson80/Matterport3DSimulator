@@ -277,7 +277,7 @@ void Simulator::populateNavigable() {
     unsigned int i = 0;
     cv::Point3f curPos = state->location->point;
     double adjustedheading = M_PI/2.0 - state->heading;
-    glm::vec3 camera_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
+    glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
     double cos_half_hfov = cos(vfov * width / height / 2.0);
     for (unsigned int i = 0; i < locations.size(); ++i) {
         if (i == idx) {
@@ -287,31 +287,23 @@ void Simulator::populateNavigable() {
         if (locations[idx]->unobstructed[i] && locations[i]->included) {
             // Check if visible between camera left and camera right
             glm::vec3 target_dir = locations[i]->pos - locations[idx]->pos;
+            double rel_distance = glm::length(target_dir);
+            double tar_z = target_dir.z;
             target_dir.z = 0.f; // project to xy plane
+            double rel_elevation = atan2(tar_z, glm::length(target_dir)) - state->elevation;
             glm::vec3 normed_target_dir = glm::normalize(target_dir);
-            double cos_angle = glm::dot(normed_target_dir, camera_dir);
+            double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
             if (cos_angle >= cos_half_hfov) {
                 glm::vec3 pos(locations[i]->pos);
-                Viewpoint v{locations[i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2])};
+                double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x, 
+                        target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
+                Viewpoint v{locations[i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2]), 
+                      rel_heading, rel_elevation, rel_distance};
                 updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
             }
         }
     }
-    /*
-    // Flush textures for locations that can no longer be reached - not sure if we should be this aggressive
-    for (auto v : state->navigableLocations) {
-        bool retained = false;
-        for (auto updatedV : updatedNavigable) {
-            if (v->ix == updatedV->ix) {
-                retained = true;
-                break;
-            }
-        }
-        if (!retained) {
-            glDeleteTextures(1, &locations[v->ix]->cubemap_texture);
-            locations[v->ix]->cubemap_texture = 0;
-        }
-    }*/
+    std::sort(updatedNavigable.begin(), updatedNavigable.end(), ViewpointPtrComp());
     state->navigableLocations = updatedNavigable;
 }
 
@@ -428,7 +420,8 @@ void Simulator::newEpisode(const std::string& scanId,
         }
     }
     glm::vec3 pos(locations[ix]->pos);
-    Viewpoint v{locations[ix]->viewpointId, (unsigned int)ix, cv::Point3f(pos[0], pos[1], pos[2])};
+    Viewpoint v{locations[ix]->viewpointId, (unsigned int)ix, 
+          cv::Point3f(pos[0], pos[1], pos[2]), 0.0, 0.0, 0.0};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
     if (renderingEnabled) {
@@ -480,6 +473,9 @@ void Simulator::makeAction(int index, double heading, double elevation) {
         throw std::domain_error( msg.str() );
     }
     state->location = state->navigableLocations[index];
+    state->location->rel_heading = 0.0;
+    state->location->rel_elevation = 0.0;
+    state->location->rel_distance = 0.0;
     state->step += 1;
     if (discretizeViews) {
         // Increments based on sign of input

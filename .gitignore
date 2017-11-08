@@ -1,6 +1,7 @@
 *~
 data
 build
+doxygen
 *.tsv
 sim_imgs
 *.so
