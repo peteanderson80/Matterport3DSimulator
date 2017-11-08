@@ -10,3 +10,4 @@ sim_imgs
 *.caffemodel.h5
 *.pyc
 *.out
+*.zip

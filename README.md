@@ -62,23 +62,23 @@ git submodule update --init --recursive
 
 ### Directory Structure
 
-- connectivity: Json navigation graphs.
-- webgl_imgs: Contains dataset views rendered with javascript (for test comparisons).
-- sim_imgs: Will contain simulator rendered images after running tests.
-- models: Caffe models for precomputing ResNet image features.
-- img_features: Storage for precomputed image features.
-- data: You create a symlink to the Matterport3D dataset.
+- `connectivity`: Json navigation graphs.
+- `webgl_imgs`: Contains dataset views rendered with javascript (for test comparisons).
+- `sim_imgs`: Will contain simulator rendered images after running tests.
+- `models`: Caffe models for precomputing ResNet image features.
+- `img_features`: Storage for precomputed image features.
+- `data`: You create a symlink to the Matterport3D dataset.
 
 Other directories are mostly self-explanatory.
 
 ### Dataset Download
 
-To use the simulator you must first download either the Matterport3D Dataset, or you can download the precomputed ResNet image features and use discretized viewpoints.
+To use the simulator you must first download **either** the [Matterport3D Dataset](https://niessner.github.io/Matterport/), **or** you can download the precomputed ResNet image features and use discretized viewpoints.
 
 #### Matterport3D Dataset
 
 Download the Matterport3D dataset which is available after requesting access [here](https://niessner.github.io/Matterport/). The provided download script allows for downloading of selected data types. Note that for the Matterport3D Simulator, only the following data types are required:
-- matterport_skybox_images
+- `matterport_skybox_images`
 
 Create a symlink to the Matterport3D Dataset, where <Matterdata> should be a directory structured as ```<Matterdata>/v1/scans/<scanId>/matterport_skybox_images/*.jpg```:
 ```
@@ -89,9 +89,13 @@ Using symlinks will allow the same Matterport3D dataset installation to be used 
 
 #### Precomputing ResNet Image Features
 
-To speed up model training times, it is convenient to discretize heading and elevation at 30 degree increments, and to precomputed image features for each view. First, download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset.
+To speed up model training times, it is convenient to discretize heading and elevation at 30 degree increments, and to precomputed image features for each view. 
 
-The script `scripts/precompute_features.py` can be used to precompute ResNet-101 features (you must have Caffe installed). Features are saved in tsv format in the `img_features` directory. Alternatively, download our tsv files and extract into `img_features`.
+To generate image features using Caffe, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-101 features. Features are saved in tsv format in the `img_features` directory. 
+
+Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
+- [ResNet-152-imagenet features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip)
+- [ResNet-152-places365 features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-places365.zip)
 
 ### Compiling
 
