@@ -94,8 +94,8 @@ To speed up model training times, it is convenient to discretize heading and ele
 To generate image features using Caffe, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-101 features. Features are saved in tsv format in the `img_features` directory. 
 
 Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
-- [ResNet-152-imagenet features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip)
-- [ResNet-152-places365 features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-places365.zip)
+- [ResNet-152-imagenet features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip) - 2.9GB
+- [ResNet-152-places365 features](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-places365.zip) - 2.9GB
 
 ### Compiling
 
