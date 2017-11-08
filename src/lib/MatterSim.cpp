@@ -131,9 +131,7 @@ void Simulator::init() {
         cv::setOpenGlContext("renderwin");
         // initialize the extension wrangler
         glewInit();
-#endif
 
-#ifndef OSMESA_RENDERING
         FramebufferName = 0;
         glGenFramebuffers(1, &FramebufferName);
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
@@ -231,8 +229,10 @@ void Simulator::init() {
 }
 
 void Simulator::clearLocationGraph() {
-    for (auto loc : locations) {
-       glDeleteTextures(1, &loc->cubemap_texture);
+    if (renderingEnabled) {
+        for (auto loc : locations) {
+           glDeleteTextures(1, &loc->cubemap_texture);
+        }
     }
     locations.clear();
 }
