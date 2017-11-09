@@ -3,13 +3,15 @@ AI Research Platform for Reinforcement Learning from Real Panoramic Images.
 
 The Matterport3D Simulator enables development of AI **agents that interact with real 3D environments using visual information** (RGB-D images). It is primarily intended for research in deep reinforcement learning, at the intersection of computer vision, natural language processing and robotics.
 
+(This is development code for early release. We may make breaking changes, particularly as we look at possible integration with [ParlAI](https://github.com/facebookresearch/ParlAI) and [OpenAI Gym](https://github.com/openai/gym).)
+
 ## Features
 - Dataset consisting of 90 different predominantly indoor environments,
 - All images are real, not synthetic (providing much more visual complexity),
 - API for C++ and Python
 - Customizable image resolution, camera parameters, etc,
 - Supports GPU rendering using OpenGL, as well as off-screen CPU rendering using OSMESA,
-- Future releases will include depth data (RGB-D).
+- Future releases will include depth data (RGB-D) as well as class and instance object segmentations.
 
 ## Cite as
 
@@ -20,7 +22,7 @@ Todo
 todo
 ```
 
-## Dataset
+## Simulator Dataset
 
 Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D images from the [Matterport3D dataset](https://niessner.github.io/Matterport/). The dataset consists of 90 different indoor environments, including homes, offices, churches and hotels. Each environment contains full 360-degree RGB-D scans from between 8 and 349 viewpoints, spread on average 2.25m apart throughout the entire walkable floorplan of the scene. 
 
@@ -28,11 +30,19 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are configurable.
 
+## Tasks
+
+Currently the simulator supports one task. We hope this will grow.
+
+### Room-to-Room (R2R) Navigation Task
+
+Please refer to [specific instructions](tasks/R2R/Readme.md) to setup and run this task.
+
 ## Installation / Build Instructions
 
 ### Prerequisites
 
-Matterport3D Simulator has several dependencies:
+A C++ compiler with C++11 support is required. Matterport3D Simulator has several dependencies:
 - [OpenCV](http://opencv.org/) >= 2.4 including 3.x 
 - [OpenGL](https://www.opengl.org/)
 - [OSMesa](https://www.mesa3d.org/osmesa.html)
@@ -68,6 +78,7 @@ git submodule update --init --recursive
 - `models`: Caffe models for precomputing ResNet image features.
 - `img_features`: Storage for precomputed image features.
 - `data`: You create a symlink to the Matterport3D dataset.
+- `tasks`: Currently just the Room-to-Room (R2R) navigation task.
 
 Other directories are mostly self-explanatory.
 
@@ -141,4 +152,9 @@ Refer to the [Catch](https://github.com/philsquared/Catch) documentation for add
 ## License
 
 The Matterport3D dataset, and data derived from it, is released under the [Matterport3D Terms of Use](http://dovahkiin.stanford.edu/matterport/public/MP_TOS.pdf). Our code is released under the MIT license.
+
+## Acknowledgements
+
+We would like to thank Matterport for allowing the Matterport3D dataset to be used by the academic community. This project is supported by a Facebook ParlAI Research Award and by the [Australian Centre for Robotic Vision](https://www.roboticvision.org/). 
+
 

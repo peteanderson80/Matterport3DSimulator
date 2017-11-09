@@ -1,9 +1,9 @@
 *~
-data
-build
-doxygen
+/data
+/build
+/doxygen
 *.tsv
-sim_imgs
+/sim_imgs
 *.so
 *kdev4*
 *.caffemodel
@@ -11,3 +11,4 @@ sim_imgs
 *.pyc
 *.out
 *.zip
+/tasks/R2R/data/*.json
