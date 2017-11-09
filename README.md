@@ -3,7 +3,7 @@ AI Research Platform for Reinforcement Learning from Real Panoramic Images.
 
 The Matterport3D Simulator enables development of AI **agents that interact with real 3D environments using visual information** (RGB-D images). It is primarily intended for research in deep reinforcement learning, at the intersection of computer vision, natural language processing and robotics.
 
-(This is development code for early release. We may make breaking changes, particularly as we look at possible integration with [ParlAI](https://github.com/facebookresearch/ParlAI) and [OpenAI Gym](https://github.com/openai/gym).)
+*This is development code for early release. We may make breaking changes, particularly as we look at possible integration with [ParlAI](https://github.com/facebookresearch/ParlAI) and [OpenAI Gym](https://github.com/openai/gym).*
 
 ## Features
 - Dataset consisting of 90 different predominantly indoor environments,
@@ -22,7 +22,7 @@ Todo
 todo
 ```
 
-## Simulator Dataset
+## Simulator Data
 
 Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D images from the [Matterport3D dataset](https://niessner.github.io/Matterport/). The dataset consists of 90 different indoor environments, including homes, offices, churches and hotels. Each environment contains full 360-degree RGB-D scans from between 8 and 349 viewpoints, spread on average 2.25m apart throughout the entire walkable floorplan of the scene. 
 
@@ -36,7 +36,7 @@ Currently the simulator supports one task. We hope this will grow.
 
 ### Room-to-Room (R2R) Navigation Task
 
-Please refer to [specific instructions](tasks/R2R/Readme.md) to setup and run this task.
+Please refer to [specific instructions](tasks/R2R/README.md) to setup and run this task.
 
 ## Installation / Build Instructions
 
