@@ -229,7 +229,7 @@ namespace mattersim {
         GLuint glShaderF;
         std::string datasetPath;
         std::string navGraphPath;
-        std::vector<LocationPtr> locations;
+        std::map<std::string, std::vector<LocationPtr> > scanLocations;
         std::default_random_engine generator;
         Timer cpuLoadTimer;
         Timer gpuLoadTimer;

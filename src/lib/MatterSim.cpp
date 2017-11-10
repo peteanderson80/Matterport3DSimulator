@@ -230,14 +230,17 @@ void Simulator::init() {
 
 void Simulator::clearLocationGraph() {
     if (renderingEnabled) {
-        for (auto loc : locations) {
+        for (auto loc : scanLocations[state->scanId]) {
            glDeleteTextures(1, &loc->cubemap_texture);
         }
     }
-    locations.clear();
 }
 
 void Simulator::loadLocationGraph() {
+    if (scanLocations.count(state->scanId) != 0) {
+        return;
+    }
+
     Json::Value root;
     auto navGraphFile =  navGraphPath + "/" + state->scanId + "_connectivity.json";
     std::ifstream ifs(navGraphFile, std::ifstream::in);
@@ -266,7 +269,7 @@ void Simulator::loadLocationGraph() {
         auto viewpointId = viewpoint["image_id"].asString();
         GLuint cubemap_texture = 0;
         Location l{viewpoint["included"].asBool(), viewpointId, openglPose, pos, unobstructed, cubemap_texture};
-        locations.push_back(std::make_shared<Location>(l));
+        scanLocations[state->scanId].push_back(std::make_shared<Location>(l));
     }
 }
 
@@ -279,14 +282,14 @@ void Simulator::populateNavigable() {
     double adjustedheading = M_PI/2.0 - state->heading;
     glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
     double cos_half_hfov = cos(vfov * width / height / 2.0);
-    for (unsigned int i = 0; i < locations.size(); ++i) {
+    for (unsigned int i = 0; i < scanLocations[state->scanId].size(); ++i) {
         if (i == idx) {
             // Current location is pushed first
             continue;
         }
-        if (locations[idx]->unobstructed[i] && locations[i]->included) {
+        if (scanLocations[state->scanId][idx]->unobstructed[i] && scanLocations[state->scanId][i]->included) {
             // Check if visible between camera left and camera right
-            glm::vec3 target_dir = locations[i]->pos - locations[idx]->pos;
+            glm::vec3 target_dir = scanLocations[state->scanId][i]->pos - scanLocations[state->scanId][idx]->pos;
             double rel_distance = glm::length(target_dir);
             double tar_z = target_dir.z;
             target_dir.z = 0.f; // project to xy plane
@@ -294,10 +297,10 @@ void Simulator::populateNavigable() {
             glm::vec3 normed_target_dir = glm::normalize(target_dir);
             double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
             if (cos_angle >= cos_half_hfov) {
-                glm::vec3 pos(locations[i]->pos);
+                glm::vec3 pos(scanLocations[state->scanId][i]->pos);
                 double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x, 
                         target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
-                Viewpoint v{locations[i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2]), 
+                Viewpoint v{scanLocations[state->scanId][i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2]), 
                       rel_heading, rel_elevation, rel_distance};
                 updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
             }
@@ -308,13 +311,13 @@ void Simulator::populateNavigable() {
 }
 
 void Simulator::loadTexture(int locationId) {
-    if (glIsTexture(locations[locationId]->cubemap_texture)){
+    if (glIsTexture(scanLocations[state->scanId][locationId]->cubemap_texture)){
         // Check if it's already loaded
         return;
     }
     cpuLoadTimer.Start();
     auto datafolder = datasetPath + "/v1/scans/" + state->scanId + "/matterport_skybox_images/";
-    auto viewpointId = locations[locationId]->viewpointId;
+    auto viewpointId = scanLocations[state->scanId][locationId]->viewpointId;
     auto xpos = cv::imread(datafolder + viewpointId + "_skybox2_sami.jpg");
     auto xneg = cv::imread(datafolder + viewpointId + "_skybox4_sami.jpg");
     auto ypos = cv::imread(datafolder + viewpointId + "_skybox0_sami.jpg");
@@ -326,9 +329,9 @@ void Simulator::loadTexture(int locationId) {
     }
     cpuLoadTimer.Stop();
     gpuLoadTimer.Start();
-    setupCubeMap(locations[locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
+    setupCubeMap(scanLocations[state->scanId][locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
     gpuLoadTimer.Stop();
-    if (!glIsTexture(locations[locationId]->cubemap_texture)){
+    if (!glIsTexture(scanLocations[state->scanId][locationId]->cubemap_texture)){
         throw std::runtime_error( "loadTexture failed" );
     }
 }
@@ -385,28 +388,28 @@ void Simulator::newEpisode(const std::string& scanId,
     setHeadingElevation(heading, elevation);
     if (state->scanId != scanId) {
         // Moving to a new building...
-        state->scanId = scanId;
         clearLocationGraph();
+        state->scanId = scanId;
         loadLocationGraph();
     }
     int ix = -1;
     if (viewpointId.empty()) {
         // Generate a random starting viewpoint
-        std::uniform_int_distribution<int> distribution(0,locations.size()-1);
+        std::uniform_int_distribution<int> distribution(0,scanLocations[state->scanId].size()-1);
         int start_ix = distribution(generator);  // generates random starting index
         ix = start_ix;
-        while (!locations[ix]->included) { // Don't start at an excluded viewpoint
+        while (!scanLocations[state->scanId][ix]->included) { // Don't start at an excluded viewpoint
             ix++;
-            if (ix >= locations.size()) ix = 0;
+            if (ix >= scanLocations[state->scanId].size()) ix = 0;
             if (ix == start_ix) {
                 throw std::logic_error( "ScanId: " + scanId + " has no included viewpoints!");
             }
         }
     } else {
         // Find index of selected viewpoint
-        for (int i = 0; i < locations.size(); ++i) {
-            if (locations[i]->viewpointId == viewpointId) {
-                if (!locations[i]->included) {
+        for (int i = 0; i < scanLocations[state->scanId].size(); ++i) {
+            if (scanLocations[state->scanId][i]->viewpointId == viewpointId) {
+                if (!scanLocations[state->scanId][i]->included) {
                     throw std::invalid_argument( "ViewpointId: " +
                             viewpointId + ", is excluded from the connectivity graph." );
                 }
@@ -419,8 +422,8 @@ void Simulator::newEpisode(const std::string& scanId,
                     viewpointId + ", is viewpoint id valid?" );
         }
     }
-    glm::vec3 pos(locations[ix]->pos);
-    Viewpoint v{locations[ix]->viewpointId, (unsigned int)ix, 
+    glm::vec3 pos(scanLocations[state->scanId][ix]->pos);
+    Viewpoint v{scanLocations[state->scanId][ix]->viewpointId, (unsigned int)ix,
           cv::Point3f(pos[0], pos[1], pos[2]), 0.0, 0.0, 0.0};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
@@ -439,7 +442,7 @@ void Simulator::renderScene() {
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Scale and move the cubemap model into position
-    Model = locations[state->location->ix]->rot * Scale;
+    Model = scanLocations[state->scanId][state->location->ix]->rot * Scale;
     // Opengl camera looking down -z axis. Rotate around x by 90deg (now looking down +y). Keep rotating for - elevation.
     RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f - (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
     // Rotate camera for heading, positive heading will turn right.
@@ -451,7 +454,7 @@ void Simulator::renderScene() {
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 #endif
     glViewport(0, 0, width, height);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, locations[state->location->ix]->cubemap_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scanLocations[state->scanId][state->location->ix]->cubemap_texture);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
     cv::Mat img(height, width, CV_8UC3);
     //use fast 4-byte alignment (default anyway) if possible
@@ -488,7 +491,7 @@ void Simulator::makeAction(int index, double heading, double elevation) {
     populateNavigable();
     if (renderingEnabled) {
         // loading cubemap
-        if (!glIsTexture(locations[state->location->ix]->cubemap_texture)) {
+        if (!glIsTexture(scanLocations[state->scanId][state->location->ix]->cubemap_texture)) {
             loadTexture(state->location->ix);
         }
         renderScene();
