@@ -99,6 +99,7 @@ namespace mattersim {
      * Main class for accessing an instance of the simulator environment.
      */
     class Simulator {
+        friend class SimulatorPython;
     public:
         Simulator();
                       
