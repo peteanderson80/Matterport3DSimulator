@@ -99,6 +99,7 @@ namespace mattersim {
      * Main class for accessing an instance of the simulator environment.
      */
     class Simulator {
+        friend class SimulatorPython;
     public:
         Simulator();
                       
@@ -229,7 +230,7 @@ namespace mattersim {
         GLuint glShaderF;
         std::string datasetPath;
         std::string navGraphPath;
-        std::vector<LocationPtr> locations;
+        std::map<std::string, std::vector<LocationPtr> > scanLocations;
         std::default_random_engine generator;
         Timer cpuLoadTimer;
         Timer gpuLoadTimer;

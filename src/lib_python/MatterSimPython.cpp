@@ -29,13 +29,16 @@ namespace mattersim {
 
     class SimStatePython {
     public:
-        SimStatePython(SimStatePtr state) : step{state->step},
-                                            viewIndex{state->viewIndex},
-                                            location{state->location},
-                                            heading{state->heading},
-                                            elevation{state->elevation} {
-            npy_intp colorShape[3] {state->rgb.rows, state->rgb.cols, 3};
-            rgb = matToNumpyArray(3, colorShape, NPY_UBYTE, (void*)state->rgb.data);
+        SimStatePython(SimStatePtr state, bool renderingEnabled)
+            : step{state->step},
+              viewIndex{state->viewIndex},
+              location{state->location},
+              heading{state->heading},
+              elevation{state->elevation} {
+            if (renderingEnabled) {
+                npy_intp colorShape[3] {state->rgb.rows, state->rgb.cols, 3};
+                rgb = matToNumpyArray(3, colorShape, NPY_UBYTE, (void*)state->rgb.data);
+            }
             scanId = state->scanId;
             for (auto viewpoint : state->navigableLocations) {
                 navigableLocations.append(ViewPointPython{viewpoint});
@@ -111,7 +114,7 @@ namespace mattersim {
             sim.newEpisode(scanId, viewpointId, heading, elevation);
         }
         SimStatePython *getState() {
-            return new SimStatePython(sim.getState());
+            return new SimStatePython(sim.getState(), sim.renderingEnabled);
         }
         void makeAction(int index, double heading, double elevation) {
             sim.makeAction(index, heading, elevation);
