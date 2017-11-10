@@ -3,7 +3,7 @@ Connectivity graphs indicating the navigable paths between viewpoints in each sc
 
 Each json file contains an array of annotations, one for each viewpoint in the scan. All annotations share the same basic structure as follows:
 
-```json
+```
 {
 "image_id": str,
 "pose": [float x 16],

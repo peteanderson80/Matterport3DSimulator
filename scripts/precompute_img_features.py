@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+''' Script to precompute image features using a Caffe ResNet CNN, using 36 discretized views
+    at each viewpoint in 30 degree increments, and the provided camera WIDTH, HEIGHT 
+    and VFOV parameters. '''
 
 import numpy as np
 import cv2
