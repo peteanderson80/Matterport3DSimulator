@@ -36,8 +36,8 @@ while True:
     for idx, loc in enumerate(locations[1:]):
         # Draw actions on the screen
         fontScale = 3.0/loc.rel_distance
-        x = WIDTH/2+int(loc.rel_heading/HFOV*WIDTH)
-        y = HEIGHT/2-int(loc.rel_elevation/VFOV*HEIGHT)
+        x = int(WIDTH/2 + loc.rel_heading/HFOV*WIDTH)
+        y = int(HEIGHT/2 - loc.rel_elevation/VFOV*HEIGHT)
         cv2.putText(im, str(idx + 1), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 
             fontScale, TEXT_COLOR, thickness=3)
     cv2.imshow('displaywin', im)
