@@ -121,10 +121,10 @@ void Simulator::init() {
         ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
         buffer = malloc(width * height * 4 * sizeof(GLubyte));
         if (!buffer) {
-            throw std::runtime_error( "Malloc image buffer failed" );
+            throw std::runtime_error( "MatterSim: Malloc image buffer failed" );
         }
         if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)) {
-            throw std::runtime_error( "OSMesaMakeCurrent failed" );
+            throw std::runtime_error( "MatterSim: OSMesaMakeCurrent failed" );
         }
 #else
         cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
@@ -159,7 +159,7 @@ void Simulator::init() {
 
         // Always check that our framebuffer is ok
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            throw std::runtime_error( "GL_FRAMEBUFFER failure" );
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER failure" );
         }
 #endif
 
@@ -245,7 +245,7 @@ void Simulator::loadLocationGraph() {
     auto navGraphFile =  navGraphPath + "/" + state->scanId + "_connectivity.json";
     std::ifstream ifs(navGraphFile, std::ifstream::in);
     if (ifs.fail()){
-        throw std::invalid_argument( "Could not open navigation graph file: " +
+        throw std::invalid_argument( "MatterSim: Could not open navigation graph file: " +
                 navGraphFile + ", is scan id valid?" );
     }
     ifs >> root;
@@ -325,14 +325,14 @@ void Simulator::loadTexture(int locationId) {
     auto zpos = cv::imread(datafolder + viewpointId + "_skybox1_sami.jpg");
     auto zneg = cv::imread(datafolder + viewpointId + "_skybox3_sami.jpg");
     if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
-        throw std::invalid_argument( "Could not open skybox files at: " + datafolder + viewpointId + "_skybox*_sami.jpg");
+        throw std::invalid_argument( "MatterSim: Could not open skybox files at: " + datafolder + viewpointId + "_skybox*_sami.jpg");
     }
     cpuLoadTimer.Stop();
     gpuLoadTimer.Start();
     setupCubeMap(scanLocations[state->scanId][locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
     gpuLoadTimer.Stop();
     if (!glIsTexture(scanLocations[state->scanId][locationId]->cubemap_texture)){
-        throw std::runtime_error( "loadTexture failed" );
+        throw std::runtime_error( "MatterSim: loadTexture failed" );
     }
 }
 
@@ -402,7 +402,7 @@ void Simulator::newEpisode(const std::string& scanId,
             ix++;
             if (ix >= scanLocations[state->scanId].size()) ix = 0;
             if (ix == start_ix) {
-                throw std::logic_error( "ScanId: " + scanId + " has no included viewpoints!");
+                throw std::logic_error( "MatterSim: ScanId: " + scanId + " has no included viewpoints!");
             }
         }
     } else {
@@ -410,7 +410,7 @@ void Simulator::newEpisode(const std::string& scanId,
         for (int i = 0; i < scanLocations[state->scanId].size(); ++i) {
             if (scanLocations[state->scanId][i]->viewpointId == viewpointId) {
                 if (!scanLocations[state->scanId][i]->included) {
-                    throw std::invalid_argument( "ViewpointId: " +
+                    throw std::invalid_argument( "MatterSim: ViewpointId: " +
                             viewpointId + ", is excluded from the connectivity graph." );
                 }
                 ix = i;
@@ -418,7 +418,7 @@ void Simulator::newEpisode(const std::string& scanId,
             }
         }
         if (ix < 0) {
-            throw std::invalid_argument( "Could not find viewpointId: " +
+            throw std::invalid_argument( "MatterSim: Could not find viewpointId: " +
                     viewpointId + ", is viewpoint id valid?" );
         }
     }
@@ -472,7 +472,7 @@ void Simulator::makeAction(int index, double heading, double elevation) {
     // move
     if (!initialized || index < 0 || index >= state->navigableLocations.size() ){
         std::stringstream msg;
-        msg << "Invalid action index: " << index;
+        msg << "MatterSim: Invalid action index: " << index;
         throw std::domain_error( msg.str() );
     }
     state->location = state->navigableLocations[index];

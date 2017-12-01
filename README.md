@@ -3,6 +3,8 @@ AI Research Platform for Reinforcement Learning from Real Panoramic Images.
 
 The Matterport3D Simulator enables development of AI **agents that interact with real 3D environments using visual information** (RGB-D images). It is primarily intended for research in deep reinforcement learning, at the intersection of computer vision, natural language processing and robotics.
 
+![Concept](teaser.jpg)
+
 *This is development code for early release. We may make breaking changes, particularly as we look at possible integration with [ParlAI](https://github.com/facebookresearch/ParlAI) and [OpenAI Gym](https://github.com/openai/gym).*
 
 ## Features
@@ -13,13 +15,21 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 - Supports GPU rendering using OpenGL, as well as off-screen CPU rendering using OSMESA,
 - Future releases will include depth data (RGB-D) as well as class and instance object segmentations.
 
-## Cite as
+## Reference
 
-Todo
+The Matterport3D Simulator and the Room-to-Room (R2R) navigation dataset are described in:
+- [Vision-and-Language Navigation: Interpreting visually-grounded navigation instructions in real environments](https://arxiv.org/abs/1711.07280). 
+
+If you use the simulator or dataset, please cite our paper:
 
 ### Bibtex:
 ```
-todo
+@article{mattersim,
+  title={{Vision-and-Language Navigation}: Interpreting visually-grounded navigation instructions in real environments},
+  author={Peter Anderson and Qi Wu and Damien Teney and Jake Bruce and Mark Johnson and Niko Sünderhauf and Ian Reid and Stephen Gould and Anton van den Hengel},
+  journal={arXiv preprint arXiv:1711.07280},
+  year={2017}
+}
 ```
 
 ## Simulator Data
@@ -28,7 +38,7 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 ### Actions
 
-At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are configurable.
+At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are described in the paper and defined in `include/MatterSim.hpp`.
 
 ## Tasks
 
@@ -129,6 +139,9 @@ doxygen
 ```
 
 ### Demo
+
+These are very simple demos designed to illustrate the use of the simulator in python and C++. Use the arrow keys to pan and tilt the camera. In the python demo, the top row number keys can be used to move to another viewpoint (if any are visible).
+
 Python demo:
 ```
 python src/driver/driver.py
@@ -156,5 +169,11 @@ The Matterport3D dataset, and data derived from it, is released under the [Matte
 ## Acknowledgements
 
 We would like to thank Matterport for allowing the Matterport3D dataset to be used by the academic community. This project is supported by a Facebook ParlAI Research Award and by the [Australian Centre for Robotic Vision](https://www.roboticvision.org/). 
+
+## Contributing
+
+We welcome contributions from the community. All submissions require review and in most cases would require tests.
+
+
 
 

@@ -1,0 +1,17 @@
+backports.functools-lru-cache==1.4
+cycler==0.10.0
+decorator==4.1.2
+matplotlib==2.1.0
+networkx==2.0
+numpy==1.13.3
+olefile==0.44
+pandas==0.21.0
+Pillow==4.3.0
+pyparsing==2.2.0
+python-dateutil==2.6.1
+pytz==2017.3
+PyYAML==3.12
+six==1.11.0
+subprocess32==3.2.7
+torch==0.2.0.post3
+torchvision==0.1.9
