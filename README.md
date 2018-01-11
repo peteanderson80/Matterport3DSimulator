@@ -7,6 +7,8 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 
 *This is development code for early release. We may make breaking changes, particularly as we look at possible integration with [ParlAI](https://github.com/facebookresearch/ParlAI) and [OpenAI Gym](https://github.com/openai/gym).*
 
+Visit the main [website](https://bringmeaspoon.org/) for updates and to view a demo.
+
 ## Features
 - Dataset consisting of 90 different predominantly indoor environments,
 - All images are real, not synthetic (providing much more visual complexity),
