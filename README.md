@@ -28,7 +28,7 @@ If you use the simulator or dataset, please cite our paper:
 ```
 @article{mattersim,
   title={{Vision-and-Language Navigation}: Interpreting visually-grounded navigation instructions in real environments},
-  author={Peter Anderson and Qi Wu and Damien Teney and Jake Bruce and Mark Johnson and Niko Sünderhauf and Ian Reid and Stephen Gould and Anton van den Hengel},
+  author={Peter Anderson and Qi Wu and Damien Teney and Jake Bruce and Mark Johnson and Niko S{\"u}nderhauf and Ian Reid and Stephen Gould and Anton van den Hengel},
   journal={arXiv preprint arXiv:1711.07280},
   year={2017}
 }
