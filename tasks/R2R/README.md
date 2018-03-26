@@ -44,7 +44,7 @@ For the test set, only the first path_id (starting location) is included. We wil
 
 Python 2, [PyTorch](http://pytorch.org/), [NetworkX](https://networkx.github.io/). Install python dependencies by running:
 ```
-pip install -r /tasks/R2R/requirements.txt
+pip install -r tasks/R2R/requirements.txt
 ```
 
 ## Training and Evaluation

@@ -9,6 +9,7 @@ import time
 
 import torch
 import torch.nn as nn
+import torch.distributions as D
 from torch.autograd import Variable
 from torch import optim
 import torch.nn.functional as F
@@ -252,8 +253,9 @@ class Seq2SeqAgent(BaseAgent):
                 _,a_t = logit.max(1)        # student forcing - argmax
                 a_t = a_t.detach()
             elif self.feedback == 'sample':
-                probs = F.softmax(logit)    # sampling an action from model
-                a_t = probs.multinomial().detach()
+                probs = F.softmax(logit, dim=1)
+                m = D.Categorical(probs)
+                a_t = m.sample()            # sampling an action from model
             else:
                 sys.exit('Invalid feedback option')
 

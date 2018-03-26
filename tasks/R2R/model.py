@@ -76,7 +76,7 @@ class SoftDotAttention(nn.Module):
         '''Initialize layer.'''
         super(SoftDotAttention, self).__init__()
         self.linear_in = nn.Linear(dim, dim, bias=False)
-        self.sm = nn.Softmax()
+        self.sm = nn.Softmax(dim=1)
         self.linear_out = nn.Linear(dim * 2, dim, bias=False)
         self.tanh = nn.Tanh()
 

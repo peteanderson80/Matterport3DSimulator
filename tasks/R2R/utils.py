@@ -80,7 +80,7 @@ class Tokenizer(object):
         if len(self.word_to_index) == 0:
             sys.exit('Tokenizer has no vocab')
         encoding = []
-        for word in self.split_sentence(sentence):
+        for word in self.split_sentence(sentence)[::-1]: # reverse input sentences
             if word in self.word_to_index:
                 encoding.append(self.word_to_index[word])
             else:
@@ -97,7 +97,7 @@ class Tokenizer(object):
                 break
             else:
                 sentence.append(self.vocab[ix])
-        return " ".join(sentence)
+        return " ".join(sentence[::-1]) # unreverse before output
 
 
 def build_vocab(splits=['train'], min_count=5, start_vocab=base_vocab):
