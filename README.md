@@ -22,15 +22,15 @@ Visit the main [website](https://bringmeaspoon.org/) for updates and to view a d
 The Matterport3D Simulator and the Room-to-Room (R2R) navigation dataset are described in:
 - [Vision-and-Language Navigation: Interpreting visually-grounded navigation instructions in real environments](https://arxiv.org/abs/1711.07280). 
 
-If you use the simulator or dataset, please cite our paper:
+If you use the simulator or dataset, please cite our paper (CVPR 2018 spotlight oral):
 
 ### Bibtex:
 ```
-@article{mattersim,
+@inproceedings{mattersim,
   title={{Vision-and-Language Navigation}: Interpreting visually-grounded navigation instructions in real environments},
   author={Peter Anderson and Qi Wu and Damien Teney and Jake Bruce and Mark Johnson and Niko S{\"u}nderhauf and Ian Reid and Stephen Gould and Anton van den Hengel},
-  journal={arXiv preprint arXiv:1711.07280},
-  year={2017}
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2018}
 }
 ```
 
