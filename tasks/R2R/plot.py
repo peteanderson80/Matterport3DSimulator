@@ -84,8 +84,8 @@ def plot_final_scores():
     mpl.rc('font', **font)
     fig, ax = plt.subplots( nrows=1, ncols=1, figsize=(7,4) )  # create figure & 1 axis
     outfiles = [
-        RESULT_DIR + 'seq2seq_teacher_imagenet_%s_iter_5000.json',
         RESULT_DIR + 'seq2seq_sample_imagenet_%s_iter_20000.json',
+        RESULT_DIR + 'seq2seq_teacher_imagenet_%s_iter_5000.json',
         RESULT_DIR + '%s_stop_agent.json',
         RESULT_DIR + '%s_random_agent.json'
     ]
@@ -93,10 +93,10 @@ def plot_final_scores():
         ev = Evaluation([split])
         for i,outfile in enumerate(outfiles):
             score_summary,scores = ev.score(outfile % split)
-            if i == 0:
+            if i == 1:
                 method = 'Teacher-forcing'
                 ax.hist(scores['nav_errors'], bins=range(0,30,3), label=method, normed=True, histtype = 'step', linewidth=2.5, color='C1')
-            elif i == 1:
+            elif i == 0:
                 method = 'Student-forcing'
                 ax.hist(scores['nav_errors'], bins=range(0,30,3), label=method, alpha=0.7, normed=True, color='C0')
             elif i == 2:
