@@ -48,7 +48,7 @@ Currently the simulator supports one task. We hope this will grow.
 
 ### Room-to-Room (R2R) Navigation Task
 
-Please refer to [specific instructions](tasks/R2R/README.md) to setup and run this task.
+Please refer to [specific instructions](tasks/R2R/README.md) to setup and run this task. There is a test server and leaderboard available at [EvalAI](https://evalai.cloudcv.org/web/challenges/challenge-page/97/overview). 
 
 ## Installation / Build Instructions
 

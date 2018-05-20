@@ -49,12 +49,14 @@ pip install -r tasks/R2R/requirements.txt
 
 ## Training and Evaluation
 
-To train the seq2seq model with student-forcing:
+There is a test server and leaderboard available at [EvalAI](https://evalai.cloudcv.org/web/challenges/challenge-page/97/overview). 
+
+To train the baseline seq2seq model with student-forcing:
 ```
 python tasks/R2R/train.py
 ```
 
-To run some simple baselines:
+To run some simple learning free baselines:
 ```
 python tasks/R2R/eval.py
 ```
