@@ -1,7 +1,8 @@
 project(Matterport_Simulator CXX)
 cmake_minimum_required(VERSION 2.8)
 
-option(OSMESA_RENDERING "Render offscreen with OSMesa" OFF)
+option(OSMESA_RENDERING "Offscreen CPU rendering with OSMesa" OFF)
+option(EGL_RENDERING "Offscreen GPU rendering with EGL" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -16,7 +17,11 @@ find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 
-if(OSMESA_RENDERING)
+if(EGL_RENDERING)
+  find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
+  pkg_check_modules(EPOXY REQUIRED epoxy)
+  set(GL_LIBS OpenGL::OpenGL OpenGL::EGL ${EPOXY_LIBRARIES})
+elseif(OSMESA_RENDERING)
   pkg_check_modules(OSMESA REQUIRED osmesa)
   set(GL_LIBS ${OSMESA_LIBRARIES})
 else()

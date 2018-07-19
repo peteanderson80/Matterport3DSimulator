@@ -13,6 +13,9 @@
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/osmesa.h>
+#elseif EGL_RENDERING
+#include <epoxy/gl.h>
+#include <EGL/egl.h>
 #else
 #include <GL/glew.h>
 #endif
@@ -43,7 +46,7 @@ namespace mattersim {
     typedef std::shared_ptr<Viewpoint> ViewpointPtr;
     struct ViewpointPtrComp {
         inline bool operator() (const ViewpointPtr& l, const ViewpointPtr& r){
-            return sqrt(l->rel_heading*l->rel_heading+l->rel_elevation*l->rel_elevation) 
+            return sqrt(l->rel_heading*l->rel_heading+l->rel_elevation*l->rel_elevation)
                 < sqrt(r->rel_heading*r->rel_heading+r->rel_elevation*r->rel_elevation);
         }
     };
@@ -102,28 +105,28 @@ namespace mattersim {
         friend class SimulatorPython;
     public:
         Simulator();
-                      
+
         ~Simulator();
 
         /**
          * Sets camera resolution. Default is 320 x 240.
          */
         void setCameraResolution(int width, int height);
-        
+
         /**
          * Sets camera vertical field-of-view in radians. Default is 0.8, approx 46 degrees.
          */
         void setCameraVFOV(double vfov);
-        
+
         /**
          * Enable or disable rendering. Useful for testing. Default is true (enabled).
          */
         void setRenderingEnabled(bool value);
 
         /**
-         * Enable or disable discretized viewing angles. When enabled, heading and 
-         * elevation changes will be restricted to 30 degree increments from zero, 
-         * with left/right/up/down movement triggered by the sign of the makeAction 
+         * Enable or disable discretized viewing angles. When enabled, heading and
+         * elevation changes will be restricted to 30 degree increments from zero,
+         * with left/right/up/down movement triggered by the sign of the makeAction
          * heading and elevation parameters. Default is false (disabled).
          */
         void setDiscretizedViewingAngles(bool value);
@@ -132,61 +135,61 @@ namespace mattersim {
          * Initialize the simulator. Further camera configuration won't take any effect from now on.
          */
         void init();
-        
+
         /**
-         * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>. 
-         * The provided directory must contain subdirectories of the form: 
+         * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>.
+         * The provided directory must contain subdirectories of the form:
          * "/v1/scans/<scanId>/matterport_skybox_images/". Default is "./data" (expected location of dataset symlink).
          */
         void setDatasetPath(const std::string& path);
-        
+
         /**
          * Set a non-standard path to the viewpoint connectivity graphs. The provided directory must contain files
          * of the form "/<scanId>_connectivity.json". Default is "./connectivity" (the graphs provided
          * by this repo).
          */
         void setNavGraphPath(const std::string& path);
-        
+
         /**
          * Set the random seed for episodes where viewpoint is not provided.
          */
         void setSeed(int seed) { generator.seed(seed); };
-        
+
         /**
          * Set the camera elevation min and max limits in radians. Default is +-0.94 radians.
          * @return true if successful.
          */
         bool setElevationLimits(double min, double max);
-        
+
         /**
          * Starts a new episode. If a viewpoint is not provided initialization will be random.
          * @param scanId - sets which scene is used, e.g. "2t7WUuJeko7"
          * @param viewpointId - sets the initial viewpoint location, e.g. "cc34e9176bfe47ebb23c58c165203134"
-         * @param heading - set the agent's initial camera heading in radians. With z-axis up, 
+         * @param heading - set the agent's initial camera heading in radians. With z-axis up,
          *                  heading is defined relative to the y-axis (turning right is positive).
-         * @param elevation - set the initial camera elevation in radians, measured from the horizon 
+         * @param elevation - set the initial camera elevation in radians, measured from the horizon
          *                    defined by the x-y plane (up is positive).
          */
-        void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(), 
+        void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(),
               double heading=0, double elevation=0);
-        
+
         /**
          * Returns the current environment state including RGB image and available actions.
          */
         SimStatePtr getState();
-        
+
         /** @brief Select an action.
          *
-         * An RL agent will sample an action here. A task-specific reward can be determined 
+         * An RL agent will sample an action here. A task-specific reward can be determined
          * based on the location, heading, elevation, etc. of the resulting state.
          * @param index - an index into the set of feasible actions defined by getState()->navigableLocations.
-         * @param heading - desired heading change in radians. With z-axis up, heading is defined 
+         * @param heading - desired heading change in radians. With z-axis up, heading is defined
          *                  relative to the y-axis (turning right is positive).
-         * @param elevation - desired elevation change in radians, measured from the horizon defined 
+         * @param elevation - desired elevation change in radians, measured from the horizon defined
          *                    by the x-y plane (up is positive).
          */
         void makeAction(int index, double heading, double elevation);
-        
+
         /**
          * Closes the environment and releases underlying texture resources, OpenGL contexts, etc.
          */
@@ -203,6 +206,9 @@ namespace mattersim {
 #ifdef OSMESA_RENDERING
         void *buffer;
         OSMesaContext ctx;
+#elseif EGL_RENDERING
+        EGLDisplay eglDpy;
+        GLuint FramebufferName;
 #else
         GLuint FramebufferName;
 #endif

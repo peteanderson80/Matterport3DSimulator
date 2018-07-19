@@ -126,12 +126,46 @@ void Simulator::init() {
         if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)) {
             throw std::runtime_error( "MatterSim: OSMesaMakeCurrent failed" );
         }
+#elseif EGL_RENDERING
+        // Initialize EGL
+        eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
+        EGLint major, minor;
+
+        eglInitialize(eglDpy, &major, &minor);
+
+        // Select an appropriate configuration
+        EGLint numConfigs;
+        EGLConfig eglCfg;
+
+        const EGLint configAttribs[] = {
+          EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+          EGL_BLUE_SIZE, 8,
+          EGL_GREEN_SIZE, 8,
+          EGL_RED_SIZE, 8,
+          EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+          EGL_NONE
+        };
+
+        eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+
+        // Bind the API
+        eglBindAPI(EGL_OPENGL_API);
+
+        // Create a context and make it current
+        EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
+                                             NULL);
+
+        eglMakeCurrent(eglDpy, EGL_NO_SURFACE, EGL_NO_SURFACE, eglCtx);
+
 #else
         cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
         cv::setOpenGlContext("renderwin");
         // initialize the extension wrangler
         glewInit();
+#endif
 
+#ifdef OSMESA_RENDERING || EGL_RENDERING
         FramebufferName = 0;
         glGenFramebuffers(1, &FramebufferName);
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
@@ -298,9 +332,9 @@ void Simulator::populateNavigable() {
             double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
             if (cos_angle >= cos_half_hfov) {
                 glm::vec3 pos(scanLocations[state->scanId][i]->pos);
-                double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x, 
+                double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x,
                         target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
-                Viewpoint v{scanLocations[state->scanId][i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2]), 
+                Viewpoint v{scanLocations[state->scanId][i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2]),
                       rel_heading, rel_elevation, rel_distance};
                 updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
             }
@@ -341,7 +375,7 @@ void Simulator::setHeadingElevation(double heading, double elevation) {
     state->heading = fmod(heading, M_PI*2.0);
     while (state->heading < 0.0) {
         state->heading += M_PI*2.0;
-    }   
+    }
     if (discretizeViews) {
         // Snap heading to nearest discrete value
         double headingIncrement = M_PI*2.0/headingCount;
@@ -525,6 +559,8 @@ void Simulator::close() {
             free( buffer );
             buffer = NULL;
             OSMesaDestroyContext( ctx );
+#elseif EGL_RENDERING
+            eglTerminate(eglDpy);
 #else
             cv::destroyAllWindows();
 #endif

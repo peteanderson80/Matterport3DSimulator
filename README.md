@@ -20,7 +20,7 @@ Visit the main [website](https://bringmeaspoon.org/) for updates and to view a d
 ## Reference
 
 The Matterport3D Simulator and the Room-to-Room (R2R) navigation dataset are described in:
-- [Vision-and-Language Navigation: Interpreting visually-grounded navigation instructions in real environments](https://arxiv.org/abs/1711.07280). 
+- [Vision-and-Language Navigation: Interpreting visually-grounded navigation instructions in real environments](https://arxiv.org/abs/1711.07280).
 
 If you use the simulator or dataset, please cite our paper (CVPR 2018 spotlight oral):
 
@@ -36,7 +36,7 @@ If you use the simulator or dataset, please cite our paper (CVPR 2018 spotlight 
 
 ## Simulator Data
 
-Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D images from the [Matterport3D dataset](https://niessner.github.io/Matterport/). The dataset consists of 90 different indoor environments, including homes, offices, churches and hotels. Each environment contains full 360-degree RGB-D scans from between 8 and 349 viewpoints, spread on average 2.25m apart throughout the entire walkable floorplan of the scene. 
+Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D images from the [Matterport3D dataset](https://niessner.github.io/Matterport/). The dataset consists of 90 different indoor environments, including homes, offices, churches and hotels. Each environment contains full 360-degree RGB-D scans from between 8 and 349 viewpoints, spread on average 2.25m apart throughout the entire walkable floorplan of the scene.
 
 ### Actions
 
@@ -48,24 +48,26 @@ Currently the simulator supports one task. We hope this will grow.
 
 ### Room-to-Room (R2R) Navigation Task
 
-Please refer to [specific instructions](tasks/R2R/README.md) to setup and run this task. There is a test server and leaderboard available at [EvalAI](https://evalai.cloudcv.org/web/challenges/challenge-page/97/overview). 
+Please refer to [specific instructions](tasks/R2R/README.md) to setup and run this task. There is a test server and leaderboard available at [EvalAI](https://evalai.cloudcv.org/web/challenges/challenge-page/97/overview).
 
 ## Installation / Build Instructions
 
 ### Prerequisites
 
 A C++ compiler with C++11 support is required. Matterport3D Simulator has several dependencies:
-- [OpenCV](http://opencv.org/) >= 2.4 including 3.x 
+- [OpenCV](http://opencv.org/) >= 2.4 including 3.x
 - [OpenGL](https://www.opengl.org/)
-- [OSMesa](https://www.mesa3d.org/osmesa.html)
 - [GLM](https://glm.g-truc.net/0.9.8/index.html)
 - [Numpy](http://www.numpy.org/)
 - [pybind11](https://github.com/pybind/pybind11) for Python bindings
 - [Doxygen](http://www.doxygen.org) for building documentation
+Optional dependences (depending on cmake options):
+- [OSMesa](https://www.mesa3d.org/osmesa.html) for OSMesa backend support
+- [epoxy](https://github.com/anholt/libepoxy) for EGL backend support
 
-E.g. installing dependencies on Ubuntu:
+E.g. installing all dependencies on Ubuntu:
 ```
-sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev doxygen libosmesa6-dev libosmesa6
+sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev doxygen libosmesa6-dev libosmesa6 libepoxy-dev
 ```
 
 ### Clone Repo
@@ -112,9 +114,9 @@ Using symlinks will allow the same Matterport3D dataset installation to be used 
 
 #### Precomputing ResNet Image Features
 
-To speed up model training times, it is convenient to discretize heading and elevation into 30 degree increments, and to precompute image features for each view. 
+To speed up model training times, it is convenient to discretize heading and elevation into 30 degree increments, and to precompute image features for each view.
 
-We generate image features using Caffe. To replicate our approach, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-152 features. Features are saved in tsv format in the `img_features` directory. 
+We generate image features using Caffe. To replicate our approach, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-152 features. Features are saved in tsv format in the `img_features` directory.
 
 Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
 - [ResNet-152-imagenet features [380K/2.9GB]](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip)
@@ -128,13 +130,8 @@ cmake ..
 make
 cd ../
 ```
-Or build headless OSMESA version using CMake:
-```
-mkdir build && cd build
-cmake -DOSMESA_RENDERING=ON ..
-make
-cd ../
-```
+To build a headless GPU or CPU version, replace the second line above with either `cmake -DEGL_RENDERING=ON ..` or `cmake -DOSMESA_RENDERING=ON ..`, respectively.
+
 To build html docs for C++ classes in the `doxygen` directory, run this command and navigate to `doxygen/html/index.html`:
 ```
 doxygen
@@ -170,12 +167,8 @@ The Matterport3D dataset, and data derived from it, is released under the [Matte
 
 ## Acknowledgements
 
-We would like to thank Matterport for allowing the Matterport3D dataset to be used by the academic community. This project is supported by a Facebook ParlAI Research Award and by the [Australian Centre for Robotic Vision](https://www.roboticvision.org/). 
+We would like to thank Matterport for allowing the Matterport3D dataset to be used by the academic community. This project is supported by a Facebook ParlAI Research Award and by the [Australian Centre for Robotic Vision](https://www.roboticvision.org/).
 
 ## Contributing
 
 We welcome contributions from the community. All submissions require review and in most cases would require tests.
-
-
-
-
