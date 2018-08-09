@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset=utf-8>
+    <title>Trajectory Viewer</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>First-Person Trajectory Visualization</h1>
+        <div class="row">
+          <div class="col-md-12">
+            <form class="form-inline">
+              <strong>Input json trajectories:</strong>
+              <label class="btn btn-default btn-file">
+                Choose file <input id="trajFile" name="trajFile" type="file" style="display: none;">
+              </label>
+              <span id="fileName"> val_unseen_shortest_agent.json </span>
+              <div class="form-group" style="margin-left: 20px;">
+                <input class="form-check-input" type="checkbox" value="" id="show-instructions">
+                <label class="form-check-label" for="show-instructions">Show adjacent viewpoints</label>
+              </div>
+            </form>
+            <p>
+              <strong>Trajectory:</strong>
+              <button type="button" class="btn btn-default" onclick="left()">
+                <span class="glyphicon glyphicon-triangle-left"></span>
+              </button>
+              <span>Index:</span><input type="text" id="ix">
+              <button type="button" class="btn btn-default" onclick="right()">
+                <span class="glyphicon glyphicon-triangle-right"></span>
+              </button>
+              <span>Instruction ID:</span><input disabled=True type="text" id="instr_id">
+            </p>
+            <p>
+              <strong>Camera parameters:</strong>
+              <span>Width:</span><input type="text" id="width">
+              <span>Height:</span><input type="text" id="height">
+              <span>V-FOV:</span><input type="text" id="vfov">
+            </p>
+            <p>
+              <strong>Controls:</strong>
+              <button class="btn btn-primary" onclick="play()" id="play" disabled=true>Play</button>
+              <button class="btn btn-warning" onclick="download()" id="download" disabled=true>Download video</button>
+              <span>Download requires Firefox 43 or above, or Chrome 51 or above.</span>
+            </p>
+            <p> Left click and drag to look around. Mouse wheel to zoom. </p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p id='instruction' style="font-size: 200%;"></p>
+      <div>
+        <figure style="display: inline-block; width: 100%;">
+          <canvas id="skybox" style="width:auto; display: block; margin: 0 auto;">
+        </figure>
+        <figure style="display: inline-block; width: 100%;">
+          <canvas id="floorplan" style="width:auto; display: block; margin: 0 auto;">
+        </figure>
+        <p id="instr" style="text-align: center; margin-left: 60px;"></p>
+      </div>
+    </div>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.2/d3.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/87/three.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/RequestAnimationFrame.js"></script>
+    <script type="text/javascript" src="/js/Detector.js"></script>
+    <script type="text/javascript" src="/js/PTZCameraControls.js"></script>
+    <script type="text/javascript" src="/js/Matterport3D.js"></script>
+    <script type="text/javascript" src="/js/Trajectory.js"></script>
+  </body>
+</html>
