@@ -91,6 +91,7 @@ git submodule update --init --recursive
 - `img_features`: Storage for precomputed image features.
 - `data`: You create a symlink to the Matterport3D dataset.
 - `tasks`: Currently just the Room-to-Room (R2R) navigation task.
+- `web`: Javascript code for visualizing trajectories and collecting annotations in AMT.
 
 Other directories are mostly self-explanatory.
 
