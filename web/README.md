@@ -2,23 +2,27 @@
 
 This directory contains web-based applications for:
 - Viewing and saving first-person trajectories
-- Visualizing floorplans
 - Amazon Mechanical Turk (AMT) interfaces that were used to collect and evaluate navigation instructions
 
 Code is based on Javascript and the [three.js](https://threejs.org/) wrapper for OpenGL, as well as the [tween.js](https://github.com/tweenjs/tween.js/) library for animation. The [Gulp](https://gulpjs.com/) task runner (based on Node.js) is used for spinning up a web servers and optimizing and minifying javascript for deployment (e.g. to AMT).
 
 To get started, make sure you have [Node.js](https://nodejs.org/en/) >=6.0.0 installed, then install the remaining dependencies using the npm package manager:
-$   npm install
+```
+npm install
+```
 
 You will also need to first install the Matterport data as described [here](../README.md). Then, set up symlinks to data (from the app directory) as follows:
-$   cd app
-$   ln -s ../../tasks/R2R/data/ R2Rdata
-$   ln -s ../../connectivity connectivity
-$   ln -s ../../data data
+```
+cd app
+ln -s ../../tasks/R2R/data/ R2Rdata
+ln -s ../../connectivity connectivity
+ln -s ../../data data
+```
 
 Now you can start a web server to check out the various visualizations and AMT user interfaces:
-$   gulp
-
+```
+gulp
+```
 
 ## Trajectory Visualization
 
