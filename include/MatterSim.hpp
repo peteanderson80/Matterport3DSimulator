@@ -13,7 +13,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/osmesa.h>
-#elseif EGL_RENDERING
+#elif defined (EGL_RENDERING)
 #include <epoxy/gl.h>
 #include <EGL/egl.h>
 #else
@@ -206,7 +206,7 @@ namespace mattersim {
 #ifdef OSMESA_RENDERING
         void *buffer;
         OSMesaContext ctx;
-#elseif EGL_RENDERING
+#elif defined (EGL_RENDERING)
         EGLDisplay eglDpy;
         GLuint FramebufferName;
 #else

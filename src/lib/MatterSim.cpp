@@ -126,7 +126,7 @@ void Simulator::init() {
         if (!OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, width, height)) {
             throw std::runtime_error( "MatterSim: OSMesaMakeCurrent failed" );
         }
-#elseif EGL_RENDERING
+#elif defined (EGL_RENDERING)
         // Initialize EGL
         eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
@@ -165,7 +165,7 @@ void Simulator::init() {
         glewInit();
 #endif
 
-#ifdef OSMESA_RENDERING || EGL_RENDERING
+#ifndef OSMESA_RENDERING
         FramebufferName = 0;
         glGenFramebuffers(1, &FramebufferName);
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
@@ -192,8 +192,17 @@ void Simulator::init() {
         glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 
         // Always check that our framebuffer is ok
-        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER failure" );
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if(status == GL_FRAMEBUFFER_UNSUPPORTED) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER UNSUPPORTED");
+        } else if(status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER INCOMPLETE ATTACHMENT");
+        } else if(status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER INCOMPLETE DIMENSIONS");
+        } else if(status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER INCOMPLETE MISSING ATTACHMENT");
+        } else if(status != GL_FRAMEBUFFER_COMPLETE) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER other failure");
         }
 #endif
 
@@ -559,7 +568,7 @@ void Simulator::close() {
             free( buffer );
             buffer = NULL;
             OSMesaDestroyContext( ctx );
-#elseif EGL_RENDERING
+#elif defined (EGL_RENDERING)
             eglTerminate(eglDpy);
 #else
             cv::destroyAllWindows();

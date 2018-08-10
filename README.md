@@ -55,6 +55,7 @@ Please refer to [specific instructions](tasks/R2R/README.md) to setup and run th
 ### Prerequisites
 
 A C++ compiler with C++11 support is required. Matterport3D Simulator has several dependencies:
+- [CMake](https://cmake.org/) >= 3.10
 - [OpenCV](http://opencv.org/) >= 2.4 including 3.x
 - [OpenGL](https://www.opengl.org/)
 - [GLM](https://glm.g-truc.net/0.9.8/index.html)
@@ -65,10 +66,12 @@ Optional dependences (depending on cmake options):
 - [OSMesa](https://www.mesa3d.org/osmesa.html) for OSMesa backend support
 - [epoxy](https://github.com/anholt/libepoxy) for EGL backend support
 
-E.g. installing all dependencies on Ubuntu:
+We install and run on Ubuntu 16.04 using [Anaconda](https://www.anaconda.com/download/#linux). First, make sure you have OpenGL and related libraries installed, e.g.:
 ```
-sudo apt-get install libopencv-dev python-opencv freeglut3 freeglut3-dev libglm-dev libjsoncpp-dev doxygen libosmesa6-dev libosmesa6 libepoxy-dev
+sudo apt-get install freeglut3 freeglut3-dev libglm-dev libosmesa6 libosmesa6-dev
 ```
+
+Then, to recreate our environment use the provided [conda-specs.txt](conda-specs.txt). 
 
 ### Clone Repo
 
