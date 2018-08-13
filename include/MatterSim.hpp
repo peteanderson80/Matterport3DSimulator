@@ -6,6 +6,8 @@
 #include <random>
 #include <time.h>
 #include <cmath>
+#include <sstream>
+#include <stdexcept>
 
 #include <opencv2/opencv.hpp>
 
@@ -194,6 +196,28 @@ namespace mattersim {
          * Closes the environment and releases underlying texture resources, OpenGL contexts, etc.
          */
         void close();
+
+    protected:
+
+        void assertOpenGLError(const std::string& msg) {
+          GLenum error = glGetError();
+          if (error != GL_NO_ERROR) {
+            std::stringstream s;
+            s << "OpenGL error 0x" << std::hex << error << " at " << msg;
+            throw std::runtime_error(s.str());
+          }
+        }
+
+        void assertEGLError(const std::string& msg) {
+          EGLint error = eglGetError();
+
+          if (error != EGL_SUCCESS) {
+            std::stringstream s;
+            s << "EGL error 0x" << std::hex << error << " at " << msg;
+            throw std::runtime_error(s.str());
+          }
+        }
+
     private:
         const int headingCount = 12; // 12 heading values in discretized views
         const double elevationIncrement = M_PI/6.0; // 30 degrees discretized up/down

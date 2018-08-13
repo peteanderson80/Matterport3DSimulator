@@ -129,10 +129,12 @@ void Simulator::init() {
 #elif defined (EGL_RENDERING)
         // Initialize EGL
         eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        assertEGLError("eglGetDisplay");
 
         EGLint major, minor;
 
         eglInitialize(eglDpy, &major, &minor);
+        assertEGLError("eglInitialize");
 
         // Select an appropriate configuration
         EGLint numConfigs;
@@ -148,15 +150,17 @@ void Simulator::init() {
         };
 
         eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+        assertEGLError("eglChooseConfig");
 
         // Bind the API
         eglBindAPI(EGL_OPENGL_API);
+        assertEGLError("eglBindAPI");
 
         // Create a context and make it current
-        EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
-                                             NULL);
-
+        EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT, NULL);
+        assertEGLError("eglCreateContext");
         eglMakeCurrent(eglDpy, EGL_NO_SURFACE, EGL_NO_SURFACE, eglCtx);
+        assertEGLError("eglMakeCurrent");
 
 #else
         cv::namedWindow("renderwin", cv::WINDOW_OPENGL);
@@ -166,43 +170,51 @@ void Simulator::init() {
 #endif
 
 #ifndef OSMESA_RENDERING
-        FramebufferName = 0;
+        GLuint FramebufferName;
         glGenFramebuffers(1, &FramebufferName);
+        assertOpenGLError("glGenFramebuffers");
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+        assertOpenGLError("glBindFramebuffer");
 
         // The texture we're going to render to
         GLuint renderedTexture;
         glGenTextures(1, &renderedTexture);
+        assertOpenGLError("glGenTextures");
 
         // "Bind" the newly created texture : all future texture functions will modify this texture
         glBindTexture(GL_TEXTURE_2D, renderedTexture);
+        assertOpenGLError("glBindTexture");
 
         // Give an empty image to OpenGL ( the last "0" )
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        assertOpenGLError("glTexImage2D");
 
         // Poor filtering. Needed !
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        assertOpenGLError("glTexParameteri");
 
         // Set "renderedTexture" as our colour attachement #0
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderedTexture, 0);
+        assertOpenGLError("glFramebufferTexture2D");
 
         // Set the list of draw buffers.
         GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
         glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+        assertOpenGLError("glDrawBuffers");
 
-        // Always check that our framebuffer is ok
+        // Always check that the framebuffer is ok
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if(status == GL_FRAMEBUFFER_UNSUPPORTED) {
-            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER UNSUPPORTED");
-        } else if(status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
-            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER INCOMPLETE ATTACHMENT");
-        } else if(status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS) {
-            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER INCOMPLETE DIMENSIONS");
-        } else if(status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
-            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER INCOMPLETE MISSING ATTACHMENT");
+        if(status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+        } else if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+        } else if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS");
+        } else if (status == GL_FRAMEBUFFER_UNSUPPORTED) {
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_UNSUPPORTED");
         } else if(status != GL_FRAMEBUFFER_COMPLETE) {
-            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER other failure");
+            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER other failure ");
         }
 #endif
 

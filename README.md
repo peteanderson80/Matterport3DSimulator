@@ -68,10 +68,10 @@ Optional dependences (depending on cmake options):
 
 We install and run on Ubuntu 16.04 using [Anaconda](https://www.anaconda.com/download/#linux). First, make sure you have OpenGL and related libraries installed, e.g.:
 ```
-sudo apt-get install freeglut3 freeglut3-dev libglm-dev libosmesa6 libosmesa6-dev
+sudo apt-get install freeglut3 freeglut3-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev
 ```
 
-Then, to recreate our environment use the provided [conda-specs.txt](conda-specs.txt). 
+Then, to recreate our environment use the provided [conda-specs.txt](conda-specs.txt). Note that the OpenCV version provided by conda is built without OpenGL support. If you wish to display the rendered images on screen, you'll need to use your own OpenCV installation.
 
 ### Clone Repo
 
