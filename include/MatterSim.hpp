@@ -197,6 +197,16 @@ namespace mattersim {
          */
         void close();
 
+        /**
+         * Reset the rendering timers that run automatically.
+         */
+        void resetTimers();
+
+        /**
+         * Return a formatted timing string.
+         */
+        std::string timingInfo(); 
+
     protected:
 
         void assertOpenGLError(const std::string& msg) {
@@ -207,7 +217,7 @@ namespace mattersim {
             throw std::runtime_error(s.str());
           }
         }
-
+#ifdef EGL_RENDERING
         void assertEGLError(const std::string& msg) {
           EGLint error = eglGetError();
 
@@ -217,7 +227,7 @@ namespace mattersim {
             throw std::runtime_error(s.str());
           }
         }
-
+#endif
     private:
         const int headingCount = 12; // 12 heading values in discretized views
         const double elevationIncrement = M_PI/6.0; // 30 degrees discretized up/down
@@ -262,10 +272,13 @@ namespace mattersim {
         std::string navGraphPath;
         std::map<std::string, std::vector<LocationPtr> > scanLocations;
         std::default_random_engine generator;
-        Timer cpuLoadTimer;
-        Timer gpuLoadTimer;
-        Timer renderTimer;
-        Timer totalTimer;
+        Timer cpuLoadTimer; // Loading textures from disk into ram
+        Timer gpuLoadTimer; // Loading textures from ram into gpu mem
+        Timer renderTimer; // Loading textures from ram into gpu mem
+        Timer gpuReadTimer; // Reading rendered images from gpu mem to ram
+        Timer processTimer; // Total run time for simulator
+        Timer wallTimer; // Wall clock timer
+        unsigned int frames;
     };
 }
 

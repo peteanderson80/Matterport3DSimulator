@@ -69,6 +69,7 @@ Simulator::Simulator() :state{new SimState()},
                         vfov(0.8),
                         minElevation(-0.94),
                         maxElevation(0.94),
+                        frames(0),
                         navGraphPath("./connectivity"),
                         datasetPath("./data"),
 #ifdef OSMESA_RENDERING
@@ -435,7 +436,8 @@ void Simulator::newEpisode(const std::string& scanId,
                            const std::string& viewpointId,
                            double heading,
                            double elevation) {
-    totalTimer.Start();
+    wallTimer.Start();
+    processTimer.Start();
     if (!initialized) {
         init();
     }
@@ -486,7 +488,7 @@ void Simulator::newEpisode(const std::string& scanId,
         loadTexture(state->location->ix);
         renderScene();
     }
-    totalTimer.Stop();
+    processTimer.Stop();
 }
 
 SimStatePtr Simulator::getState() {
@@ -494,6 +496,7 @@ SimStatePtr Simulator::getState() {
 }
 
 void Simulator::renderScene() {
+    frames += 1;
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Scale and move the cubemap model into position
@@ -511,6 +514,8 @@ void Simulator::renderScene() {
     glViewport(0, 0, width, height);
     glBindTexture(GL_TEXTURE_CUBE_MAP, scanLocations[state->scanId][state->location->ix]->cubemap_texture);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+    renderTimer.Stop();
+    gpuReadTimer.Start();
     cv::Mat img(height, width, CV_8UC3);
     //use fast 4-byte alignment (default anyway) if possible
     glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
@@ -519,11 +524,11 @@ void Simulator::renderScene() {
     glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
     cv::flip(img, img, 0);
     this->state->rgb = img;
-    renderTimer.Stop();
+    gpuReadTimer.Stop();
 }
 
 void Simulator::makeAction(int index, double heading, double elevation) {
-    totalTimer.Start();
+    processTimer.Start();
     // move
     if (!initialized || index < 0 || index >= state->navigableLocations.size() ){
         std::stringstream msg;
@@ -551,15 +556,7 @@ void Simulator::makeAction(int index, double heading, double elevation) {
         }
         renderScene();
     }
-    totalTimer.Stop();
-    //std::cout << "\ntotalTimer: " << totalTimer.MilliSeconds() << " ms" << std::endl;
-    //std::cout << "cpuLoadTimer: " << cpuLoadTimer.MilliSeconds() << " ms" << std::endl;
-    //std::cout << "gpuLoadTimer: " << gpuLoadTimer.MilliSeconds() << " ms" << std::endl;
-    //std::cout << "renderTimer: " << renderTimer.MilliSeconds() << " ms" << std::endl;
-    //cpuLoadTimer.Reset();
-    //gpuLoadTimer.Reset();
-    //renderTimer.Reset();
-    //totalTimer.Reset();
+    processTimer.Stop();
 }
 
 void Simulator::close() {
@@ -588,5 +585,33 @@ void Simulator::close() {
         }
         initialized = false;
     }
+}
+
+void Simulator::resetTimers() {
+    cpuLoadTimer.Reset();
+    gpuLoadTimer.Reset();
+    renderTimer.Reset();
+    gpuReadTimer.Reset();
+    processTimer.Reset();
+    wallTimer.Reset();
+}
+
+std::string Simulator::timingInfo() {
+    std::ostringstream oss;
+    float f = static_cast<float>(frames);
+    float wt = wallTimer.MilliSeconds();
+    float pt = processTimer.MilliSeconds();
+    float ct = cpuLoadTimer.MilliSeconds();
+    float gt = gpuLoadTimer.MilliSeconds();
+    float rt = renderTimer.MilliSeconds();
+    float it = gpuReadTimer.MilliSeconds();
+    oss << "Rendered " << f << " frames" << std::endl;
+    oss << "Wall time: " << wt << " ms, (" << f/wt*1000 << " fps)" << std::endl;
+    oss << "Process time: " << pt << " ms, (" << f/pt*1000 << " fps)" << std::endl;
+    oss << "\tTexture loading - cpu: " << ct << " ms" << std::endl;
+    oss << "\tTexture loading - gpu: " << gt << " ms" << std::endl;
+    oss << "\tRendering: " << rt << " ms" << std::endl;
+    oss << "\tReading rendered image: " << it << " ms" << std::endl;
+    return oss.str();
 }
 }

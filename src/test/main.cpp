@@ -4,6 +4,10 @@
 #include <fstream>
 #include <unordered_map>
 #include <cmath>
+#include <algorithm>
+#include <string>
+#include <cstdlib>
+#include <ctime>
 
 #include <json/json.h>
 #include <opencv2/opencv.hpp>
@@ -324,15 +328,49 @@ TEST_CASE( "RGB Image", "[Rendering]" ) {
 
         SimStatePtr state = sim.getState();
         auto reference_image = cv::imread("webgl_imgs/"+imgfile);
-        cv::imwrite("sim_imgs/"+imgfile, state->rgb); // save for later comparison
-        
-        //cv::imshow("WebGL", reference_image);
-        //cv::imshow("MatterSim", state->rgb);
-        //int key = cv::waitKey(100);
+        // save for later comparison, these images can also be inspected by hand
+        cv::imwrite("sim_imgs/"+imgfile, state->rgb);
         
         double err = cv::norm(reference_image, state->rgb, CV_L2);
         err /= reference_image.rows * reference_image.cols;
         CHECK(err < 0.15);
     }
+    REQUIRE_NOTHROW(sim.close());
+}
+
+
+TEST_CASE( "Timing", "[Rendering]" ) {
+
+    // Initialize random generator
+    std::srand(std::time(NULL));
+
+    Simulator sim;
+    sim.setCameraResolution(640,480); // width,height
+    sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
+    sim.setRenderingEnabled(true);
+    sim.setDiscretizedViewingAngles(true);
+    REQUIRE_NOTHROW(sim.init());
+
+    // Load environment names
+    std::vector<std::string> envs;
+    std::ifstream is("connectivity/scans.txt");
+    std::string line;
+    while (std::getline(is, line)) {
+        envs.push_back(line);
+    }
+
+    for (int i=0; i<50; i++) {
+        std::random_shuffle(envs.begin(), envs.end());
+        REQUIRE_NOTHROW(sim.newEpisode(envs.front()));
+        SimStatePtr state = sim.getState();
+        for (int j=1; j<20; j++) {
+            int index = std::rand() % state->navigableLocations.size();
+            int heading = (std::rand() % 3) - 1;
+            int elevation = (std::rand() % 3) - 1;
+            sim.makeAction(index, heading, elevation);
+            state = sim.getState();
+        }
+    }
+    std::cout << sim.timingInfo() << std::endl;
     REQUIRE_NOTHROW(sim.close());
 }

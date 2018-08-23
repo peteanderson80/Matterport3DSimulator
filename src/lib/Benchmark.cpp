@@ -30,14 +30,23 @@ namespace mattersim {
     }
 
     float Timer::MicroSeconds() {
+      if (running()) {
+        elapsed_ += std::chrono::steady_clock::now() - start_;
+      }
       return std::chrono::duration_cast<std::chrono::microseconds>(elapsed_).count();
     }
 
     float Timer::MilliSeconds() {
+      if (running()) {
+        elapsed_ += std::chrono::steady_clock::now() - start_;
+      }
       return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_).count();
     }
 
     float Timer::Seconds() {
+      if (running()) {
+        elapsed_ += std::chrono::steady_clock::now() - start_;
+      }
       return std::chrono::duration_cast<std::chrono::seconds>(elapsed_).count();
     }
 

@@ -1,14 +1,14 @@
 # Matterport3DSimulator
 # Requires nvidia gpu with driver 384.xx or higher
 
-# docker build -t mattersim .
-# nvidia-docker run -it --mount type=bind,source=<MATTERPORT_DATA>,target=/root/mount/Matterport3DSimulator/data,readonly --rm mattersim bash
+# docker build -t mattersim-egl .
+# nvidia-docker run -it --mount type=bind,source=<MATTERPORT_DATA>,target=/root/mount/Matterport3DSimulator/data,readonly -v ~/sim_imgs:/root/mount/Matterport3DSimulator/sim_imgs --rm mattersim-egl bash
 # ./build/tests
 
 FROM nvidia/cudagl:9.0-devel-ubuntu16.04
 
-# Install a few libraries
-RUN apt-get update && apt-get install -y curl libjsoncpp-dev libepoxy-dev libglm-dev
+# Install a few libraries to support both EGL and OSMESA options
+RUN apt-get update && apt-get install -y curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev
 
 # Install miniconda to /miniconda
 RUN curl -LO http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
@@ -17,7 +17,7 @@ RUN rm Miniconda-latest-Linux-x86_64.sh
 ENV PATH=/miniconda/bin:${PATH}
 RUN conda update -y conda
 
-# Copy files (
+# Copy files
 ADD  . /root/mount/Matterport3DSimulator
 WORKDIR /root/mount/Matterport3DSimulator
 
@@ -29,6 +29,6 @@ ENV PATH /miniconda/envs/matterport/bin:$PATH
 RUN /bin/bash -c "source activate matterport"
 RUN mkdir build
 WORKDIR /root/mount/Matterport3DSimulator/build
-RUN cmake -DEGL_RENDERING=ON ..
+RUN cmake -DEGL_RENDERING=ON ..    # Or use -DOSMESA_RENDERING=ON
 RUN make
 WORKDIR /root/mount/Matterport3DSimulator
