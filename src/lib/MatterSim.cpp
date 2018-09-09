@@ -470,12 +470,14 @@ void Simulator::renderScene() {
 void Simulator::makeAction(int index, double heading, double elevation) {
     totalTimer.Start();
     // move
-    if (!initialized || index < 0 || index >= state->navigableLocations.size() ){
+    if (!initialized || index < 0 || (state->navigableLocations.size() > 1 && index >= state->navigableLocations.size()) ){
         std::stringstream msg;
         msg << "MatterSim: Invalid action index: " << index;
         throw std::domain_error( msg.str() );
     }
-    state->location = state->navigableLocations[index];
+    if (state->navigableLocations.size() > 1) { // if there is any navigable locations, then just go; otherwise just stay
+        state->location = state->navigableLocations[index];
+    }
     state->location->rel_heading = 0.0;
     state->location->rel_elevation = 0.0;
     state->location->rel_distance = 0.0;
