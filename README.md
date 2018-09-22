@@ -5,17 +5,17 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 
 ![Concept](teaser.jpg)
 
-*This is development code for early release. We may make breaking changes, particularly as we look at possible integration with [ParlAI](https://github.com/facebookresearch/ParlAI) and [OpenAI Gym](https://github.com/openai/gym).*
-
 Visit the main [website](https://bringmeaspoon.org/) for updates and to view a demo.
 
 ## Features
 - Dataset consisting of 90 different predominantly indoor environments,
 - All images are real, not synthetic (providing much more visual complexity),
 - API for C++ and Python
+- Outputs RGB and depth images
 - Customizable image resolution, camera parameters, etc,
-- Supports GPU rendering using OpenGL, as well as off-screen CPU rendering using OSMESA,
-- Future releases will include depth data (RGB-D) as well as class and instance object segmentations.
+- Supports off-screen rending (both GPU and CPU based)
+- Fast (xxx fps RGB-D off-screen rendering at 640x480 resolution using a Titan X GPU)
+- Future releases may support class and instance object segmentations.
 
 ## Reference
 
@@ -42,36 +42,21 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are described in the paper and defined in `include/MatterSim.hpp`.
 
-## Tasks
-
-Currently the simulator supports one task. We hope this will grow.
-
 ### Room-to-Room (R2R) Navigation Task
 
-Please refer to [specific instructions](tasks/R2R/README.md) to setup and run this task. There is a test server and leaderboard available at [EvalAI](https://evalai.cloudcv.org/web/challenges/challenge-page/97/overview).
+The simulator includes the training data and evaluation metrics for the Room-to-Room (R2R) Navigation task, which requires an autonomous agent to follow a natural language navigation instruction to navigate to a goal location in a previously unseen building. Please refer to [specific instructions](tasks/R2R/README.md) to setup and run this task. There is a test server and leaderboard available at [EvalAI](https://evalai.cloudcv.org/web/challenges/challenge-page/97/overview).
 
 ## Installation / Build Instructions
 
+We recommend using our docker image to install the simulator. The simulator can also be built from source but satisfying the project dependencies may be more difficult.
+
 ### Prerequisites
 
-A C++ compiler with C++11 support is required. Matterport3D Simulator has several dependencies:
-- [CMake](https://cmake.org/) >= 3.10
-- [OpenCV](http://opencv.org/) >= 2.4 including 3.x
-- [OpenGL](https://www.opengl.org/)
-- [GLM](https://glm.g-truc.net/0.9.8/index.html)
-- [Numpy](http://www.numpy.org/)
-- [pybind11](https://github.com/pybind/pybind11) for Python bindings
-- [Doxygen](http://www.doxygen.org) for building documentation
-Optional dependences (depending on cmake options):
-- [OSMesa](https://www.mesa3d.org/osmesa.html) for OSMesa backend support
-- [epoxy](https://github.com/anholt/libepoxy) for EGL backend support
-
-We install and run on Ubuntu 16.04 using [Anaconda](https://www.anaconda.com/download/#linux). First, make sure you have OpenGL and related libraries installed, e.g.:
-```
-sudo apt-get install freeglut3 freeglut3-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev
-```
-
-Then, to recreate our environment use the provided [conda-specs.txt](conda-specs.txt). Note that the OpenCV version provided by conda is built without OpenGL support. If you wish to display the rendered images on screen, you'll need to use your own OpenCV installation.
+- Ubuntu 16.04
+- Nvidia GPU with driver >= 384
+- Install [docker](https://docs.docker.com/engine/installation/)
+- Install [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+- Note: CUDA / CuDNN toolkits do not need to be installed (these are provided by the docker image)
 
 ### Clone Repo
 
@@ -87,62 +72,63 @@ If you didn't clone with the `--recursive` flag, then you'll need to manually cl
 git submodule update --init --recursive
 ```
 
-### Directory Structure
-
-- `connectivity`: Json navigation graphs.
-- `webgl_imgs`: Contains dataset views rendered with javascript (for test comparisons).
-- `sim_imgs`: Will contain simulator rendered images after running tests.
-- `models`: Caffe models for precomputing ResNet image features.
-- `img_features`: Storage for precomputed image features.
-- `data`: You create a symlink to the Matterport3D dataset.
-- `tasks`: Currently just the Room-to-Room (R2R) navigation task.
-
-Other directories are mostly self-explanatory.
-
 ### Dataset Download
 
-To use the simulator you must first download **either** the [Matterport3D Dataset](https://niessner.github.io/Matterport/), **or** you can download the precomputed ResNet image features and use discretized viewpoints.
+To use the simulator you must first download the [Matterport3D Dataset](https://niessner.github.io/Matterport/) which is available after requesting access [here](https://niessner.github.io/Matterport/). The download script that will be provided allows for downloading of selected data types. To run the simulator, only the `matterport_skybox_images` are needed.
 
-#### Matterport3D Dataset
-
-Download the Matterport3D dataset which is available after requesting access [here](https://niessner.github.io/Matterport/). The provided download script allows for downloading of selected data types. Note that for the Matterport3D Simulator, only the following data types are required (and can be selected with the download script):
-- `matterport_skybox_images`
-
-Create a symlink to the Matterport3D Dataset, which should be structured as ```<Matterdata>/v1/scans/<scanId>/matterport_skybox_images/*.jpg```:
+Set an environment variable to the location of the dataset, where <PATH> is the full absolute path (not a relative path or symlink) to the directory containing the individual matterport scan directories (17DRP5sb8fy, 2t7WUuJeko7, etc):
 ```
-ln -s <Matterdata> data
+export MATTERPORT_DATA_DIR=<PATH>
 ```
 
-Using symlinks will allow the same Matterport3D dataset installation to be used between multiple projects.
+Note that if <PATH> is a remote sshfs mount, you will need to mount it with the `-o allow_root` option or the docker container won't be able to access this directory. 
 
-#### Precomputing ResNet Image Features
 
-To speed up model training times, it is convenient to discretize heading and elevation into 30 degree increments, and to precompute image features for each view.
+### Building and Testing using Docker
 
-We generate image features using Caffe. To replicate our approach, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-152 features. Features are saved in tsv format in the `img_features` directory.
-
-Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
-- [ResNet-152-imagenet features [380K/2.9GB]](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-imagenet.zip)
-- [ResNet-152-places365 features [380K/2.9GB]](https://storage.googleapis.com/bringmeaspoon/img_features/ResNet-152-places365.zip)
-
-### Compiling
-Build OpenGL version using CMake:
+Build the docker image:
 ```
+docker build -t mattersim .
+```
+
+Run the docker container, mounting both the git repo and the dataset:
+```
+nvidia-docker run -it --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+```
+
+Now (from inside the docker container), build the simulator and run the unit tests:
+```
+cd /root/mount/Matterport3DSimulator
 mkdir build && cd build
-cmake ..
+cmake -DEGL_RENDERING=ON ..
 make
 cd ../
-```
-To build a headless GPU or CPU version, replace the second line above with either `cmake -DEGL_RENDERING=ON ..` or `cmake -DOSMESA_RENDERING=ON ..`, respectively.
-
-To build html docs for C++ classes in the `doxygen` directory, run this command and navigate to `doxygen/html/index.html`:
-```
-doxygen
+./build/tests
 ```
 
-### Demo
+Assuming all tests pass, some information about the rendering frame rate will be printed to stdout and `sim_imgs` will now contain some test images rendered by the simulator. 
 
-These are very simple demos designed to illustrate the use of the simulator in python and C++. Use the arrow keys to pan and tilt the camera. In the python demo, the top row number keys can be used to move to another viewpoint (if any are visible).
+
+### Rendering Options (GPU, CPU, off-screen)
+
+There are three rendering options, which are selected using [cmake](https://cmake.org/) options during the build process (by varying line 3 in the build commands immediately above):
+- GPU rendering using OpenGL (requires an X server): `cmake ..` (default)
+- Off-screen GPU rendering using [EGL](https://www.khronos.org/egl/): `cmake -DEGL_RENDERING=ON ..`
+- Off-screen CPU rendering using [OSMesa](https://www.mesa3d.org/osmesa.html): `cmake -DOSMESA_RENDERING=ON ..`
+
+The recommended (fast) approach for training agents is using off-screen GPU rendering (EGL).
+
+
+### Interactive Demo
+
+To run an interactive demo, build the docker image as described above (`docker build -t mattersim .`), then run the docker container while sharing the host's X server and DISPLAY environment variable with the container:
+```
+xhost +
+nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+cd /root/mount/Matterport3DSimulator
+```
+
+Be sure to build the simulator using the cmake option for on-screen rendering (`cmake ..`). Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. Use the arrow keys to pan and tilt the camera. In the python demo, the top row number keys can be used to move to another viewpoint (if any are visible).
 
 Python demo:
 ```
@@ -153,15 +139,43 @@ C++ demo:
 build/mattersim_main
 ```
 
-### Running Tests
+
+### Building without Docker
+
+The simulator can be built outside of a docker container using the cmake build commands described above. However, this is not the recommended approach, as all dependencies will need to be installed locally and may conflict with existing libraries. The main requirements are:
+- Ubuntu >= 14.04
+- Nvidia-driver with CUDA installed 
+- C++ compiler with C++11 support
+- [CMake](https://cmake.org/) >= 3.10
+- [OpenCV](http://opencv.org/) >= 2.4 including 3.x
+- [OpenGL](https://www.opengl.org/)
+- [GLM](https://glm.g-truc.net/0.9.8/index.html)
+- [Numpy](http://www.numpy.org/)
+Optional dependences (depending on the cmake rendering options):
+- [OSMesa](https://www.mesa3d.org/osmesa.html) for OSMesa backend support
+- [epoxy](https://github.com/anholt/libepoxy) for EGL backend support
+
+The provided [Dockerfile](Dockerfile) contains install commands for most of these libraries. For example, to install OpenGL and related libraries:
 ```
-build/tests
+sudo apt-get install libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev
 ```
-Or, if you haven't installed the Matterport3D dataset, you will need to skip the rendering tests:
-```
-build/tests exclude:[Rendering]
-```
-Refer to the [Catch](https://github.com/philsquared/Catch) documentation for additional usage and configuration options.
+
+
+### Simulator API
+
+TODO
+
+### Directory Structure
+
+- `connectivity`: Json navigation graphs.
+- `webgl_imgs`: Contains dataset views rendered with javascript (for test comparisons).
+- `sim_imgs`: Will contain simulator rendered images after running tests.
+- `models`: Caffe models for precomputing ResNet image features.
+- `img_features`: Storage for precomputed image features.
+- `data`: Matterport3D dataset.
+- `tasks`: Currently just the Room-to-Room (R2R) navigation task.
+
+Other directories are mostly self-explanatory.
 
 
 ## License

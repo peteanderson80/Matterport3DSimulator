@@ -210,8 +210,6 @@ void Simulator::init() {
             throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
         } else if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
             throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
-        } else if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS) {
-            throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS");
         } else if (status == GL_FRAMEBUFFER_UNSUPPORTED) {
             throw std::runtime_error( "MatterSim: GL_FRAMEBUFFER_UNSUPPORTED");
         } else if(status != GL_FRAMEBUFFER_COMPLETE) {
