@@ -115,7 +115,7 @@ void Simulator::setNavGraphPath(const std::string& path) {
     navGraphPath = path;
 }
 
-void Simulator::init() {
+void Simulator::initialize() {
     state->rgb.create(height, width, CV_8UC3);
     if (renderingEnabled) {
 #ifdef OSMESA_RENDERING
@@ -332,7 +332,6 @@ void Simulator::populateNavigable() {
     updatedNavigable.push_back(state->location);
     unsigned int idx = state->location->ix;
     unsigned int i = 0;
-    cv::Point3f curPos = state->location->point;
     double adjustedheading = M_PI/2.0 - state->heading;
     glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
     double cos_half_hfov = cos(vfov * width / height / 2.0);
@@ -354,7 +353,7 @@ void Simulator::populateNavigable() {
                 glm::vec3 pos(scanLocations[state->scanId][i]->pos);
                 double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x,
                         target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
-                Viewpoint v{scanLocations[state->scanId][i]->viewpointId, i, cv::Point3f(pos[0], pos[1], pos[2]),
+                Viewpoint v{scanLocations[state->scanId][i]->viewpointId, i, pos[0], pos[1], pos[2],
                       rel_heading, rel_elevation, rel_distance};
                 updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
             }
@@ -437,7 +436,7 @@ void Simulator::newEpisode(const std::string& scanId,
     wallTimer.Start();
     processTimer.Start();
     if (!initialized) {
-        init();
+        initialize();
     }
     state->step = 0;
     setHeadingElevation(heading, elevation);
@@ -479,7 +478,7 @@ void Simulator::newEpisode(const std::string& scanId,
     }
     glm::vec3 pos(scanLocations[state->scanId][ix]->pos);
     Viewpoint v{scanLocations[state->scanId][ix]->viewpointId, (unsigned int)ix,
-          cv::Point3f(pos[0], pos[1], pos[2]), 0.0, 0.0, 0.0};
+          pos[0], pos[1], pos[2], 0.0, 0.0, 0.0};
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
     if (renderingEnabled) {

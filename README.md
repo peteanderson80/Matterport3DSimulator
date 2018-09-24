@@ -165,6 +165,12 @@ sudo apt-get install libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa
 
 TODO
 
+To build html docs for C++ classes in the `doxygen` directory, run this command and navigate to `doxygen/html/index.html`:
+```
+doxygen
+```
+
+
 ### Directory Structure
 
 - `connectivity`: Json navigation graphs.

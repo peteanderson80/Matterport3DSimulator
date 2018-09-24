@@ -4,6 +4,7 @@ import MatterSim
 import time
 import math
 import cv2
+import numpy as np
 
 
 WIDTH = 640
@@ -16,14 +17,16 @@ cv2.namedWindow('displaywin')
 sim = MatterSim.Simulator()
 sim.setCameraResolution(WIDTH, HEIGHT)
 sim.setCameraVFOV(VFOV)
-sim.init()
+sim.initialize()
 sim.newEpisode('2t7WUuJeko7', '1e6b606b44df4a6086c0f97e826d4d15', 0, 0)
-
 
 heading = 0
 elevation = 0
 location = 0
 ANGLEDELTA = 5 * math.pi / 180
+
+
+
 while True:
     sim.makeAction(location, heading, elevation)
     location = 0
@@ -31,8 +34,7 @@ while True:
     elevation = 0
     state = sim.getState()
     locations = state.navigableLocations
-    im = state.rgb
-    origin = locations[0].point
+    im = np.array(state.rgb, copy=False)
     for idx, loc in enumerate(locations[1:]):
         # Draw actions on the screen
         fontScale = 3.0/loc.rel_distance
@@ -42,6 +44,10 @@ while True:
             fontScale, TEXT_COLOR, thickness=3)
     cv2.imshow('displaywin', im)
     k = cv2.waitKey(1)
+    if k == -1:
+        continue
+    else:
+        k = (k & 255)
     if k == ord('q'):
         break
     elif ord('1') <= k <= ord('9'):

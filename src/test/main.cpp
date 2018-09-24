@@ -52,7 +52,7 @@ TEST_CASE( "Continuous Motion", "[Actions]" ) {
     sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
     sim.setRenderingEnabled(false);
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
-    REQUIRE_NOTHROW(sim.init());
+    REQUIRE_NOTHROW(sim.initialize());
     for (int i = 0; i < scanIds.size(); ++i) {
         std::string scanId = scanIds[i];
         std::string viewpointId = viewpointIds[i];
@@ -87,7 +87,7 @@ TEST_CASE( "Discrete Motion", "[Actions]" ) {
     sim.setRenderingEnabled(false);
     sim.setDiscretizedViewingAngles(true);
     CHECK(sim.setElevationLimits(radians(-10),radians(10))); // should be disregarded
-    REQUIRE_NOTHROW(sim.init());
+    REQUIRE_NOTHROW(sim.initialize());
     for (int i = 0; i < scanIds.size(); ++i) {
         std::string scanId = scanIds[i];
         std::string viewpointId = viewpointIds[i];
@@ -121,7 +121,7 @@ TEST_CASE( "Robot Relative Coords", "[Actions]" ) {
     sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
     sim.setRenderingEnabled(false);
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
-    REQUIRE_NOTHROW(sim.init());
+    REQUIRE_NOTHROW(sim.initialize());
     for (int i = 0; i < scanIds.size(); ++i) {
         std::string scanId = scanIds[i];
         std::string viewpointId = viewpointIds[i];
@@ -129,7 +129,7 @@ TEST_CASE( "Robot Relative Coords", "[Actions]" ) {
         for (int t = 0; t < 10; ++t ) {
             INFO("i=" << i << ", t=" << t);
             SimStatePtr state = sim.getState();
-            cv::Point3f curr = state->location->point;
+            cv::Point3f curr(state->location->x, state->location->y, state->location->z);
             std::vector<ViewpointPtr> actions = state->navigableLocations;
             double last_angle = 0.0;
             int k = 0;
@@ -152,14 +152,14 @@ TEST_CASE( "Robot Relative Coords", "[Actions]" ) {
                 INFO("elevation=" << degrees(state->elevation) << ", rel_elevation=" << degrees(loc->rel_elevation));
                 INFO("rel_distance=" << loc->rel_distance);
                 INFO("curr=(" << curr.x << ", " << curr.y << ", " << curr.z << ")");
-                INFO("targ=(" << loc->point.x << ", " << loc->point.y << ", " << loc->point.z << ")"); 
-                INFO("diff=(" << loc->point.x-curr.x << ", " << loc->point.y-curr.y << ", " << loc->point.z-curr.z << ")"); 
+                INFO("targ=(" << loc->x << ", " << loc->y << ", " << loc->z << ")"); 
+                INFO("diff=(" << loc->x-curr.x << ", " << loc->y-curr.y << ", " << loc->z-curr.z << ")"); 
                 cv::Point3f offset(sin(h)*cos(e)*loc->rel_distance, cos(h)*cos(e)*loc->rel_distance, sin(e)*loc->rel_distance);
                 INFO("calc diff=(" << offset.x << ", " << offset.y << ", " << offset.z << ")"); 
                 cv::Point3f target = curr + offset;
-                REQUIRE(loc->point.x == Approx(target.x));
-                REQUIRE(loc->point.y == Approx(target.y));
-                REQUIRE(loc->point.z == Approx(target.z));
+                REQUIRE(loc->x == Approx(target.x));
+                REQUIRE(loc->y == Approx(target.y));
+                REQUIRE(loc->z == Approx(target.z));
                 k++;
             }
             int ix = t % actions.size(); // select an action
@@ -184,7 +184,7 @@ TEST_CASE( "Navigable Locations", "[Actions]" ) {
     double half_hfov = M_PI/4;
     sim.setRenderingEnabled(false);
     sim.setSeed(1);
-    REQUIRE_NOTHROW(sim.init());
+    REQUIRE_NOTHROW(sim.initialize());
     for (auto scanId : scanIds) {
         REQUIRE_NOTHROW(sim.newEpisode(scanId)); // start anywhere, but repeatably so
 
@@ -247,9 +247,9 @@ TEST_CASE( "Navigable Locations", "[Actions]" ) {
                     // We should never be at a not included viewpoint
                     CHECK(included[i]);
                     ViewpointPtr target_viewpoint = locs[target];
-                    CHECK(target_viewpoint->point.x == Approx(tar_x));
-                    CHECK(target_viewpoint->point.y == Approx(tar_y));
-                    CHECK(target_viewpoint->point.z == Approx(tar_z));
+                    CHECK(target_viewpoint->x == Approx(tar_x));
+                    CHECK(target_viewpoint->y == Approx(tar_y));
+                    CHECK(target_viewpoint->z == Approx(tar_z));
                     navigableCount++;
                 } else if (!currentViewpoint["unobstructed"][i].asBool()) {
                     // obstructed
@@ -279,9 +279,9 @@ TEST_CASE( "Navigable Locations", "[Actions]" ) {
                             << ") with heading " << state->heading);
                         REQUIRE(locs.find(target) != locs.end());
                         ViewpointPtr target_viewpoint = locs[target];
-                        CHECK(target_viewpoint->point.x == Approx(tar_x));
-                        CHECK(target_viewpoint->point.y == Approx(tar_y));
-                        CHECK(target_viewpoint->point.z == Approx(tar_z));
+                        CHECK(target_viewpoint->x == Approx(tar_x));
+                        CHECK(target_viewpoint->y == Approx(tar_y));
+                        CHECK(target_viewpoint->z == Approx(tar_z));
                         navigableCount++;
                     } else {
                         INFO("Viewpoint " << target << " (" << tar_x << ", " << tar_y << ", " << tar_z 
@@ -309,7 +309,7 @@ TEST_CASE( "RGB Image", "[Rendering]" ) {
     sim.setCameraResolution(640,480); // width,height
     sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
-    REQUIRE_NOTHROW(sim.init());
+    REQUIRE_NOTHROW(sim.initialize());
     Json::Value root;
     std::string testSpecFile{"src/test/rendertest_spec.json"};
     std::ifstream ifs(testSpecFile, std::ifstream::in);
@@ -349,7 +349,7 @@ TEST_CASE( "Timing", "[Rendering]" ) {
     sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     sim.setRenderingEnabled(true);
     sim.setDiscretizedViewingAngles(true);
-    REQUIRE_NOTHROW(sim.init());
+    REQUIRE_NOTHROW(sim.initialize());
 
     // Load environment names
     std::vector<std::string> envs;

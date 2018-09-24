@@ -30,13 +30,21 @@
 #include "Benchmark.hpp"
 
 namespace mattersim {
-    struct Viewpoint {
+    struct Viewpoint: std::enable_shared_from_this<Viewpoint> {
+        Viewpoint(std::string viewpointId, unsigned int ix, double x, double y, double z,
+          double rel_heading, double rel_elevation, double rel_distance) : 
+            viewpointId(viewpointId), ix(ix), x(x), y(y), z(z), rel_heading(rel_heading),
+            rel_elevation(rel_elevation), rel_distance(rel_distance)  
+        {}
+
         //! Viewpoint identifier
         std::string viewpointId;
         //! Viewpoint index into connectivity graph
         unsigned int ix;
         //! 3D position in world coordinates
-        cv::Point3f point;
+        double x;
+        double y;
+        double z;
         //! Heading relative to the camera
         double rel_heading;
         //! Elevation relative to the camera
@@ -56,7 +64,7 @@ namespace mattersim {
     /**
      * Simulator state class.
      */
-    struct SimState {
+    struct SimState: std::enable_shared_from_this<SimState>{
         //! Building / scan environment identifier
         std::string scanId;
         //! Number of frames since the last newEpisode() call
@@ -104,7 +112,7 @@ namespace mattersim {
      * Main class for accessing an instance of the simulator environment.
      */
     class Simulator {
-        friend class SimulatorPython;
+
     public:
         Simulator();
 
@@ -136,7 +144,7 @@ namespace mattersim {
         /**
          * Initialize the simulator. Further camera configuration won't take any effect from now on.
          */
-        void init();
+        void initialize();
 
         /**
          * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>.

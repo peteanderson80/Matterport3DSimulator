@@ -15,13 +15,13 @@ using namespace mattersim;
 int main(int argc, char *argv[]) {
     cv::namedWindow("displaywin");
 
-    Simulator *sim = new Simulator();
+    Simulator sim;
 
     // Sets resolution. Default is 320X240
-    sim->setCameraResolution(640,480);
+    sim.setCameraResolution(640,480);
 
     // Initialize the simulator. Further camera configuration won't take any effect from now on.
-    sim->init();
+    sim.initialize();
 
     // Run this many episodes
     int episodes = 10;
@@ -30,12 +30,12 @@ int main(int argc, char *argv[]) {
         std::cout << "Episode #" << i + 1 << "\n";
 
         // Starts a new episode. It is not needed right after init() but it doesn't cost much and the loop is nicer.
-        sim->newEpisode("2t7WUuJeko7"); // Take optional viewpoint_id argument, otherwise launches at a random location
+        sim.newEpisode("2t7WUuJeko7"); // Take optional viewpoint_id argument, otherwise launches at a random location
 
         while (true) {
 
             // Get the state
-            SimStatePtr state = sim->getState(); // SimStatePtr is std::shared_ptr<SimState>
+            SimStatePtr state = sim.getState(); // SimStatePtr is std::shared_ptr<SimState>
 
             // Which consists of:
             unsigned int n = state->step;
@@ -87,15 +87,14 @@ int main(int argc, char *argv[]) {
                 elevationChange = -M_PI / 180;
                 break;
             }
-            sim->makeAction(locationIdx, headingChange, elevationChange);
+            sim.makeAction(locationIdx, headingChange, elevationChange);
 
         }
         std::cout << "Episode finished.\n";
     }
 
     // It will be done automatically in destructor but after close You can init it again with different settings.
-    sim->close();
-    delete sim;
+    sim.close();
 
     return 0;
 }

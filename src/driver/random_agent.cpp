@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     sim->setCameraResolution(640,480);
 
     // Initialize the simulator. Further camera configuration won't take any effect from now on.
-    sim->init();
+    sim->initialize();
 
     // Run this many episodes
     int episodes = 10;
