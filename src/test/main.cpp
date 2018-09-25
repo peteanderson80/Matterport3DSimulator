@@ -349,6 +349,7 @@ TEST_CASE( "Timing", "[Rendering]" ) {
     sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     sim.setRenderingEnabled(true);
     sim.setDiscretizedViewingAngles(true);
+    sim.setPreloadEnabled(true);
     REQUIRE_NOTHROW(sim.initialize());
 
     // Load environment names

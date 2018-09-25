@@ -4,9 +4,7 @@
 #include <memory>
 #include <vector>
 #include <random>
-#include <time.h>
 #include <cmath>
-#include <sstream>
 #include <stdexcept>
 
 #include <opencv2/opencv.hpp>
@@ -28,6 +26,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Benchmark.hpp"
+#include "NavGraph.hpp"
 
 namespace mattersim {
     struct Viewpoint: std::enable_shared_from_this<Viewpoint> {
@@ -90,23 +89,6 @@ namespace mattersim {
 
     typedef std::shared_ptr<SimState> SimStatePtr;
 
-    /**
-     * Internal class for representing nearby candidate locations that can be moved to.
-     */
-    struct Location {
-        //! True if viewpoint is included in the simulator. Sometimes duplicated viewpoints have been excluded.
-        bool included;
-        //! Unique Matterport identifier for every pano location
-        std::string viewpointId;
-        //! Rotation component
-        glm::mat4 rot;
-        //! Translation component
-        glm::vec3 pos;
-        std::vector<bool> unobstructed;
-        GLuint cubemap_texture;
-    };
-
-    typedef std::shared_ptr<Location> LocationPtr;
 
     /**
      * Main class for accessing an instance of the simulator environment.
@@ -142,14 +124,15 @@ namespace mattersim {
         void setDiscretizedViewingAngles(bool value);
 
         /**
-         * Initialize the simulator. Further camera configuration won't take any effect from now on.
+         * Enable or disable preloading of images from disk to CPU memory. Default is false (disabled).
+         * Enabled is better for training models, but will cause a delay when starting the simulator.
          */
-        void initialize();
+        void setPreloadEnabled(bool value);
 
         /**
          * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>.
          * The provided directory must contain subdirectories of the form:
-         * "/v1/scans/<scanId>/matterport_skybox_images/". Default is "./data" (expected location of dataset symlink).
+         * "<scanId>/matterport_skybox_images/". Default is "./data/v1/scans/".
          */
         void setDatasetPath(const std::string& path);
 
@@ -163,13 +146,18 @@ namespace mattersim {
         /**
          * Set the random seed for episodes where viewpoint is not provided.
          */
-        void setSeed(int seed) { generator.seed(seed); };
+        void setSeed(int seed);
 
         /**
          * Set the camera elevation min and max limits in radians. Default is +-0.94 radians.
          * @return true if successful.
          */
         bool setElevationLimits(double min, double max);
+
+        /**
+         * Initialize the simulator. Further configuration won't take any effect from now on.
+         */
+        void initialize();
 
         /**
          * Starts a new episode. If a viewpoint is not provided initialization will be random.
@@ -184,7 +172,7 @@ namespace mattersim {
               double heading=0, double elevation=0);
 
         /**
-         * Returns the current environment state including RGB image and available actions.
+         * Returns the current batch of environment states including RGB images and available actions.
          */
         SimStatePtr getState();
 
@@ -239,10 +227,7 @@ namespace mattersim {
     private:
         const int headingCount = 12; // 12 heading values in discretized views
         const double elevationIncrement = M_PI/6.0; // 30 degrees discretized up/down
-        void loadLocationGraph();
-        void clearLocationGraph();
         void populateNavigable();
-        void loadTexture(int locationId);
         void setHeadingElevation(double heading, double elevation);
         void renderScene();
 #ifdef OSMESA_RENDERING
@@ -258,8 +243,10 @@ namespace mattersim {
         bool initialized;
         bool renderingEnabled;
         bool discretizeViews;
+        bool preloadImages;
         int width;
         int height;
+        int randomSeed;
         double vfov;
         double minElevation;
         double maxElevation;
@@ -278,12 +265,9 @@ namespace mattersim {
         GLuint glShaderF;
         std::string datasetPath;
         std::string navGraphPath;
-        std::map<std::string, std::vector<LocationPtr> > scanLocations;
-        std::default_random_engine generator;
-        Timer cpuLoadTimer; // Loading textures from disk into ram
-        Timer gpuLoadTimer; // Loading textures from ram into gpu mem
-        Timer renderTimer; // Loading textures from ram into gpu mem
-        Timer gpuReadTimer; // Reading rendered images from gpu mem to ram
+        Timer loadTimer; // Loading textures from disk or cpu memory onto gpu
+        Timer renderTimer; // Rendering time
+        Timer gpuReadTimer; // Reading rendered images from gpu back to cpu memory
         Timer processTimer; // Total run time for simulator
         Timer wallTimer; // Wall clock timer
         unsigned int frames;

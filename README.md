@@ -103,10 +103,15 @@ mkdir build && cd build
 cmake -DEGL_RENDERING=ON ..
 make
 cd ../
-./build/tests
+./build/tests ~Timing
 ```
 
-Assuming all tests pass, some information about the rendering frame rate will be printed to stdout and `sim_imgs` will now contain some test images rendered by the simulator. 
+Assuming all tests pass, `sim_imgs` will now contain some test images rendered by the simulator. You may also wish to test the rendering frame rate. The following command will try to load all the Matterport environments into memory (requiring XX GB), and then some information about the rendering frame rate (at 640x480 resolution) will be printed to stdout:
+```
+./build/tests Timing
+```
+
+The timing test must be run individually from the other tests to get accurate results. Refer to the [Catch](https://github.com/philsquared/Catch) documentation for unit test configuration options.
 
 
 ### Rendering Options (GPU, CPU, off-screen)

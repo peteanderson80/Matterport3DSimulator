@@ -47,6 +47,7 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setCameraResolution", &Simulator::setCameraResolution)
         .def("setCameraVFOV", &Simulator::setCameraVFOV)
         .def("setRenderingEnabled", &Simulator::setRenderingEnabled)
+        .def("setPreloadEnabled", &Simulator::setPreloadEnabled)
         .def("setDiscretizedViewingAngles", &Simulator::setDiscretizedViewingAngles)
         .def("initialize", &Simulator::initialize)
         .def("setSeed", &Simulator::setSeed)

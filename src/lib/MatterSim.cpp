@@ -1,8 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <opencv2/opencv.hpp>
 
-#include <json/json.h>
 #include "MatterSim.hpp"
 #include "Benchmark.hpp"
 
@@ -37,31 +35,7 @@ char* loadFile(const char *filename) {
     return data;
 }
 
-void setupCubeMap(GLuint& texture) {
-    glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_TEXTURE_CUBE_MAP);
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-}
 
-void setupCubeMap(GLuint& texture, cv::Mat &xpos, cv::Mat &xneg, cv::Mat &ypos, cv::Mat &yneg, cv::Mat &zpos, cv::Mat &zneg) {
-    setupCubeMap(texture);
-    //use fast 4-byte alignment (default anyway) if possible
-    glPixelStorei(GL_UNPACK_ALIGNMENT, (xneg.step & 3) ? 1 : 4);
-    //set length of one complete row in data (doesn't need to equal image.cols)
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, xneg.step/xneg.elemSize());
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, xpos.rows, xpos.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, xpos.ptr());
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, xneg.rows, xneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, xneg.ptr());
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, ypos.rows, ypos.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, ypos.ptr());
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, yneg.rows, yneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, yneg.ptr());
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, zpos.rows, zpos.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zpos.ptr());
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, zneg.rows, zneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zneg.ptr());
-}
 
 Simulator::Simulator() :state{new SimState()},
                         width(320),
@@ -71,14 +45,14 @@ Simulator::Simulator() :state{new SimState()},
                         maxElevation(0.94),
                         frames(0),
                         navGraphPath("./connectivity"),
-                        datasetPath("./data"),
+                        datasetPath("./data/v1/scans/"),
 #ifdef OSMESA_RENDERING
                         buffer(NULL),
 #endif
                         initialized(false),
                         renderingEnabled(true),
-                        discretizeViews(false) {
-    generator.seed(time(NULL));
+                        discretizeViews(false),
+                        preloadImages(false) {
 };
 
 Simulator::~Simulator() {
@@ -107,12 +81,28 @@ void Simulator::setDiscretizedViewingAngles(bool value) {
     }
 }
 
+void Simulator::setPreloadEnabled(bool value) {
+     if (!initialized) {
+        preloadImages = value;
+    } 
+}
+
 void Simulator::setDatasetPath(const std::string& path) {
-    datasetPath = path;
+    if (!initialized) {
+        datasetPath = path;
+    }
 }
 
 void Simulator::setNavGraphPath(const std::string& path) {
-    navGraphPath = path;
+    if (!initialized) {
+        navGraphPath = path;
+    }
+}
+
+void Simulator::setSeed(int seed) {
+    if (!initialized) {
+        randomSeed = seed;
+    }
 }
 
 void Simulator::initialize() {
@@ -275,6 +265,11 @@ void Simulator::initialize() {
         glGenBuffers(1, &ibo_cube_indices);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_indices);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
+
+        if (preloadImages) {
+              // trigger loading from disk now, to get predictable timing later
+              auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
+        }
     } else {
         // no rendering, e.g. for unit testing
         state->rgb.setTo(cv::Scalar(0, 0, 0));
@@ -282,111 +277,35 @@ void Simulator::initialize() {
     initialized = true;
 }
 
-void Simulator::clearLocationGraph() {
-    if (renderingEnabled) {
-        for (auto loc : scanLocations[state->scanId]) {
-           glDeleteTextures(1, &loc->cubemap_texture);
-        }
-    }
-}
-
-void Simulator::loadLocationGraph() {
-    if (scanLocations.count(state->scanId) != 0) {
-        return;
-    }
-
-    Json::Value root;
-    auto navGraphFile =  navGraphPath + "/" + state->scanId + "_connectivity.json";
-    std::ifstream ifs(navGraphFile, std::ifstream::in);
-    if (ifs.fail()){
-        throw std::invalid_argument( "MatterSim: Could not open navigation graph file: " +
-                navGraphFile + ", is scan id valid?" );
-    }
-    ifs >> root;
-    for (auto viewpoint : root) {
-        float posearr[16];
-        int i = 0;
-        for (auto f : viewpoint["pose"]) {
-            posearr[i++] = f.asFloat();
-        }
-        // glm uses column-major order. Inputs are in row-major order.
-        glm::mat4 mattPose = glm::transpose(glm::make_mat4(posearr));
-        // glm access is col,row
-        glm::vec3 pos{mattPose[3][0], mattPose[3][1], mattPose[3][2]};
-        mattPose[3] = {0,0,0,1}; // remove translation component
-        // Matterport camera looks down z axis. Opengl camera looks down -z axis. Rotate around x by 180 deg.
-        glm::mat4 openglPose = glm::rotate(mattPose, (float)M_PI, glm::vec3(1.0f, 0.0f, 0.0f));
-        std::vector<bool> unobstructed;
-        for (auto u : viewpoint["unobstructed"]) {
-            unobstructed.push_back(u.asBool());
-        }
-        auto viewpointId = viewpoint["image_id"].asString();
-        GLuint cubemap_texture = 0;
-        Location l{viewpoint["included"].asBool(), viewpointId, openglPose, pos, unobstructed, cubemap_texture};
-        scanLocations[state->scanId].push_back(std::make_shared<Location>(l));
-    }
-}
-
 void Simulator::populateNavigable() {
     std::vector<ViewpointPtr> updatedNavigable;
     updatedNavigable.push_back(state->location);
     unsigned int idx = state->location->ix;
-    unsigned int i = 0;
     double adjustedheading = M_PI/2.0 - state->heading;
     glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
     double cos_half_hfov = cos(vfov * width / height / 2.0);
-    for (unsigned int i = 0; i < scanLocations[state->scanId].size(); ++i) {
-        if (i == idx) {
-            // Current location is pushed first
-            continue;
-        }
-        if (scanLocations[state->scanId][idx]->unobstructed[i] && scanLocations[state->scanId][i]->included) {
-            // Check if visible between camera left and camera right
-            glm::vec3 target_dir = scanLocations[state->scanId][i]->pos - scanLocations[state->scanId][idx]->pos;
-            double rel_distance = glm::length(target_dir);
-            double tar_z = target_dir.z;
-            target_dir.z = 0.f; // project to xy plane
-            double rel_elevation = atan2(tar_z, glm::length(target_dir)) - state->elevation;
-            glm::vec3 normed_target_dir = glm::normalize(target_dir);
-            double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
-            if (cos_angle >= cos_half_hfov) {
-                glm::vec3 pos(scanLocations[state->scanId][i]->pos);
-                double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x,
-                        target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
-                Viewpoint v{scanLocations[state->scanId][i]->viewpointId, i, pos[0], pos[1], pos[2],
-                      rel_heading, rel_elevation, rel_distance};
-                updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
-            }
+    
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
+    for (unsigned int i : navGraph.adjacentViewpointIndices(state->scanId, idx)) {
+        // Check if visible between camera left and camera right
+        glm::vec3 target_dir = navGraph.cameraPosition(state->scanId,i) - navGraph.cameraPosition(state->scanId,idx);
+        double rel_distance = glm::length(target_dir);
+        double tar_z = target_dir.z;
+        target_dir.z = 0.f; // project to xy plane
+        double rel_elevation = atan2(tar_z, glm::length(target_dir)) - state->elevation;
+        glm::vec3 normed_target_dir = glm::normalize(target_dir);
+        double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
+        if (cos_angle >= cos_half_hfov) {
+            glm::vec3 pos = navGraph.cameraPosition(state->scanId,i);
+            double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x,
+                    target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
+            Viewpoint v{navGraph.viewpoint(state->scanId,i), i, pos[0], pos[1], pos[2],
+                  rel_heading, rel_elevation, rel_distance};
+            updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
         }
     }
     std::sort(updatedNavigable.begin(), updatedNavigable.end(), ViewpointPtrComp());
     state->navigableLocations = updatedNavigable;
-}
-
-void Simulator::loadTexture(int locationId) {
-    if (glIsTexture(scanLocations[state->scanId][locationId]->cubemap_texture)){
-        // Check if it's already loaded
-        return;
-    }
-    cpuLoadTimer.Start();
-    auto datafolder = datasetPath + "/v1/scans/" + state->scanId + "/matterport_skybox_images/";
-    auto viewpointId = scanLocations[state->scanId][locationId]->viewpointId;
-    auto xpos = cv::imread(datafolder + viewpointId + "_skybox2_sami.jpg");
-    auto xneg = cv::imread(datafolder + viewpointId + "_skybox4_sami.jpg");
-    auto ypos = cv::imread(datafolder + viewpointId + "_skybox0_sami.jpg");
-    auto yneg = cv::imread(datafolder + viewpointId + "_skybox5_sami.jpg");
-    auto zpos = cv::imread(datafolder + viewpointId + "_skybox1_sami.jpg");
-    auto zneg = cv::imread(datafolder + viewpointId + "_skybox3_sami.jpg");
-    if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
-        throw std::invalid_argument( "MatterSim: Could not open skybox files at: " + datafolder + viewpointId + "_skybox*_sami.jpg");
-    }
-    cpuLoadTimer.Stop();
-    gpuLoadTimer.Start();
-    setupCubeMap(scanLocations[state->scanId][locationId]->cubemap_texture, xpos, xneg, ypos, yneg, zpos, zneg);
-    gpuLoadTimer.Stop();
-    if (!glIsTexture(scanLocations[state->scanId][locationId]->cubemap_texture)){
-        throw std::runtime_error( "MatterSim: loadTexture failed" );
-    }
 }
 
 void Simulator::setHeadingElevation(double heading, double elevation) {
@@ -439,50 +358,21 @@ void Simulator::newEpisode(const std::string& scanId,
         initialize();
     }
     state->step = 0;
+    state->scanId = scanId;
     setHeadingElevation(heading, elevation);
-    if (state->scanId != scanId) {
-        // Moving to a new building...
-        clearLocationGraph();
-        state->scanId = scanId;
-        loadLocationGraph();
-    }
-    int ix = -1;
-    if (viewpointId.empty()) {
-        // Generate a random starting viewpoint
-        std::uniform_int_distribution<int> distribution(0,scanLocations[state->scanId].size()-1);
-        int start_ix = distribution(generator);  // generates random starting index
-        ix = start_ix;
-        while (!scanLocations[state->scanId][ix]->included) { // Don't start at an excluded viewpoint
-            ix++;
-            if (ix >= scanLocations[state->scanId].size()) ix = 0;
-            if (ix == start_ix) {
-                throw std::logic_error( "MatterSim: ScanId: " + scanId + " has no included viewpoints!");
-            }
-        }
-    } else {
-        // Find index of selected viewpoint
-        for (int i = 0; i < scanLocations[state->scanId].size(); ++i) {
-            if (scanLocations[state->scanId][i]->viewpointId == viewpointId) {
-                if (!scanLocations[state->scanId][i]->included) {
-                    throw std::invalid_argument( "MatterSim: ViewpointId: " +
-                            viewpointId + ", is excluded from the connectivity graph." );
-                }
-                ix = i;
-                break;
-            }
-        }
-        if (ix < 0) {
-            throw std::invalid_argument( "MatterSim: Could not find viewpointId: " +
-                    viewpointId + ", is viewpoint id valid?" );
-        }
-    }
-    glm::vec3 pos(scanLocations[state->scanId][ix]->pos);
-    Viewpoint v{scanLocations[state->scanId][ix]->viewpointId, (unsigned int)ix,
-          pos[0], pos[1], pos[2], 0.0, 0.0, 0.0};
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
+    const std::string vid = viewpointId.empty() ? navGraph.randomViewpoint(scanId) : viewpointId;
+    unsigned int ix = navGraph.index(state->scanId, vid);
+    glm::vec3 pos = navGraph.cameraPosition(scanId, ix);
+    Viewpoint v {
+        vid, 
+        ix,
+        pos[0], pos[1], pos[2], 
+        0.0, 0.0, 0.0
+    };
     state->location = std::make_shared<Viewpoint>(v);
     populateNavigable();
     if (renderingEnabled) {
-        loadTexture(state->location->ix);
         renderScene();
     }
     processTimer.Stop();
@@ -494,10 +384,14 @@ SimStatePtr Simulator::getState() {
 
 void Simulator::renderScene() {
     frames += 1;
+    loadTimer.Start();
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
+    GLuint texId = navGraph.cubemapTexture(state->scanId,state->location->ix);
+    loadTimer.Stop();
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Scale and move the cubemap model into position
-    Model = scanLocations[state->scanId][state->location->ix]->rot * Scale;
+    Model = navGraph.cameraRotation(state->scanId,state->location->ix) * Scale;
     // Opengl camera looking down -z axis. Rotate around x by 90deg (now looking down +y). Keep rotating for - elevation.
     RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f - (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
     // Rotate camera for heading, positive heading will turn right.
@@ -509,7 +403,7 @@ void Simulator::renderScene() {
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 #endif
     glViewport(0, 0, width, height);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, scanLocations[state->scanId][state->location->ix]->cubemap_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
     renderTimer.Stop();
     gpuReadTimer.Start();
@@ -547,10 +441,6 @@ void Simulator::makeAction(int index, double heading, double elevation) {
     setHeadingElevation(state->heading + heading, state->elevation + elevation);
     populateNavigable();
     if (renderingEnabled) {
-        // loading cubemap
-        if (!glIsTexture(scanLocations[state->scanId][state->location->ix]->cubemap_texture)) {
-            loadTexture(state->location->ix);
-        }
         renderScene();
     }
     processTimer.Stop();
@@ -559,8 +449,6 @@ void Simulator::makeAction(int index, double heading, double elevation) {
 void Simulator::close() {
     if (initialized) {
         if (renderingEnabled) {
-            // delete textures
-            clearLocationGraph();
             // release vertex and index buffer object
             glDeleteBuffers(1, &ibo_cube_indices);
             glDeleteBuffers(1, &vbo_cube_vertices);
@@ -585,8 +473,7 @@ void Simulator::close() {
 }
 
 void Simulator::resetTimers() {
-    cpuLoadTimer.Reset();
-    gpuLoadTimer.Reset();
+    loadTimer.Reset();
     renderTimer.Reset();
     gpuReadTimer.Reset();
     processTimer.Reset();
@@ -598,15 +485,13 @@ std::string Simulator::timingInfo() {
     float f = static_cast<float>(frames);
     float wt = wallTimer.MilliSeconds();
     float pt = processTimer.MilliSeconds();
-    float ct = cpuLoadTimer.MilliSeconds();
-    float gt = gpuLoadTimer.MilliSeconds();
+    float lt = loadTimer.MilliSeconds();
     float rt = renderTimer.MilliSeconds();
     float it = gpuReadTimer.MilliSeconds();
     oss << "Rendered " << f << " frames" << std::endl;
     oss << "Wall time: " << wt << " ms, (" << f/wt*1000 << " fps)" << std::endl;
     oss << "Process time: " << pt << " ms, (" << f/pt*1000 << " fps)" << std::endl;
-    oss << "\tTexture loading - cpu: " << ct << " ms" << std::endl;
-    oss << "\tTexture loading - gpu: " << gt << " ms" << std::endl;
+    oss << "\tTexture loading: " << lt << " ms" << std::endl;
     oss << "\tRendering: " << rt << " ms" << std::endl;
     oss << "\tReading rendered image: " << it << " ms" << std::endl;
     return oss.str();
