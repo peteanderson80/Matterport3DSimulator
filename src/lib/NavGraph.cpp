@@ -96,9 +96,9 @@ void NavGraph::Location::loadCubemapTextures() {
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         //use fast 4-byte alignment (default anyway) if possible
-        glPixelStorei(GL_UNPACK_ALIGNMENT, (xneg.step & 3) ? 1 : 4);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, (xnegD.step & 3) ? 1 : 4);
         //set length of one complete row in data (doesn't need to equal image.cols)
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, xneg.step/xneg.elemSize());
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, xnegD.step/xnegD.elemSize());
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RED, xposD.rows, xposD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, xposD.ptr());
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RED, xnegD.rows, xnegD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, xnegD.ptr());
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RED, yposD.rows, yposD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, yposD.ptr());
