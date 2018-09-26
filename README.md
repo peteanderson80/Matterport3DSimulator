@@ -133,7 +133,7 @@ nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=b
 cd /root/mount/Matterport3DSimulator
 ```
 
-Be sure to build the simulator using the cmake option for on-screen rendering (`cmake ..`). Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. Use the arrow keys to pan and tilt the camera. In the python demo, the top row number keys can be used to move to another viewpoint (if any are visible).
+Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. Use the arrow keys to pan and tilt the camera. In the python demo, the top row number keys can be used to move to another viewpoint (if any are visible).
 
 Python demo:
 ```

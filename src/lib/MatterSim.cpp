@@ -385,8 +385,8 @@ SimStatePtr Simulator::getState() {
 void Simulator::renderScene() {
     frames += 1;
     loadTimer.Start();
-    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
-    GLuint texId = navGraph.cubemapTexture(state->scanId,state->location->ix);
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
+    texId = navGraph.cubemapTexture(state->scanId,state->location->ix);
     loadTimer.Stop();
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -398,10 +398,6 @@ void Simulator::renderScene() {
     View = glm::rotate(RotateX, (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 M = Projection * View * Model;
     glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
-#ifndef OSMESA_RENDERING
-    // Render to our framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-#endif
     glViewport(0, 0, width, height);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
@@ -413,6 +409,7 @@ void Simulator::renderScene() {
     //set length of one complete row in destination data (doesn't need to equal img.cols)
     glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
     glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
+    assertOpenGLError("renderScene");
     cv::flip(img, img, 0);
     this->state->rgb = img;
     gpuReadTimer.Stop();
