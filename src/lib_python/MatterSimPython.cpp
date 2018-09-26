@@ -15,18 +15,23 @@ PYBIND11_MODULE(MatterSim, m) {
         .def_readonly("rel_heading", &Viewpoint::rel_heading)
         .def_readonly("rel_elevation", &Viewpoint::rel_elevation)
         .def_readonly("rel_distance", &Viewpoint::rel_distance);
-    py::class_<cv::Mat>(m, "Image", pybind11::buffer_protocol())
+    py::class_<cv::Mat>(m, "Mat", pybind11::buffer_protocol())
         .def_buffer([](cv::Mat& im) -> pybind11::buffer_info {
+            ssize_t item_size = im.elemSize() / im.channels();
+            std::string format = pybind11::format_descriptor<unsigned char>::format();
+            if (item_size == 2) { // handle depth maps
+                format = pybind11::format_descriptor<unsigned short>::format();
+            }
             return pybind11::buffer_info(
                 im.data, // Pointer to buffer
-                sizeof(unsigned char), // Size of one scalar
-                pybind11::format_descriptor<unsigned char>::format(),
-                3, // Number of dimensions
+                item_size, // Size of one scalar
+                format,
+                im.channels(), // Number of dimensions
                 { im.rows, im.cols, im.channels() }, // Buffer dimensions
                 {   // Strides (in bytes) for each index
-                    sizeof(unsigned char) * im.channels() * im.cols,
-                    sizeof(unsigned char) * im.channels(),
-                    sizeof(unsigned char)
+                    item_size * im.channels() * im.cols,
+                    item_size * im.channels(),
+                    item_size
                 }
             );
         });
@@ -47,13 +52,14 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setCameraResolution", &Simulator::setCameraResolution)
         .def("setCameraVFOV", &Simulator::setCameraVFOV)
         .def("setRenderingEnabled", &Simulator::setRenderingEnabled)
-        .def("setPreloadEnabled", &Simulator::setPreloadEnabled)
+        .def("setPreloadingEnabled", &Simulator::setPreloadingEnabled)
+        .def("setDepthEnabled", &Simulator::setDepthEnabled)
         .def("setDiscretizedViewingAngles", &Simulator::setDiscretizedViewingAngles)
         .def("initialize", &Simulator::initialize)
         .def("setSeed", &Simulator::setSeed)
         .def("setElevationLimits", &Simulator::setElevationLimits)
         .def("newEpisode", &Simulator::newEpisode)
-        .def("getState", &Simulator::getState, py::return_value_policy::reference)
+        .def("getState", &Simulator::getState, py::return_value_policy::take_ownership)
         .def("makeAction", &Simulator::makeAction)
         .def("close", &Simulator::close)
         .def("resetTimers", &Simulator::resetTimers)

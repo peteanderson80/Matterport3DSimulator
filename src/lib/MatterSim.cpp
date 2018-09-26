@@ -13,7 +13,7 @@ GLushort cube_indices[] = {
     7, 6, 5, 4,
     4, 5, 1, 0,
     0, 3, 7, 4,
-    1, 2, 6, 5,
+    5, 6, 2, 1,
 };
 
 char* loadFile(const char *filename) {
@@ -52,7 +52,8 @@ Simulator::Simulator() :state{new SimState()},
                         initialized(false),
                         renderingEnabled(true),
                         discretizeViews(false),
-                        preloadImages(false) {
+                        preloadImages(false),
+                        renderDepth(false) {
 };
 
 Simulator::~Simulator() {
@@ -81,9 +82,15 @@ void Simulator::setDiscretizedViewingAngles(bool value) {
     }
 }
 
-void Simulator::setPreloadEnabled(bool value) {
+void Simulator::setPreloadingEnabled(bool value) {
      if (!initialized) {
         preloadImages = value;
+    } 
+}
+
+void Simulator::setDepthEnabled(bool value) {
+     if (!initialized) {
+        renderDepth = value;
     } 
 }
 
@@ -106,7 +113,8 @@ void Simulator::setSeed(int seed) {
 }
 
 void Simulator::initialize() {
-    state->rgb.create(height, width, CV_8UC3);
+    state->rgb = cv::Mat(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
+    state->depth = cv::Mat(height, width, CV_16UC1, cv::Scalar(0));
     if (renderingEnabled) {
 #ifdef OSMESA_RENDERING
         ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
@@ -238,7 +246,7 @@ void Simulator::initialize() {
         glGetShaderInfoLog(glShaderF, 2048, &flength, flog);
 
         // grab the pvm matrix and vertex location from our shader program
-        PVM    = glGetUniformLocation(glProgram, "PVM");
+        PVMM   = glGetUniformLocation(glProgram, "PVMM");
         vertex = glGetAttribLocation(glProgram, "vertex");
 
         // these won't change
@@ -249,12 +257,12 @@ void Simulator::initialize() {
         GLfloat cube_vertices[] = {
           -1.0,  1.0,  1.0,
           -1.0, -1.0,  1.0,
-            1.0, -1.0,  1.0,
-            1.0,  1.0,  1.0,
+           1.0, -1.0,  1.0,
+           1.0,  1.0,  1.0,
           -1.0,  1.0, -1.0,
           -1.0, -1.0, -1.0,
-            1.0, -1.0, -1.0,
-            1.0,  1.0, -1.0,
+           1.0, -1.0, -1.0,
+           1.0,  1.0, -1.0,
         };
         glGenBuffers(1, &vbo_cube_vertices);
         glBindBuffer(GL_ARRAY_BUFFER, vbo_cube_vertices);
@@ -267,12 +275,9 @@ void Simulator::initialize() {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
 
         if (preloadImages) {
-              // trigger loading from disk now, to get predictable timing later
-              auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
+            // trigger loading from disk now, to get predictable timing later
+            auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
         }
-    } else {
-        // no rendering, e.g. for unit testing
-        state->rgb.setTo(cv::Scalar(0, 0, 0));
     }
     initialized = true;
 }
@@ -285,7 +290,7 @@ void Simulator::populateNavigable() {
     glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
     double cos_half_hfov = cos(vfov * width / height / 2.0);
     
-    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
     for (unsigned int i : navGraph.adjacentViewpointIndices(state->scanId, idx)) {
         // Check if visible between camera left and camera right
         glm::vec3 target_dir = navGraph.cameraPosition(state->scanId,i) - navGraph.cameraPosition(state->scanId,idx);
@@ -360,7 +365,7 @@ void Simulator::newEpisode(const std::string& scanId,
     state->step = 0;
     state->scanId = scanId;
     setHeadingElevation(heading, elevation);
-    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, randomSeed);
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
     const std::string vid = viewpointId.empty() ? navGraph.randomViewpoint(scanId) : viewpointId;
     unsigned int ix = navGraph.index(state->scanId, vid);
     glm::vec3 pos = navGraph.cameraPosition(scanId, ix);
@@ -386,32 +391,30 @@ void Simulator::renderScene() {
     frames += 1;
     loadTimer.Start();
     auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
-    texId = navGraph.cubemapTexture(state->scanId,state->location->ix);
+    std::pair<GLuint, GLuint> texIds = navGraph.cubemapTextures(state->scanId,state->location->ix);
     loadTimer.Stop();
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Scale and move the cubemap model into position
     Model = navGraph.cameraRotation(state->scanId,state->location->ix) * Scale;
-    // Opengl camera looking down -z axis. Rotate around x by 90deg (now looking down +y). Keep rotating for - elevation.
-    RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f - (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
-    // Rotate camera for heading, positive heading will turn right.
-    View = glm::rotate(RotateX, (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
+    // Opengl camera looking down -z axis. Rotate around x by -90deg (now looking down +y). Add positive elevation to look up.
+    RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f + (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
+    // Rotate camera around z for heading, positive heading will turn right.
+    View = glm::rotate(RotateX, (float)M_PI + (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 M = Projection * View * Model;
-    glUniformMatrix4fv(PVM, 1, GL_FALSE, glm::value_ptr(M));
+    glUniformMatrix4fv(PVMM, 1, GL_FALSE, glm::value_ptr(M));
     glViewport(0, 0, width, height);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.first);
     glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
     renderTimer.Stop();
     gpuReadTimer.Start();
-    cv::Mat img(height, width, CV_8UC3);
+    cv::Mat img = this->state->rgb;
     //use fast 4-byte alignment (default anyway) if possible
     glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
     //set length of one complete row in destination data (doesn't need to equal img.cols)
     glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
     glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
     assertOpenGLError("renderScene");
-    cv::flip(img, img, 0);
-    this->state->rgb = img;
     gpuReadTimer.Stop();
 }
 

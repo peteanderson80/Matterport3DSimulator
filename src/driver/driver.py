@@ -17,6 +17,7 @@ cv2.namedWindow('displaywin')
 sim = MatterSim.Simulator()
 sim.setCameraResolution(WIDTH, HEIGHT)
 sim.setCameraVFOV(VFOV)
+#sim.setDepthEnabled(True)
 sim.initialize()
 sim.newEpisode('2t7WUuJeko7', '1e6b606b44df4a6086c0f97e826d4d15', 0, 0)
 

@@ -127,7 +127,12 @@ namespace mattersim {
          * Enable or disable preloading of images from disk to CPU memory. Default is false (disabled).
          * Enabled is better for training models, but will cause a delay when starting the simulator.
          */
-        void setPreloadEnabled(bool value);
+        void setPreloadingEnabled(bool value);
+
+        /**
+         * Enable or disable rendering of depth images. Default is false (disabled).
+         */
+        void setDepthEnabled(bool value);
 
         /**
          * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>.
@@ -244,6 +249,7 @@ namespace mattersim {
         bool renderingEnabled;
         bool discretizeViews;
         bool preloadImages;
+        bool renderDepth;
         int width;
         int height;
         int randomSeed;
@@ -256,7 +262,7 @@ namespace mattersim {
         glm::mat4 Scale;
         glm::mat4 RotateX;
         glm::mat4 RotateZ;
-        GLint PVM;
+        GLint PVMM;
         GLint vertex;
         GLuint ibo_cube_indices;
         GLuint vbo_cube_vertices;

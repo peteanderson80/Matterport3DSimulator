@@ -9,7 +9,8 @@ namespace mattersim {
 
 
 NavGraph::Location::Location(const Json::Value& viewpoint, const std::string& skyboxDir, 
-        bool preload): skyboxDir(skyboxDir), im_loaded(false), cubemap_texture(0) {
+        bool preload, bool depth): skyboxDir(skyboxDir), im_loaded(false), 
+                                   includeDepth(depth), cubemap_texture(0), depth_texture(0) {
 
     viewpointId = viewpoint["image_id"].asString();
     included = viewpoint["included"].asBool();
@@ -20,12 +21,10 @@ NavGraph::Location::Location(const Json::Value& viewpoint, const std::string& sk
         posearr[i++] = f.asFloat();
     }
     // glm uses column-major order. Inputs are in row-major order.
-    glm::mat4 mattPose = glm::transpose(glm::make_mat4(posearr));
+    rot = glm::transpose(glm::make_mat4(posearr));
     // glm access is col,row
-    pos = glm::vec3{mattPose[3][0], mattPose[3][1], mattPose[3][2]};
-    mattPose[3] = {0,0,0,1}; // remove translation component
-    // Matterport camera looks down z axis. Opengl camera looks down -z axis. Rotate around x by 180 deg.
-    rot = glm::rotate(mattPose, (float)M_PI, glm::vec3(1.0f, 0.0f, 0.0f));
+    pos = glm::vec3{rot[3][0], rot[3][1], rot[3][2]};
+    rot[3] = {0,0,0,1}; // remove translation component
     
     for (auto u : viewpoint["unobstructed"]) {
         unobstructed.push_back(u.asBool());
@@ -46,13 +45,26 @@ void NavGraph::Location::loadCubemapImages() {
     zpos = cv::imread(skyboxDir + viewpointId + "_skybox1_sami.jpg");
     zneg = cv::imread(skyboxDir + viewpointId + "_skybox3_sami.jpg");
     if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
-        throw std::invalid_argument( "MatterSim: Could not open skybox files at: " + skyboxDir + viewpointId + "_skybox*_sami.jpg");
+        throw std::invalid_argument( "MatterSim: Could not open skybox RGB files at: " + skyboxDir + viewpointId + "_skybox*_sami.jpg");
+    }
+    if (includeDepth) {
+        // 16 bit grayscale images
+        xposD = cv::imread(skyboxDir + viewpointId + "_skybox2_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
+        xnegD = cv::imread(skyboxDir + viewpointId + "_skybox4_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
+        yposD = cv::imread(skyboxDir + viewpointId + "_skybox0_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
+        ynegD = cv::imread(skyboxDir + viewpointId + "_skybox5_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
+        zposD = cv::imread(skyboxDir + viewpointId + "_skybox1_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
+        znegD = cv::imread(skyboxDir + viewpointId + "_skybox3_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
+        if (xposD.empty() || xnegD.empty() || yposD.empty() || ynegD.empty() || zposD.empty() || znegD.empty()) {
+            throw std::invalid_argument( "MatterSim: Could not open skybox depth files at: " + skyboxDir + viewpointId + "_skybox*_depth.jpg");
+        }
     }
     im_loaded = true;
 }
 
 
-void NavGraph::Location::loadCubemapTexture() {
+void NavGraph::Location::loadCubemapTextures() {
+    // RGB texture
     glActiveTexture(GL_TEXTURE0);
     glEnable(GL_TEXTURE_CUBE_MAP);
     glGenTextures(1, &cubemap_texture);
@@ -72,28 +84,52 @@ void NavGraph::Location::loadCubemapTexture() {
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, yneg.rows, yneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, yneg.ptr());
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, zpos.rows, zpos.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zpos.ptr());
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, zneg.rows, zneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zneg.ptr());
+    if (includeDepth) {
+        // Depth Texture
+        glActiveTexture(GL_TEXTURE1);
+        glEnable(GL_TEXTURE_CUBE_MAP);
+        glGenTextures(1, &depth_texture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, depth_texture);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        //use fast 4-byte alignment (default anyway) if possible
+        glPixelStorei(GL_UNPACK_ALIGNMENT, (xneg.step & 3) ? 1 : 4);
+        //set length of one complete row in data (doesn't need to equal image.cols)
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, xneg.step/xneg.elemSize());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RED, xposD.rows, xposD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, xposD.ptr());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RED, xnegD.rows, xnegD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, xnegD.ptr());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RED, yposD.rows, yposD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, yposD.ptr());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RED, ynegD.rows, ynegD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, ynegD.ptr());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RED, zposD.rows, zposD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, zposD.ptr());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RED, znegD.rows, znegD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, znegD.ptr());
+    }
 }
 
 
-void NavGraph::Location::deleteCubemapTexture() {
-    glDeleteTextures(1, &cubemap_texture); // no need to check existence, silently ignores errors
+void NavGraph::Location::deleteCubemapTextures() {
+    // no need to check existence, silently ignores errors
+    glDeleteTextures(1, &cubemap_texture);
+    glDeleteTextures(1, &depth_texture);
 }
 
 
-GLuint NavGraph::Location::cubemapTexture() {
+std::pair<GLuint, GLuint> NavGraph::Location::cubemapTextures() {
     if (glIsTexture(cubemap_texture)){
-        return cubemap_texture; 
+        return {cubemap_texture, depth_texture}; 
     }
     if (!im_loaded) {
         loadCubemapImages();
     }
-    loadCubemapTexture();
-    return cubemap_texture;
+    loadCubemapTextures();
+    return {cubemap_texture, depth_texture};
 }
 
 
 NavGraph::NavGraph(const std::string& navGraphPath, const std::string& datasetPath, 
-                    bool preloadImages, int randomSeed) {
+                    bool preloadImages, bool renderDepth, int randomSeed) {
 
     generator.seed(randomSeed);
 
@@ -117,7 +153,7 @@ NavGraph::NavGraph(const std::string& navGraphPath, const std::string& datasetPa
         ifs >> root;
         auto skyboxDir = datasetPath + "/" + scanId + "/matterport_skybox_images/";
         for (auto viewpoint : root) {
-            Location l(viewpoint, skyboxDir, preloadImages);
+            Location l(viewpoint, skyboxDir, preloadImages, renderDepth);
             scanLocations[scanId].push_back(std::make_shared<Location>(l));
         }
     }
@@ -128,16 +164,16 @@ NavGraph::~NavGraph() {
     // free all remaining textures
     for (auto scan : scanLocations) {
         for (auto loc : scan.second) {
-            loc->deleteCubemapTexture();
+            loc->deleteCubemapTextures();
         }
     }
 }
 
 
 NavGraph& NavGraph::getInstance(const std::string& navGraphPath, const std::string& datasetPath, 
-                bool preloadImages, int randomSeed){
+                bool preloadImages, bool renderDepth, int randomSeed){
     // magic static
-    static NavGraph instance(navGraphPath, datasetPath, preloadImages, randomSeed);
+    static NavGraph instance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
     return instance;
 }
 
@@ -207,13 +243,13 @@ std::vector<unsigned int> NavGraph::adjacentViewpointIndices(const std::string& 
 }
 
 
-GLuint NavGraph::cubemapTexture(const std::string& scanId, unsigned int ix) {
-    return scanLocations.at(scanId).at(ix)->cubemapTexture();
+std::pair<GLuint, GLuint> NavGraph::cubemapTextures(const std::string& scanId, unsigned int ix) {
+    return scanLocations.at(scanId).at(ix)->cubemapTextures();
 }
 
 
-void NavGraph::deleteCubemapTexture(const std::string& scanId, unsigned int ix) {
-    scanLocations.at(scanId).at(ix)->deleteCubemapTexture();
+void NavGraph::deleteCubemapTextures(const std::string& scanId, unsigned int ix) {
+    scanLocations.at(scanId).at(ix)->deleteCubemapTextures();
 }
 
 

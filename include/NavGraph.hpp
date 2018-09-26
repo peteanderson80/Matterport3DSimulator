@@ -40,7 +40,7 @@ namespace mattersim {
     private:
 
         NavGraph(const std::string& navGraphPath, const std::string& datasetPath, 
-                bool preloadImages, int randomSeed);
+                bool preloadImages, bool renderDepth, int randomSeed);
 
         ~NavGraph();
 
@@ -58,10 +58,11 @@ namespace mattersim {
          * @param navGraphPath - directory containing json viewpoint connectivity graphs
          * @param datasetPath - directory containing a data directory for each Matterport scan id
          * @param preloadImages - if true, all cubemap images will be loaded into CPU memory immediately
+         * @param renderDepth - if true, depth map images are also required
          * @param randomSeed - only used for randomViewpoint function
          */
         static NavGraph& getInstance(const std::string& navGraphPath, const std::string& datasetPath, 
-                bool preloadImages, int randomSeed);
+                bool preloadImages, bool renderDepth, int randomSeed);
   
         /**
          * Select a random viewpoint from a scan
@@ -94,14 +95,14 @@ namespace mattersim {
         std::vector<unsigned int> adjacentViewpointIndices(const std::string& scanId, unsigned int ix) const;
 
         /**
-         * Get cubemap RGB texture for a selected viewpoint index
+         * Get cubemap RGB (and optionally, depth) textures for a selected viewpoint index
          */
-        GLuint cubemapTexture(const std::string& scanId, unsigned int ix);
+        std::pair<GLuint, GLuint> cubemapTextures(const std::string& scanId, unsigned int ix);
 
         /**
-         * Free GPU memory associated with this viewpoint texture
+         * Free GPU memory associated with this viewpoint's textures
          */
-        void deleteCubemapTexture(const std::string& scanId, unsigned int ix);
+        void deleteCubemapTextures(const std::string& scanId, unsigned int ix);
 
 
     protected:
@@ -117,21 +118,22 @@ namespace mattersim {
              * @param viewpoint - json struct
              * @param skyboxDir - directory containing a data directory for each Matterport scan id
              * @param preload - if true, all cubemap images will be loaded into CPU memory immediately
+             * @param depth - if true, depth textures will also be provided
              */
-            Location(const Json::Value& viewpoint, const std::string& skyboxDir, bool preload);
+            Location(const Json::Value& viewpoint, const std::string& skyboxDir, bool preload, bool depth);
 
             Location() = delete; // no default constructor
 
             /**
-             * Return this cubemap texture, which will be loaded from CPU memory or disk
-             * if necessary
+             * Return the cubemap RGB (and optionally, depth) textures for this viewpoint, which will 
+             * be loaded from CPU memory or disk if necessary
              */
-            GLuint cubemapTexture();
+            std::pair<GLuint, GLuint> cubemapTextures();
 
             /**
-             * Free GPU memory associated with this location texture
+             * Free GPU memory associated with RGB and depth textures at this location
              */
-            void deleteCubemapTexture();
+            void deleteCubemapTextures();
 
             std::string viewpointId;        //! Unique Matterport identifier for every pano
             bool included;                  //! Some duplicated viewpoints have been excluded
@@ -142,23 +144,31 @@ namespace mattersim {
         protected:
 
             /**
-             * Load RGB cubemap images from disk into CPU memory
+             * Load RGB (and optionally, depth) cubemap images from disk into CPU memory
              */
             void loadCubemapImages();
 
             /**
-             * Create a texture from cubemap images (e.g., in GPU memory)
+             * Create RGB (and optionally, depth) textures from cubemap images (e.g., in GPU memory)
              */
-            void loadCubemapTexture();
+            void loadCubemapTextures();
 
             GLuint cubemap_texture;
-            cv::Mat xpos;                   //! Images for faces of the cubemap
+            GLuint depth_texture;
+            cv::Mat xpos;                   //! RGB images for faces of the cubemap
             cv::Mat xneg;
             cv::Mat ypos;
             cv::Mat yneg;
             cv::Mat zpos;
             cv::Mat zneg;
+            cv::Mat xposD;                   //! Depth images for faces of the cubemap
+            cv::Mat xnegD;
+            cv::Mat yposD;
+            cv::Mat ynegD;
+            cv::Mat zposD;
+            cv::Mat znegD;
             bool im_loaded;
+            bool includeDepth;
             std::string skyboxDir;          //! Path to skybox images
         };
         typedef std::shared_ptr<Location> LocationPtr;
