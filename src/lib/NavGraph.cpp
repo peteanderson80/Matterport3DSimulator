@@ -84,9 +84,10 @@ void NavGraph::Location::loadCubemapTextures() {
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, yneg.rows, yneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, yneg.ptr());
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, zpos.rows, zpos.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zpos.ptr());
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, zneg.rows, zneg.cols, 0, GL_BGR, GL_UNSIGNED_BYTE, zneg.ptr());
+    assertOpenGLError("RGB texture");
     if (includeDepth) {
         // Depth Texture
-        glActiveTexture(GL_TEXTURE1);
+        glActiveTexture(GL_TEXTURE0);
         glEnable(GL_TEXTURE_CUBE_MAP);
         glGenTextures(1, &depth_texture);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depth_texture);
@@ -105,6 +106,7 @@ void NavGraph::Location::loadCubemapTextures() {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RED, ynegD.rows, ynegD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, ynegD.ptr());
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RED, zposD.rows, zposD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, zposD.ptr());
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RED, znegD.rows, znegD.cols, 0, GL_RED, GL_UNSIGNED_SHORT, znegD.ptr());
+        assertOpenGLError("Depth texture");
     }
 }
 

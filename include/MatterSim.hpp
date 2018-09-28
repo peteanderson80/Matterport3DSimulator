@@ -29,6 +29,7 @@
 #include "NavGraph.hpp"
 
 namespace mattersim {
+
     struct Viewpoint: std::enable_shared_from_this<Viewpoint> {
         Viewpoint(std::string viewpointId, unsigned int ix, double x, double y, double z,
           double rel_heading, double rel_elevation, double rel_distance) : 
@@ -208,27 +209,6 @@ namespace mattersim {
          */
         std::string timingInfo(); 
 
-    protected:
-
-        void assertOpenGLError(const std::string& msg) {
-          GLenum error = glGetError();
-          if (error != GL_NO_ERROR) {
-            std::stringstream s;
-            s << "OpenGL error 0x" << std::hex << error << " at " << msg;
-            throw std::runtime_error(s.str());
-          }
-        }
-#ifdef EGL_RENDERING
-        void assertEGLError(const std::string& msg) {
-          EGLint error = eglGetError();
-
-          if (error != EGL_SUCCESS) {
-            std::stringstream s;
-            s << "EGL error 0x" << std::hex << error << " at " << msg;
-            throw std::runtime_error(s.str());
-          }
-        }
-#endif
     private:
         const int headingCount = 12; // 12 heading values in discretized views
         const double elevationIncrement = M_PI/6.0; // 30 degrees discretized up/down

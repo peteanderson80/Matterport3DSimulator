@@ -7,17 +7,18 @@ import cv2
 import numpy as np
 
 
-WIDTH = 640
-HEIGHT = 480
+WIDTH = 200
+HEIGHT = 150
 VFOV = math.radians(60)
 HFOV = VFOV*WIDTH/HEIGHT
 TEXT_COLOR = [230, 40, 40]
 
-cv2.namedWindow('displaywin')
+cv2.namedWindow('RGB')
+cv2.namedWindow('Depth')
 sim = MatterSim.Simulator()
 sim.setCameraResolution(WIDTH, HEIGHT)
 sim.setCameraVFOV(VFOV)
-#sim.setDepthEnabled(True)
+sim.setDepthEnabled(True)
 sim.initialize()
 sim.newEpisode('2t7WUuJeko7', '1e6b606b44df4a6086c0f97e826d4d15', 0, 0)
 
@@ -35,15 +36,18 @@ while True:
     elevation = 0
     state = sim.getState()
     locations = state.navigableLocations
-    im = np.array(state.rgb, copy=False)
+    rgb = np.array(state.rgb, copy=False)
     for idx, loc in enumerate(locations[1:]):
         # Draw actions on the screen
         fontScale = 3.0/loc.rel_distance
         x = int(WIDTH/2 + loc.rel_heading/HFOV*WIDTH)
         y = int(HEIGHT/2 - loc.rel_elevation/VFOV*HEIGHT)
-        cv2.putText(im, str(idx + 1), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 
+        cv2.putText(rgb, str(idx + 1), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 
             fontScale, TEXT_COLOR, thickness=3)
-    cv2.imshow('displaywin', im)
+    cv2.imshow('RGB', rgb)
+
+    depth = np.array(state.depth, copy=False)
+    cv2.imshow('Depth', depth)
     k = cv2.waitKey(1)
     if k == -1:
         continue

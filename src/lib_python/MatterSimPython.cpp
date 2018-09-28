@@ -19,14 +19,14 @@ PYBIND11_MODULE(MatterSim, m) {
         .def_buffer([](cv::Mat& im) -> pybind11::buffer_info {
             ssize_t item_size = im.elemSize() / im.channels();
             std::string format = pybind11::format_descriptor<unsigned char>::format();
-            if (item_size == 2) { // handle depth maps
+            if (item_size == 2) { // handle 16bit data from depth maps
                 format = pybind11::format_descriptor<unsigned short>::format();
             }
             return pybind11::buffer_info(
                 im.data, // Pointer to buffer
                 item_size, // Size of one scalar
                 format,
-                im.channels(), // Number of dimensions
+                3, // Number of dimensions (row, cols, channels)
                 { im.rows, im.cols, im.channels() }, // Buffer dimensions
                 {   // Strides (in bytes) for each index
                     item_size * im.channels() * im.cols,

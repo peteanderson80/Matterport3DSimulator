@@ -391,7 +391,7 @@ void Simulator::renderScene() {
     frames += 1;
     loadTimer.Start();
     auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
-    std::pair<GLuint, GLuint> texIds = navGraph.cubemapTextures(state->scanId,state->location->ix);
+    std::pair<GLuint, GLuint> texIds = navGraph.cubemapTextures(state->scanId, state->location->ix);
     loadTimer.Stop();
     renderTimer.Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -414,8 +414,24 @@ void Simulator::renderScene() {
     //set length of one complete row in destination data (doesn't need to equal img.cols)
     glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
     glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
-    assertOpenGLError("renderScene");
     gpuReadTimer.Stop();
+    assertOpenGLError("render RGB");
+    if (renderDepth) {
+        renderTimer.Start();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.second);
+        glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+        renderTimer.Stop();
+        gpuReadTimer.Start();
+        cv::Mat img = this->state->depth;
+        //use fast 4-byte alignment (default anyway) if possible
+        glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
+        //set length of one complete row in destination data (doesn't need to equal img.cols)
+        glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
+        glReadPixels(0, 0, img.cols, img.rows, GL_RED, GL_UNSIGNED_SHORT, img.data);
+        gpuReadTimer.Stop();
+        assertOpenGLError("render Depth");
+    }
 }
 
 void Simulator::makeAction(int index, double heading, double elevation) {

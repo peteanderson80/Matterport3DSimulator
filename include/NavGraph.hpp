@@ -28,7 +28,26 @@
 #include <glm/gtc/type_ptr.hpp>
 
 namespace mattersim {
-    
+
+    static void assertOpenGLError(const std::string& msg) {
+      GLenum error = glGetError();
+      if (error != GL_NO_ERROR) {
+        std::stringstream s;
+        s << "OpenGL error 0x" << std::hex << error << " at " << msg;
+        throw std::runtime_error(s.str());
+      }
+    }
+#ifdef EGL_RENDERING
+    static void assertEGLError(const std::string& msg) {
+      EGLint error = eglGetError();
+
+      if (error != EGL_SUCCESS) {
+        std::stringstream s;
+        s << "EGL error 0x" << std::hex << error << " at " << msg;
+        throw std::runtime_error(s.str());
+      }
+    }
+#endif
 
     /**
      * Navigation graph indicating which panoramic viewpoints are adjacent, and also 
