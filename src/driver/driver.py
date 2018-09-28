@@ -7,8 +7,8 @@ import cv2
 import numpy as np
 
 
-WIDTH = 200
-HEIGHT = 150
+WIDTH = 800
+HEIGHT = 600
 VFOV = math.radians(60)
 HFOV = VFOV*WIDTH/HEIGHT
 TEXT_COLOR = [230, 40, 40]
