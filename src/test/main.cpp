@@ -349,7 +349,8 @@ TEST_CASE( "Timing", "[Rendering]" ) {
     sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     sim.setRenderingEnabled(true);
     sim.setDiscretizedViewingAngles(true);
-    sim.setPreloadingEnabled(true);
+    sim.setPreloadingEnabled(false);
+    sim.setDepthEnabled(false);
     REQUIRE_NOTHROW(sim.initialize());
 
     // Load environment names
@@ -360,7 +361,7 @@ TEST_CASE( "Timing", "[Rendering]" ) {
         envs.push_back(line);
     }
 
-    for (int i=0; i<50; i++) {
+    for (int i=0; i<500; i++) {
         std::random_shuffle(envs.begin(), envs.end());
         REQUIRE_NOTHROW(sim.newEpisode(envs.front()));
         SimStatePtr state = sim.getState();

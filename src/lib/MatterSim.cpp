@@ -276,7 +276,9 @@ void Simulator::initialize() {
 
         if (preloadImages) {
             // trigger loading from disk now, to get predictable timing later
+            preloadTimer.Start();
             auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
+            preloadTimer.Stop();
         }
     }
     initialized = true;
@@ -499,11 +501,13 @@ void Simulator::resetTimers() {
 std::string Simulator::timingInfo() {
     std::ostringstream oss;
     float f = static_cast<float>(frames);
+    float pret = preloadTimer.Seconds() / 60.0;
     float wt = wallTimer.MilliSeconds();
     float pt = processTimer.MilliSeconds();
     float lt = loadTimer.MilliSeconds();
     float rt = renderTimer.MilliSeconds();
     float it = gpuReadTimer.MilliSeconds();
+    oss << "Preloading images: " << pret << " minutes" << std::endl;
     oss << "Rendered " << f << " frames" << std::endl;
     oss << "Wall time: " << wt << " ms, (" << f/wt*1000 << " fps)" << std::endl;
     oss << "Process time: " << pt << " ms, (" << f/pt*1000 << " fps)" << std::endl;

@@ -251,6 +251,7 @@ namespace mattersim {
         GLuint glShaderF;
         std::string datasetPath;
         std::string navGraphPath;
+        Timer preloadTimer; // Preloading images from disk into cpu memory
         Timer loadTimer; // Loading textures from disk or cpu memory onto gpu
         Timer renderTimer; // Rendering time
         Timer gpuReadTimer; // Reading rendered images from gpu back to cpu memory
