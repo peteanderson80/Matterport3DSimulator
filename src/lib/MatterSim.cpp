@@ -53,7 +53,9 @@ Simulator::Simulator() :state{new SimState()},
                         renderingEnabled(true),
                         discretizeViews(false),
                         preloadImages(false),
-                        renderDepth(false) {
+                        renderDepth(false),
+                        randomSeed(1),
+                        cacheSize(200) {
 };
 
 Simulator::~Simulator() {
@@ -109,6 +111,12 @@ void Simulator::setNavGraphPath(const std::string& path) {
 void Simulator::setSeed(int seed) {
     if (!initialized) {
         randomSeed = seed;
+    }
+}
+
+void Simulator::setCacheSize(unsigned int size) {
+    if (!initialized) {
+        cacheSize = size;
     }
 }
 
@@ -277,7 +285,8 @@ void Simulator::initialize() {
         if (preloadImages) {
             // trigger loading from disk now, to get predictable timing later
             preloadTimer.Start();
-            auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
+            auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, 
+                              renderDepth, randomSeed, cacheSize);
             preloadTimer.Stop();
         }
     }
@@ -292,7 +301,7 @@ void Simulator::populateNavigable() {
     glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
     double cos_half_hfov = cos(vfov * width / height / 2.0);
     
-    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
     for (unsigned int i : navGraph.adjacentViewpointIndices(state->scanId, idx)) {
         // Check if visible between camera left and camera right
         glm::vec3 target_dir = navGraph.cameraPosition(state->scanId,i) - navGraph.cameraPosition(state->scanId,idx);
@@ -367,7 +376,7 @@ void Simulator::newEpisode(const std::string& scanId,
     state->step = 0;
     state->scanId = scanId;
     setHeadingElevation(heading, elevation);
-    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
     const std::string vid = viewpointId.empty() ? navGraph.randomViewpoint(scanId) : viewpointId;
     unsigned int ix = navGraph.index(state->scanId, vid);
     glm::vec3 pos = navGraph.cameraPosition(scanId, ix);
@@ -392,7 +401,7 @@ SimStatePtr Simulator::getState() {
 void Simulator::renderScene() {
     frames += 1;
     loadTimer.Start();
-    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
     std::pair<GLuint, GLuint> texIds = navGraph.cubemapTextures(state->scanId, state->location->ix);
     loadTimer.Stop();
     renderTimer.Start();

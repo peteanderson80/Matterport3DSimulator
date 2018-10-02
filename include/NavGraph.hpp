@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include <random>
 #include <cmath>
 #include <sstream>
@@ -59,7 +60,7 @@ namespace mattersim {
     private:
 
         NavGraph(const std::string& navGraphPath, const std::string& datasetPath, 
-                bool preloadImages, bool renderDepth, int randomSeed);
+                bool preloadImages, bool renderDepth, int randomSeed, unsigned int cacheSize);
 
         ~NavGraph();
 
@@ -79,9 +80,10 @@ namespace mattersim {
          * @param preloadImages - if true, all cubemap images will be loaded into CPU memory immediately
          * @param renderDepth - if true, depth map images are also required
          * @param randomSeed - only used for randomViewpoint function
+         * @param cacheSize - number of pano textures to keep in GPU memory
          */
         static NavGraph& getInstance(const std::string& navGraphPath, const std::string& datasetPath, 
-                bool preloadImages, bool renderDepth, int randomSeed);
+                bool preloadImages, bool renderDepth, int randomSeed, unsigned int cacheSize);
   
         /**
          * Select a random viewpoint from a scan
@@ -192,9 +194,54 @@ namespace mattersim {
         };
         typedef std::shared_ptr<Location> LocationPtr;
 
+
+        /**
+         * Helper class implementing a LRU cache for cubemap textures.
+         */
+        class TextureCache {
+
+        public:
+            TextureCache(unsigned int size) : size(size) {
+                cacheMap.reserve(size+1);
+            }
+
+            TextureCache() = delete; // no default constructor
+
+            void add(LocationPtr loc) {
+                auto map_it = cacheMap.find(loc);
+                if (map_it != cacheMap.end()) {
+                    // Remove entry from middle of list
+                    cacheList.erase(map_it->second);
+                    cacheMap.erase(map_it);
+                }
+                // Add element to list and save iterator on map
+                auto list_it = cacheList.insert(cacheList.begin(), loc);
+                cacheMap.emplace(loc, list_it);
+                if (cacheMap.size() >= size) {
+                    removeEldest();
+                }
+            }
+
+            void removeEldest() {
+                if (cacheMap.empty()) {
+                    throw std::runtime_error("MatterSim: TextureCache is empty");
+                }
+                LocationPtr loc = cacheList.back();
+                loc->deleteCubemapTextures();
+                cacheMap.erase(loc);
+                cacheList.pop_back();
+            }
+
+        private:
+            unsigned int size;
+            std::unordered_map<LocationPtr, std::list<LocationPtr>::iterator > cacheMap;
+            std::list<LocationPtr> cacheList;
+        };
+
+        
         std::map<std::string, std::vector<LocationPtr> > scanLocations;
         std::default_random_engine generator;
-
+        TextureCache cache;
     };
 
 }

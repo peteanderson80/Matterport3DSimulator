@@ -1,8 +1,12 @@
 #include <iostream>
 #include <fstream>
+#include <iterator>
 #include <opencv2/opencv.hpp>
 
 #include <json/json.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include "NavGraph.hpp"
 
 namespace mattersim {
@@ -115,6 +119,8 @@ void NavGraph::Location::deleteCubemapTextures() {
     // no need to check existence, silently ignores errors
     glDeleteTextures(1, &cubemap_texture);
     glDeleteTextures(1, &depth_texture);
+    cubemap_texture = 0;
+    depth_texture = 0;
 }
 
 
@@ -131,7 +137,7 @@ std::pair<GLuint, GLuint> NavGraph::Location::cubemapTextures() {
 
 
 NavGraph::NavGraph(const std::string& navGraphPath, const std::string& datasetPath, 
-                    bool preloadImages, bool renderDepth, int randomSeed) {
+              bool preloadImages, bool renderDepth, int randomSeed, unsigned int cacheSize) : cache(cacheSize) {
 
     generator.seed(randomSeed);
 
@@ -141,8 +147,14 @@ NavGraph::NavGraph(const std::string& navGraphPath, const std::string& datasetPa
         throw std::invalid_argument( "MatterSim: Could not open list of scans at: " +
                 textFile + ", is path valid?" );
     }
-    std::string scanId;
-    while (std::getline(scansFile, scanId)){
+    std::vector<std::string> scanIds;
+    std::copy(std::istream_iterator<std::string>(scansFile),
+          std::istream_iterator<std::string>(),
+          std::back_inserter(scanIds));
+
+    #pragma omp parallel for
+    for (unsigned int i=0; i<scanIds.size(); i++) {
+        std::string scanId = scanIds.at(i);
         Json::Value root;
         auto navGraphFile =  navGraphPath + "/" + scanId + "_connectivity.json";
         std::ifstream ifs(navGraphFile, std::ifstream::in);
@@ -150,13 +162,19 @@ NavGraph::NavGraph(const std::string& navGraphPath, const std::string& datasetPa
             throw std::invalid_argument( "MatterSim: Could not open navigation graph file: " +
                     navGraphFile + ", is path valid?" );
         }
-        scanLocations.insert(std::pair<std::string, 
-                std::vector<LocationPtr> > (scanId, std::vector<LocationPtr>()));
         ifs >> root;
         auto skyboxDir = datasetPath + "/" + scanId + "/matterport_skybox_images/";
+        #pragma omp critical
+        {
+            scanLocations.insert(std::pair<std::string, 
+                    std::vector<LocationPtr> > (scanId, std::vector<LocationPtr>()));
+        }
         for (auto viewpoint : root) {
             Location l(viewpoint, skyboxDir, preloadImages, renderDepth);
-            scanLocations[scanId].push_back(std::make_shared<Location>(l));
+            #pragma omp critical
+            {
+                scanLocations[scanId].push_back(std::make_shared<Location>(l));
+            }
         }
     }
 }
@@ -173,9 +191,9 @@ NavGraph::~NavGraph() {
 
 
 NavGraph& NavGraph::getInstance(const std::string& navGraphPath, const std::string& datasetPath, 
-                bool preloadImages, bool renderDepth, int randomSeed){
+                bool preloadImages, bool renderDepth, int randomSeed, unsigned int cacheSize){
     // magic static
-    static NavGraph instance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed);
+    static NavGraph instance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
     return instance;
 }
 
@@ -246,7 +264,10 @@ std::vector<unsigned int> NavGraph::adjacentViewpointIndices(const std::string& 
 
 
 std::pair<GLuint, GLuint> NavGraph::cubemapTextures(const std::string& scanId, unsigned int ix) {
-    return scanLocations.at(scanId).at(ix)->cubemapTextures();
+    LocationPtr loc = scanLocations.at(scanId).at(ix);
+    std::pair<GLuint, GLuint> textures = loc->cubemapTextures();
+    cache.add(loc);
+    return textures;
 }
 
 

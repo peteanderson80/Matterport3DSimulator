@@ -155,6 +155,11 @@ namespace mattersim {
         void setSeed(int seed);
 
         /**
+         * Set the cache size for storing pano images in gpu memory. Default is 200.
+         */
+        void setCacheSize(unsigned int size);
+
+        /**
          * Set the camera elevation min and max limits in radians. Default is +-0.94 radians.
          * @return true if successful.
          */
@@ -233,6 +238,7 @@ namespace mattersim {
         int width;
         int height;
         int randomSeed;
+        unsigned int cacheSize;
         double vfov;
         double minElevation;
         double maxElevation;
