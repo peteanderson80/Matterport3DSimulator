@@ -6,14 +6,49 @@
 
 namespace mattersim {
 
-// cube indices for index buffer object
-GLushort cube_indices[] = {
-    0, 1, 2, 3,
-    3, 2, 6, 7,
-    7, 6, 5, 4,
-    4, 5, 1, 0,
-    0, 3, 7, 4,
-    5, 6, 2, 1,
+// cube vertices for vertex buffer object
+GLfloat cube_vertices[] = {
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
 };
 
 char* loadFile(const char *filename) {
@@ -261,26 +296,14 @@ void Simulator::initialize() {
         Projection = glm::perspective((float)vfov, (float)width / (float)height, 0.1f, 100.0f);
         Scale      = glm::scale(glm::mat4(1.0f),glm::vec3(10,10,10)); // Scale cube to 10m
 
-        // cube vertices for vertex buffer object
-        GLfloat cube_vertices[] = {
-          -1.0,  1.0,  1.0,
-          -1.0, -1.0,  1.0,
-           1.0, -1.0,  1.0,
-           1.0,  1.0,  1.0,
-          -1.0,  1.0, -1.0,
-          -1.0, -1.0, -1.0,
-           1.0, -1.0, -1.0,
-           1.0,  1.0, -1.0,
-        };
+        // skybox
+        glGenVertexArrays(1, &vao_cube);
         glGenBuffers(1, &vbo_cube_vertices);
+        glBindVertexArray(vao_cube);
         glBindBuffer(GL_ARRAY_BUFFER, vbo_cube_vertices);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_vertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(vertex);
-        glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-        glGenBuffers(1, &ibo_cube_indices);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_indices);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
+        glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
         if (preloadImages) {
             // trigger loading from disk now, to get predictable timing later
@@ -416,7 +439,7 @@ void Simulator::renderScene() {
     glUniformMatrix4fv(PVMM, 1, GL_FALSE, glm::value_ptr(M));
     glViewport(0, 0, width, height);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.first);
-    glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
     renderTimer.Stop();
     gpuReadTimer.Start();
     cv::Mat img = this->state->rgb;
@@ -431,7 +454,6 @@ void Simulator::renderScene() {
         renderTimer.Start();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.second);
-        glDrawElements(GL_QUADS, sizeof(cube_indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
         renderTimer.Stop();
         gpuReadTimer.Start();
         cv::Mat img = this->state->depth;
@@ -476,8 +498,10 @@ void Simulator::makeAction(int index, double heading, double elevation) {
 void Simulator::close() {
     if (initialized) {
         if (renderingEnabled) {
-            // release vertex and index buffer object
-            glDeleteBuffers(1, &ibo_cube_indices);
+            // release vertex and array buffer object
+            glDeleteVertexArrays(1, &vao_cube);
+            glDeleteVertexArrays(1, &vbo_cube_vertices);
+            glDeleteBuffers(1, &vao_cube);
             glDeleteBuffers(1, &vbo_cube_vertices);
             // detach shaders from program and release
             glDetachShader(glProgram, glShaderF);

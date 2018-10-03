@@ -250,7 +250,7 @@ namespace mattersim {
         glm::mat4 RotateZ;
         GLint PVMM;
         GLint vertex;
-        GLuint ibo_cube_indices;
+        GLuint vao_cube;
         GLuint vbo_cube_vertices;
         GLuint glProgram;
         GLuint glShaderV;
