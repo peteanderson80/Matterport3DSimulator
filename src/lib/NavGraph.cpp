@@ -42,12 +42,15 @@ NavGraph::Location::Location(const Json::Value& viewpoint, const std::string& sk
 
 
 void NavGraph::Location::loadCubemapImages() {
-    xpos = cv::imread(skyboxDir + viewpointId + "_skybox2_small.jpg");
-    xneg = cv::imread(skyboxDir + viewpointId + "_skybox4_small.jpg");
-    ypos = cv::imread(skyboxDir + viewpointId + "_skybox0_small.jpg");
-    yneg = cv::imread(skyboxDir + viewpointId + "_skybox5_small.jpg");
-    zpos = cv::imread(skyboxDir + viewpointId + "_skybox1_small.jpg");
-    zneg = cv::imread(skyboxDir + viewpointId + "_skybox3_small.jpg");
+    cv::Mat rgb = cv::imread(skyboxDir + viewpointId + "_skybox_small.jpg");
+    int w = rgb.cols/6;
+    int h = rgb.rows;
+    xpos = rgb(cv::Rect(2*w, 0, w, h));
+    xneg = rgb(cv::Rect(4*w, 0, w, h));
+    ypos = rgb(cv::Rect(0*w, 0, w, h));
+    yneg = rgb(cv::Rect(5*w, 0, w, h));
+    zpos = rgb(cv::Rect(1*w, 0, w, h));
+    zneg = rgb(cv::Rect(3*w, 0, w, h));
     if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
         throw std::invalid_argument( "MatterSim: Could not open skybox RGB files at: " + skyboxDir + viewpointId + "_skybox*_small.jpg");
     }
