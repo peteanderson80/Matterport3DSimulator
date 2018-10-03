@@ -1,11 +1,33 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "MatterSim.hpp"
+#include "cbf.h"
 
 namespace py = pybind11;
+
+namespace mattersim {
+
+    void cbf(py::buffer depth, py::buffer intensity, py::buffer mask, py::buffer result) {
+        double spaceSigmas[3] = {12, 5, 8};
+        double rangeSigmas[3] = {0.2, 0.08, 0.02};
+        py::buffer_info d_info = depth.request();
+        py::buffer_info i_info = intensity.request();
+        py::buffer_info m_info = mask.request();
+        py::buffer_info r_info = result.request();
+        cbf::cbf(d_info.shape[0], d_info.shape[1],
+            static_cast<uint8_t*>(d_info.ptr),
+            static_cast<uint8_t*>(i_info.ptr),
+            static_cast<uint8_t*>(m_info.ptr),
+            static_cast<uint8_t*>(r_info.ptr),
+            3, &spaceSigmas[0], &rangeSigmas[0]);
+    }
+
+}
+
 using namespace mattersim;
 
 PYBIND11_MODULE(MatterSim, m) {
+    m.def("cbf", &mattersim::cbf, "Cross Bilateral Filter");
     py::class_<Viewpoint, ViewpointPtr>(m, "ViewPoint")
         .def_readonly("viewpointId", &Viewpoint::viewpointId)
         .def_readonly("ix", &Viewpoint::ix)
@@ -55,9 +77,10 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setPreloadingEnabled", &Simulator::setPreloadingEnabled)
         .def("setDepthEnabled", &Simulator::setDepthEnabled)
         .def("setDiscretizedViewingAngles", &Simulator::setDiscretizedViewingAngles)
-        .def("initialize", &Simulator::initialize)
         .def("setSeed", &Simulator::setSeed)
+        .def("setCacheSize", &Simulator::setCacheSize)
         .def("setElevationLimits", &Simulator::setElevationLimits)
+        .def("initialize", &Simulator::initialize)
         .def("newEpisode", &Simulator::newEpisode)
         .def("getState", &Simulator::getState, py::return_value_policy::take_ownership)
         .def("makeAction", &Simulator::makeAction)

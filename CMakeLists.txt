@@ -40,7 +40,7 @@ else()
   set(GL_LIBS ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
 endif()
 
-add_library(MatterSim SHARED src/lib/MatterSim.cpp src/lib/NavGraph.cpp src/lib/Benchmark.cpp)
+add_library(MatterSim SHARED src/lib/MatterSim.cpp src/lib/NavGraph.cpp src/lib/Benchmark.cpp src/lib/cbf.cpp)
 if(OSMESA_RENDERING)
   target_compile_definitions(MatterSim PUBLIC "-DOSMESA_RENDERING")
 endif()
