@@ -1,142 +1,152 @@
 [
-  {
-    "scanId": "17DRP5sb8fy", 
-    "viewpointId": "85c23efeaecd4d43a7dcd5b90137179e", 
-    "elevation": 0.008557380839564054, 
-    "heading": 2.551961945320492, 
-    "reference_image": "17DRP5sb8fy_85c23efeaecd4d43a7dcd5b90137179e_2.551961945320492_0.008557380839564054.png"
-  }, 
-  {
-    "scanId": "1LXtFkjw3qL", 
-    "viewpointId": "187589bb7d4644f2943079fb949c0be9", 
-    "elevation": 0.0004921836022802584, 
-    "heading": 1.8699330579409539, 
-    "reference_image": "1LXtFkjw3qL_187589bb7d4644f2943079fb949c0be9_1.8699330579409539_0.0004921836022802584.png"
-  }, 
-  {
-    "scanId": "1pXnuDYAj8r", 
-    "viewpointId": "163d61ac7edb43fb958c5d9e69ae11ad", 
-    "elevation": -0.02444352614304746, 
-    "heading": 4.626331047551077, 
-    "reference_image": "1pXnuDYAj8r_163d61ac7edb43fb958c5d9e69ae11ad_4.626331047551077_-0.02444352614304746.png"
-  }, 
-  {
-    "scanId": "29hnd4uzFmX", 
-    "viewpointId": "1576d62e7bbb45e8a5ef9e7bb37b1839", 
-    "elevation": -0.0006838914039405167, 
-    "heading": 5.844119909926444, 
-    "reference_image": "29hnd4uzFmX_1576d62e7bbb45e8a5ef9e7bb37b1839_5.844119909926444_-0.0006838914039405167.png"
-  }, 
-  {
-    "scanId": "2azQ1b91cZZ", 
-    "viewpointId": "3daad58ad53742038e50d62e91f84e7b", 
-    "elevation": 0.016732869758208434, 
-    "heading": 3.1736484087962933, 
-    "reference_image": "2azQ1b91cZZ_3daad58ad53742038e50d62e91f84e7b_3.1736484087962933_0.016732869758208434.png"
-  }, 
-  {
-    "scanId": "2n8kARJN3HM", 
-    "viewpointId": "94ac3cea52ec455993f8562f78da3be1", 
-    "elevation": -0.0009188787844489273, 
-    "heading": 2.604601935142565, 
-    "reference_image": "2n8kARJN3HM_94ac3cea52ec455993f8562f78da3be1_2.604601935142565_-0.0009188787844489273.png"
-  }, 
-  {
-    "scanId": "2t7WUuJeko7", 
-    "viewpointId": "529f006f8293406da0b506defd2891a5", 
-    "elevation": -0.013788837143969411, 
-    "heading": 0.032985516949381344, 
-    "reference_image": "2t7WUuJeko7_529f006f8293406da0b506defd2891a5_0.032985516949381344_-0.013788837143969411.png"
-  }, 
-  {
-    "scanId": "5LpN3gDmAk7", 
-    "viewpointId": "bda8025f20404048a77381e9e0dc0ccf", 
-    "elevation": -0.01083211073205187, 
-    "heading": 5.325207878739601, 
-    "reference_image": "5LpN3gDmAk7_bda8025f20404048a77381e9e0dc0ccf_5.325207878739601_-0.01083211073205187.png"
-  }, 
-  {
-    "scanId": "5q7pvUzZiYa", 
-    "viewpointId": "397403366d784caf804d741f32fd68b9", 
-    "elevation": -0.0007063598518199811, 
-    "heading": 2.8746465006968234, 
-    "reference_image": "5q7pvUzZiYa_397403366d784caf804d741f32fd68b9_2.8746465006968234_-0.0007063598518199811.png"
-  }, 
-  {
-    "scanId": "5ZKStnWn8Zo", 
-    "viewpointId": "c76b52856e7c4f2a9a4419000c8e646a", 
-    "elevation": -0.02922217527541366, 
-    "heading": 4.13470589902238, 
-    "reference_image": "5ZKStnWn8Zo_c76b52856e7c4f2a9a4419000c8e646a_4.13470589902238_-0.02922217527541366.png"
-  }, 
-  {
-    "scanId": "759xd9YjKW5", 
-    "viewpointId": "2343ef3bf04a4433af62f0d527d7512a", 
-    "elevation": -0.016938006310169448, 
-    "heading": 3.5451019786019264, 
-    "reference_image": "759xd9YjKW5_2343ef3bf04a4433af62f0d527d7512a_3.5451019786019264_-0.016938006310169448.png"
-  }, 
-  {
-    "scanId": "7y3sRwLe3Va", 
-    "viewpointId": "9bbf903d50da4ffd9e5d1fb7c9f4d69b", 
-    "elevation": 0.008361841032265524, 
-    "heading": 1.7348660165523566, 
-    "reference_image": "7y3sRwLe3Va_9bbf903d50da4ffd9e5d1fb7c9f4d69b_1.7348660165523566_0.008361841032265524.png"
-  }, 
-  {
-    "scanId": "8194nk5LbLH", 
-    "viewpointId": "c9e8dc09263e4d0da77d16de0ecddd39", 
-    "elevation": 0.008533161479170466, 
-    "heading": 4.05504292862083, 
-    "reference_image": "8194nk5LbLH_c9e8dc09263e4d0da77d16de0ecddd39_4.05504292862083_0.008533161479170466.png"
-  }, 
-  {
-    "scanId": "82sE5b5pLXE", 
-    "viewpointId": "056a491afa534b17bac36f4f5898462a", 
-    "elevation": -0.0037883068413356496, 
-    "heading": 1.689393931320027, 
-    "reference_image": "82sE5b5pLXE_056a491afa534b17bac36f4f5898462a_1.689393931320027_-0.0037883068413356496.png"
-  }, 
-  {
-    "scanId": "8WUmhLawc2A", 
-    "viewpointId": "d21aae0b5d944f27a0074525c803fc9f", 
-    "elevation": -0.04510889155759994, 
-    "heading": 3.047458184407221, 
-    "reference_image": "8WUmhLawc2A_d21aae0b5d944f27a0074525c803fc9f_3.047458184407221_-0.04510889155759994.png"
-  }, 
-  {
-    "scanId": "ac26ZMwG7aT", 
-    "viewpointId": "efeef7cc82c84690addb0bf415f075ea", 
-    "elevation": -0.013447513736072197, 
-    "heading": 0.07434352566701552, 
-    "reference_image": "ac26ZMwG7aT_efeef7cc82c84690addb0bf415f075ea_0.07434352566701552_-0.013447513736072197.png"
-  }, 
-  {
-    "scanId": "ARNzJeq3xxb", 
-    "viewpointId": "9a671e6915de4eb897f45fee8bf2031d", 
-    "elevation": 0.02583868533558965, 
-    "heading": 5.616355886953764, 
-    "reference_image": "ARNzJeq3xxb_9a671e6915de4eb897f45fee8bf2031d_5.616355886953764_0.02583868533558965.png"
-  }, 
-  {
-    "scanId": "B6ByNegPMKs", 
-    "viewpointId": "e3a65955df26467581c32613c4e9f865", 
-    "elevation": 0.007265625492957138, 
-    "heading": 5.230794959607039, 
-    "reference_image": "B6ByNegPMKs_e3a65955df26467581c32613c4e9f865_5.230794959607039_0.007265625492957138.png"
-  }, 
-  {
-    "scanId": "b8cTxDM8gDG", 
-    "viewpointId": "f2944e0b66b9461994a7f757582f9bc3", 
-    "elevation": -0.007543204141144086, 
-    "heading": 0.0853092784395515, 
-    "reference_image": "b8cTxDM8gDG_f2944e0b66b9461994a7f757582f9bc3_0.0853092784395515_-0.007543204141144086.png"
-  }, 
-  {
-    "scanId": "cV4RVeZvu5T", 
-    "viewpointId": "1b321779a4374c2b952c51820daa9e6c", 
-    "elevation": 0.07914721704610106, 
-    "heading": 6.266463179566256, 
-    "reference_image": "cV4RVeZvu5T_1b321779a4374c2b952c51820daa9e6c_6.266463179566256_0.07914721704610106.png"
-  }
+  [
+    {
+      "scanId": "17DRP5sb8fy", 
+      "viewpointId": "85c23efeaecd4d43a7dcd5b90137179e", 
+      "elevation": 0.008557380839564054, 
+      "heading": 2.551961945320492, 
+      "reference_image": "17DRP5sb8fy_85c23efeaecd4d43a7dcd5b90137179e_2.551961945320492_0.008557380839564054.png"
+    }, 
+    {
+      "scanId": "1LXtFkjw3qL", 
+      "viewpointId": "187589bb7d4644f2943079fb949c0be9", 
+      "elevation": 0.0004921836022802584, 
+      "heading": 1.8699330579409539, 
+      "reference_image": "1LXtFkjw3qL_187589bb7d4644f2943079fb949c0be9_1.8699330579409539_0.0004921836022802584.png"
+    }, 
+    {
+      "scanId": "1pXnuDYAj8r", 
+      "viewpointId": "163d61ac7edb43fb958c5d9e69ae11ad", 
+      "elevation": -0.02444352614304746, 
+      "heading": 4.626331047551077, 
+      "reference_image": "1pXnuDYAj8r_163d61ac7edb43fb958c5d9e69ae11ad_4.626331047551077_-0.02444352614304746.png"
+    }, 
+    {
+      "scanId": "29hnd4uzFmX", 
+      "viewpointId": "1576d62e7bbb45e8a5ef9e7bb37b1839", 
+      "elevation": -0.0006838914039405167, 
+      "heading": 5.844119909926444, 
+      "reference_image": "29hnd4uzFmX_1576d62e7bbb45e8a5ef9e7bb37b1839_5.844119909926444_-0.0006838914039405167.png"
+    }
+  ],
+  [
+    {
+      "scanId": "2azQ1b91cZZ", 
+      "viewpointId": "3daad58ad53742038e50d62e91f84e7b", 
+      "elevation": 0.016732869758208434, 
+      "heading": 3.1736484087962933, 
+      "reference_image": "2azQ1b91cZZ_3daad58ad53742038e50d62e91f84e7b_3.1736484087962933_0.016732869758208434.png"
+    }, 
+    {
+      "scanId": "2n8kARJN3HM", 
+      "viewpointId": "94ac3cea52ec455993f8562f78da3be1", 
+      "elevation": -0.0009188787844489273, 
+      "heading": 2.604601935142565, 
+      "reference_image": "2n8kARJN3HM_94ac3cea52ec455993f8562f78da3be1_2.604601935142565_-0.0009188787844489273.png"
+    }, 
+    {
+      "scanId": "2t7WUuJeko7", 
+      "viewpointId": "529f006f8293406da0b506defd2891a5", 
+      "elevation": -0.013788837143969411, 
+      "heading": 0.032985516949381344, 
+      "reference_image": "2t7WUuJeko7_529f006f8293406da0b506defd2891a5_0.032985516949381344_-0.013788837143969411.png"
+    }, 
+    {
+      "scanId": "5LpN3gDmAk7", 
+      "viewpointId": "bda8025f20404048a77381e9e0dc0ccf", 
+      "elevation": -0.01083211073205187, 
+      "heading": 5.325207878739601, 
+      "reference_image": "5LpN3gDmAk7_bda8025f20404048a77381e9e0dc0ccf_5.325207878739601_-0.01083211073205187.png"
+    }
+  ],
+  [
+    {
+      "scanId": "5q7pvUzZiYa", 
+      "viewpointId": "397403366d784caf804d741f32fd68b9", 
+      "elevation": -0.0007063598518199811, 
+      "heading": 2.8746465006968234, 
+      "reference_image": "5q7pvUzZiYa_397403366d784caf804d741f32fd68b9_2.8746465006968234_-0.0007063598518199811.png"
+    }, 
+    {
+      "scanId": "5ZKStnWn8Zo", 
+      "viewpointId": "c76b52856e7c4f2a9a4419000c8e646a", 
+      "elevation": -0.02922217527541366, 
+      "heading": 4.13470589902238, 
+      "reference_image": "5ZKStnWn8Zo_c76b52856e7c4f2a9a4419000c8e646a_4.13470589902238_-0.02922217527541366.png"
+    }, 
+    {
+      "scanId": "759xd9YjKW5", 
+      "viewpointId": "2343ef3bf04a4433af62f0d527d7512a", 
+      "elevation": -0.016938006310169448, 
+      "heading": 3.5451019786019264, 
+      "reference_image": "759xd9YjKW5_2343ef3bf04a4433af62f0d527d7512a_3.5451019786019264_-0.016938006310169448.png"
+    }, 
+    {
+      "scanId": "7y3sRwLe3Va", 
+      "viewpointId": "9bbf903d50da4ffd9e5d1fb7c9f4d69b", 
+      "elevation": 0.008361841032265524, 
+      "heading": 1.7348660165523566, 
+      "reference_image": "7y3sRwLe3Va_9bbf903d50da4ffd9e5d1fb7c9f4d69b_1.7348660165523566_0.008361841032265524.png"
+    }
+  ],
+  [
+    {
+      "scanId": "8194nk5LbLH", 
+      "viewpointId": "c9e8dc09263e4d0da77d16de0ecddd39", 
+      "elevation": 0.008533161479170466, 
+      "heading": 4.05504292862083, 
+      "reference_image": "8194nk5LbLH_c9e8dc09263e4d0da77d16de0ecddd39_4.05504292862083_0.008533161479170466.png"
+    }, 
+    {
+      "scanId": "82sE5b5pLXE", 
+      "viewpointId": "056a491afa534b17bac36f4f5898462a", 
+      "elevation": -0.0037883068413356496, 
+      "heading": 1.689393931320027, 
+      "reference_image": "82sE5b5pLXE_056a491afa534b17bac36f4f5898462a_1.689393931320027_-0.0037883068413356496.png"
+    }, 
+    {
+      "scanId": "8WUmhLawc2A", 
+      "viewpointId": "d21aae0b5d944f27a0074525c803fc9f", 
+      "elevation": -0.04510889155759994, 
+      "heading": 3.047458184407221, 
+      "reference_image": "8WUmhLawc2A_d21aae0b5d944f27a0074525c803fc9f_3.047458184407221_-0.04510889155759994.png"
+    }, 
+    {
+      "scanId": "ac26ZMwG7aT", 
+      "viewpointId": "efeef7cc82c84690addb0bf415f075ea", 
+      "elevation": -0.013447513736072197, 
+      "heading": 0.07434352566701552, 
+      "reference_image": "ac26ZMwG7aT_efeef7cc82c84690addb0bf415f075ea_0.07434352566701552_-0.013447513736072197.png"
+    }
+  ],
+  [
+    {
+      "scanId": "ARNzJeq3xxb", 
+      "viewpointId": "9a671e6915de4eb897f45fee8bf2031d", 
+      "elevation": 0.02583868533558965, 
+      "heading": 5.616355886953764, 
+      "reference_image": "ARNzJeq3xxb_9a671e6915de4eb897f45fee8bf2031d_5.616355886953764_0.02583868533558965.png"
+    }, 
+    {
+      "scanId": "B6ByNegPMKs", 
+      "viewpointId": "e3a65955df26467581c32613c4e9f865", 
+      "elevation": 0.007265625492957138, 
+      "heading": 5.230794959607039, 
+      "reference_image": "B6ByNegPMKs_e3a65955df26467581c32613c4e9f865_5.230794959607039_0.007265625492957138.png"
+    }, 
+    {
+      "scanId": "b8cTxDM8gDG", 
+      "viewpointId": "f2944e0b66b9461994a7f757582f9bc3", 
+      "elevation": -0.007543204141144086, 
+      "heading": 0.0853092784395515, 
+      "reference_image": "b8cTxDM8gDG_f2944e0b66b9461994a7f757582f9bc3_0.0853092784395515_-0.007543204141144086.png"
+    }, 
+    {
+      "scanId": "cV4RVeZvu5T", 
+      "viewpointId": "1b321779a4374c2b952c51820daa9e6c", 
+      "elevation": 0.07914721704610106, 
+      "heading": 6.266463179566256, 
+      "reference_image": "cV4RVeZvu5T_1b321779a4374c2b952c51820daa9e6c_6.266463179566256_0.07914721704610106.png"
+    }
+  ]
 ]

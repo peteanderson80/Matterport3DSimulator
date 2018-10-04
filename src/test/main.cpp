@@ -43,6 +43,7 @@ float elevation_chg[10] =     {   0,  -36, -30, -10,   0,  90,    5,  -10,  -40,
 float discreteElevation[10] = {   0,    0, -30, -30, -30, -30,    0,   30,    0, -30 };
 unsigned int viewIndex[10] =  {  12,   23,  10,  11,   0,   1,   12,   35,   22,   9 };
 
+
 TEST_CASE( "Continuous Motion", "[Actions]" ) {
 
     std::vector<std::string> scanIds {"2t7WUuJeko7", "17DRP5sb8fy"};
@@ -51,15 +52,21 @@ TEST_CASE( "Continuous Motion", "[Actions]" ) {
     sim.setCameraResolution(200,100); // width,height
     sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
     sim.setRenderingEnabled(false);
+    sim.setBatchSize(scanIds.size());
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
     REQUIRE_NOTHROW(sim.initialize());
-    for (int i = 0; i < scanIds.size(); ++i) {
-        std::string scanId = scanIds[i];
-        std::string viewpointId = viewpointIds[i];
-        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading[0]), radians(elevation[0])));
-        for (int t = 0; t < 10; ++t ) {
+    std::vector<double> headings(scanIds.size(),radians(heading[0]));
+    std::vector<double> elevations(scanIds.size(),radians(elevation[0]));
+    REQUIRE_NOTHROW(sim.newEpisode(scanIds, viewpointIds, headings, elevations));
+    std::vector<unsigned int> ix;
+    for (int t = 0; t < 10; ++t ) {
+        headings.clear();
+        elevations.clear();
+        for (int i = 0; i < scanIds.size(); ++i) {
             INFO("i=" << i << ", t=" << t);
-            SimStatePtr state = sim.getState();
+            std::string scanId = scanIds[i];
+            std::string viewpointId = viewpointIds.at(i);
+            SimStatePtr state = sim.getState().at(i);
             CHECK( state->scanId == scanId );
             CHECK( state->step == t );
             CHECK( state->heading == Approx(radians(heading[t])) );
@@ -69,13 +76,15 @@ TEST_CASE( "Continuous Motion", "[Actions]" ) {
             CHECK( state->location->viewpointId == viewpointId );
             CHECK( state->viewIndex == 0 ); // not active
             std::vector<ViewpointPtr> actions = state->navigableLocations;
-            int ix = t % actions.size(); // select an action
-            sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
-            viewpointId = actions[ix]->viewpointId;
+            ix.push_back(t % actions.size()); // select an action
+            headings.push_back(radians(heading_chg[t]));
+            elevations.push_back(radians(elevation_chg[t]));
         }
+        sim.makeAction(ix, headings, elevations);
     }
     REQUIRE_NOTHROW(sim.close());
 }
+
 
 TEST_CASE( "Discrete Motion", "[Actions]" ) {
 
@@ -85,16 +94,22 @@ TEST_CASE( "Discrete Motion", "[Actions]" ) {
     sim.setCameraResolution(200,100); // width,height
     sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
     sim.setRenderingEnabled(false);
+    sim.setBatchSize(scanIds.size());
     sim.setDiscretizedViewingAngles(true);
     CHECK(sim.setElevationLimits(radians(-10),radians(10))); // should be disregarded
     REQUIRE_NOTHROW(sim.initialize());
-    for (int i = 0; i < scanIds.size(); ++i) {
-        std::string scanId = scanIds[i];
-        std::string viewpointId = viewpointIds[i];
-        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading[0]), radians(elevation[0])));
-        for (int t = 0; t < 10; ++t ) {
+    std::vector<double> headings(scanIds.size(),radians(heading[0]));
+    std::vector<double> elevations(scanIds.size(),radians(elevation[0]));
+    REQUIRE_NOTHROW(sim.newEpisode(scanIds, viewpointIds, headings, elevations));
+    std::vector<unsigned int> ix;
+    for (int t = 0; t < 10; ++t ) {
+        headings.clear();
+        elevations.clear();
+        for (int i = 0; i < scanIds.size(); ++i) {
             INFO("i=" << i << ", t=" << t);
-            SimStatePtr state = sim.getState();
+            std::string scanId = scanIds[i];
+            std::string viewpointId = viewpointIds.at(i);
+            SimStatePtr state = sim.getState().at(i);
             CHECK( state->scanId == scanId );
             CHECK( state->step == t );
             CHECK( state->heading == Approx(radians(discreteHeading[t])) );
@@ -104,13 +119,15 @@ TEST_CASE( "Discrete Motion", "[Actions]" ) {
             CHECK( state->location->viewpointId == viewpointId );
             CHECK( state->viewIndex == viewIndex[t] );
             std::vector<ViewpointPtr> actions = state->navigableLocations;
-            int ix = t % actions.size(); // select an action
-            sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
-            viewpointId = actions[ix]->viewpointId;
+            ix.push_back(t % actions.size()); // select an action
+            headings.push_back(radians(heading_chg[t]));
+            elevations.push_back(radians(elevation_chg[t]));
         }
+        sim.makeAction(ix, headings, elevations);
     }
     REQUIRE_NOTHROW(sim.close());
 }
+
 
 TEST_CASE( "Robot Relative Coords", "[Actions]" ) {
 
@@ -120,15 +137,19 @@ TEST_CASE( "Robot Relative Coords", "[Actions]" ) {
     sim.setCameraResolution(200,100); // width,height
     sim.setCameraVFOV(radians(45)); // 45deg vfov, 90deg hfov
     sim.setRenderingEnabled(false);
+    sim.setBatchSize(scanIds.size());
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
     REQUIRE_NOTHROW(sim.initialize());
-    for (int i = 0; i < scanIds.size(); ++i) {
-        std::string scanId = scanIds[i];
-        std::string viewpointId = viewpointIds[i];
-        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, radians(heading[0]), radians(elevation[0])));
-        for (int t = 0; t < 10; ++t ) {
+    std::vector<double> headings(scanIds.size(),radians(heading[0]));
+    std::vector<double> elevations(scanIds.size(),radians(elevation[0]));
+    REQUIRE_NOTHROW(sim.newEpisode(scanIds, viewpointIds, headings, elevations));
+    std::vector<unsigned int> ix;
+    for (int t = 0; t < 10; ++t ) {
+        headings.clear();
+        elevations.clear();
+        for (int i = 0; i < scanIds.size(); ++i) {
             INFO("i=" << i << ", t=" << t);
-            SimStatePtr state = sim.getState();
+            SimStatePtr state = sim.getState().at(i);
             cv::Point3f curr(state->location->x, state->location->y, state->location->z);
             std::vector<ViewpointPtr> actions = state->navigableLocations;
             double last_angle = 0.0;
@@ -162,13 +183,15 @@ TEST_CASE( "Robot Relative Coords", "[Actions]" ) {
                 REQUIRE(loc->z == Approx(target.z));
                 k++;
             }
-            int ix = t % actions.size(); // select an action
-            sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
-            viewpointId = actions[ix]->viewpointId;
+            ix.push_back(t % actions.size()); // select an action
+            headings.push_back(radians(heading_chg[t]));
+            elevations.push_back(radians(elevation_chg[t]));
         }
+        sim.makeAction(ix, headings, elevations);
     }
     REQUIRE_NOTHROW(sim.close());
 }
+
 
 TEST_CASE( "Navigable Locations", "[Actions]" ) {
 
@@ -184,39 +207,51 @@ TEST_CASE( "Navigable Locations", "[Actions]" ) {
     double half_hfov = M_PI/4;
     sim.setRenderingEnabled(false);
     sim.setSeed(1);
+    sim.setBatchSize(scanIds.size());
     REQUIRE_NOTHROW(sim.initialize());
-    for (auto scanId : scanIds) {
-        REQUIRE_NOTHROW(sim.newEpisode(scanId)); // start anywhere, but repeatably so
+    std::vector<double> headings;
+    std::vector<double> elevations;
+    std::vector<unsigned int> ix;
+    REQUIRE_NOTHROW(sim.newRandomEpisode(scanIds)); // start anywhere, but repeatably so
 
-        // Load connectivity graph
+    // Load connectivity graphs
+    std::vector<Json::Value> graphs;
+    for (auto scanId : scanIds) {
         Json::Value root;
         auto navGraphFile =  "./connectivity/" + scanId + "_connectivity.json";
         std::ifstream ifs(navGraphFile, std::ifstream::in);
         ifs >> root;
-        // Find included viewpoints
-        std::vector<bool> included;
-        SimStatePtr state = sim.getState();
-        for (auto viewpoint : root) {
-            included.push_back(viewpoint["included"].asBool());
-            if (viewpoint["image_id"].asString() == state->location->viewpointId) {
-                INFO("Don't let newEpisode spawn at an excluded viewpoint");
-                CHECK(included.back());
-            }
-        }
+        graphs.push_back(root);
+    }
 
-        // Check a short episode
-        for (int t = 0; t < 10; ++t ) {
-            state = sim.getState();
+    // Check a short episode in each scan
+    for (int t = 0; t < 10; ++t ) {
+
+        for (int k = 0; k < scanIds.size(); ++k) {
+            auto scanId = scanIds.at(k);
+            Json::Value root = graphs.at(k);
+
+            SimStatePtr state = sim.getState().at(k);
             CHECK( state->scanId == scanId );
             CHECK( state->step == t );
 
-            // navigableLocations from sim into a map
+            // Check included viewpoints
+            std::vector<bool> included;
+            for (auto viewpoint : root) {
+                included.push_back(viewpoint["included"].asBool());
+                if (viewpoint["image_id"].asString() == state->location->viewpointId) {
+                    INFO("Don't let simulator navigate to an excluded viewpoint");
+                    CHECK(included.back());
+                }
+            }
+
+            // Store navigableLocations from sim into a map
             std::unordered_map <std::string, ViewpointPtr> locs;
             for (auto v : state->navigableLocations) {
                 locs[v->viewpointId] = v;
             }
 
-            // Find current viewpoint in json file
+            // Check current viewpoint exists in json file
             Json::Value currentViewpoint;
             for (auto viewpoint : root) {
                 auto viewpointId = viewpoint["image_id"].asString();
@@ -293,11 +328,12 @@ TEST_CASE( "Navigable Locations", "[Actions]" ) {
             }
             CHECK(navigableCount == state->navigableLocations.size());
 
-            // Move somewhere else
             std::vector<ViewpointPtr> actions = state->navigableLocations;
-            int ix = t % actions.size(); // select an action
-            sim.makeAction(ix, radians(heading_chg[t]), radians(elevation_chg[t]));
+            ix.push_back(t % actions.size()); // select an action
+            headings.push_back(radians(heading_chg[t]));
+            elevations.push_back(radians(elevation_chg[t]));
         }
+        sim.makeAction(ix, headings, elevations);
     }
     REQUIRE_NOTHROW(sim.close());
 }
@@ -309,6 +345,8 @@ TEST_CASE( "RGB Image", "[Rendering]" ) {
     sim.setCameraResolution(640,480); // width,height
     sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     CHECK(sim.setElevationLimits(radians(-40),radians(50)));
+    unsigned int batchSize = 4;
+    sim.setBatchSize(batchSize);
     REQUIRE_NOTHROW(sim.initialize());
     Json::Value root;
     std::string testSpecFile{"src/test/rendertest_spec.json"};
@@ -317,23 +355,33 @@ TEST_CASE( "RGB Image", "[Rendering]" ) {
         throw std::invalid_argument( "Could not open test spec file: " + testSpecFile );
     }
     ifs >> root;
-    for (auto testcase : root) {
-        auto imgfile = testcase["reference_image"].asString();
-        auto scanId = testcase["scanId"].asString();
-        auto viewpointId = testcase["viewpointId"].asString();
-        auto heading = testcase["heading"].asFloat();
-        auto elevation = testcase["elevation"].asFloat();
 
-        REQUIRE_NOTHROW(sim.newEpisode(scanId, viewpointId, heading, elevation));
+    std::vector<std::string> scanIds(batchSize);
+    std::vector<std::string> viewpointIds(batchSize);
+    std::vector<double> headings(batchSize);
+    std::vector<double> elevations(batchSize);
 
-        SimStatePtr state = sim.getState();
-        auto reference_image = cv::imread("webgl_imgs/"+imgfile);
-        // save for later comparison, these images can also be inspected by hand
-        cv::imwrite("sim_imgs/"+imgfile, state->rgb);
-        
-        double err = cv::norm(reference_image, state->rgb, CV_L2);
-        err /= reference_image.rows * reference_image.cols;
-        CHECK(err < 0.15);
+    for (auto testbatch : root) {
+        for (unsigned int n=0; n<batchSize; ++n) {
+            auto testcase = testbatch[n];
+            scanIds.at(n) = testcase["scanId"].asString();
+            viewpointIds.at(n) = testcase["viewpointId"].asString();
+            headings.at(n) = testcase["heading"].asFloat();
+            elevations.at(n) = testcase["elevation"].asFloat();
+        }
+        INFO(testbatch);
+        REQUIRE_NOTHROW(sim.newEpisode(scanIds, viewpointIds, headings, elevations));
+        for (unsigned int n=0; n<batchSize; ++n) {
+            auto testcase = testbatch[n];
+            auto imgfile = testcase["reference_image"].asString();
+            auto reference_image = cv::imread("webgl_imgs/"+imgfile);
+            auto state = sim.getState().at(n);
+            double err = cv::norm(reference_image, state->rgb, CV_L2);
+            err /= reference_image.rows * reference_image.cols;
+            CHECK(err < 0.15);
+            // save for later comparison, these images can also be inspected by hand
+            cv::imwrite("sim_imgs/"+imgfile, state->rgb);
+        }
     }
     REQUIRE_NOTHROW(sim.close());
 }
@@ -344,15 +392,6 @@ TEST_CASE( "Timing", "[Rendering]" ) {
     // Initialize random generator
     std::srand(std::time(NULL));
 
-    Simulator sim;
-    sim.setCameraResolution(640,480); // width,height
-    sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
-    sim.setRenderingEnabled(true);
-    sim.setDiscretizedViewingAngles(true);
-    sim.setPreloadingEnabled(true);
-    sim.setDepthEnabled(false);
-    REQUIRE_NOTHROW(sim.initialize());
-
     // Load environment names
     std::vector<std::string> envs;
     std::ifstream is("connectivity/scans.txt");
@@ -361,15 +400,33 @@ TEST_CASE( "Timing", "[Rendering]" ) {
         envs.push_back(line);
     }
 
-    for (int i=0; i<500; i++) {
+    Simulator sim;
+    sim.setCameraResolution(640,480); // width,height
+    sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
+    sim.setRenderingEnabled(true);
+    sim.setDiscretizedViewingAngles(true);
+    sim.setPreloadingEnabled(true);
+    int batchSize = envs.size();
+    sim.setBatchSize(batchSize);
+    sim.setDepthEnabled(true);
+    REQUIRE_NOTHROW(sim.initialize());
+
+    std::vector<unsigned int> ix(batchSize);
+    std::vector<double> headings(batchSize);
+    std::vector<double> elevations(batchSize);
+    std::vector<SimStatePtr> state;
+
+    for (int i=0; i<10; i++) {
         std::random_shuffle(envs.begin(), envs.end());
-        REQUIRE_NOTHROW(sim.newEpisode(envs.front()));
-        SimStatePtr state = sim.getState();
-        for (int j=1; j<20; j++) {
-            int index = std::rand() % state->navigableLocations.size();
-            int heading = (std::rand() % 3) - 1;
-            int elevation = (std::rand() % 3) - 1;
-            sim.makeAction(index, heading, elevation);
+        REQUIRE_NOTHROW(sim.newRandomEpisode(envs));
+        state = sim.getState();
+        for (int j=1; j<50; j++) {
+            for (int n=0; n<batchSize; ++n) {
+                ix.at(n) = std::rand() % state.at(n)->navigableLocations.size();
+                headings.at(n) = (std::rand() % 3) - 1;
+                elevations.at(n) = (std::rand() % 3) - 1;
+            }
+            sim.makeAction(ix, headings, elevations);
             state = sim.getState();
         }
     }

@@ -30,12 +30,12 @@ int main(int argc, char *argv[]) {
         std::cout << "Episode #" << i + 1 << "\n";
 
         // Starts a new episode. It is not needed right after init() but it doesn't cost much and the loop is nicer.
-        sim.newEpisode("2t7WUuJeko7"); // Take optional viewpoint_id argument, otherwise launches at a random location
+        sim.newRandomEpisode(std::vector<std::string>(1,"2t7WUuJeko7")); // Launches at a random location
 
         while (true) {
 
             // Get the state
-            SimStatePtr state = sim.getState(); // SimStatePtr is std::shared_ptr<SimState>
+            SimStatePtr state = sim.getState().at(0); // SimStatePtr is std::shared_ptr<SimState>
 
             // Which consists of:
             unsigned int n = state->step;
@@ -87,7 +87,9 @@ int main(int argc, char *argv[]) {
                 elevationChange = -M_PI / 180;
                 break;
             }
-            sim.makeAction(locationIdx, headingChange, elevationChange);
+            sim.makeAction(std::vector<unsigned int>(1, locationIdx), 
+                           std::vector<double>(1, headingChange), 
+                           std::vector<double>(1, elevationChange));
 
         }
         std::cout << "Episode finished.\n";

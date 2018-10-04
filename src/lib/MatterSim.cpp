@@ -52,8 +52,7 @@ GLfloat cube_vertices[] = {
 };
 
 
-Simulator::Simulator() :state{new SimState()},
-                        width(320),
+Simulator::Simulator() :width(320),
                         height(240),
                         vfov(0.8),
                         minElevation(-0.94),
@@ -69,14 +68,32 @@ Simulator::Simulator() :state{new SimState()},
                         discretizeViews(false),
                         preloadImages(false),
                         renderDepth(false),
-                        randomSeed(1),
-                        cacheSize(200) {
+                        batchSize(1),
+                        cacheSize(200),
+                        randomSeed(1) {
 };
 
 Simulator::~Simulator() {
     close();
 }
 
+void Simulator::setDatasetPath(const std::string& path) {
+    if (!initialized) {
+        datasetPath = path;
+    }
+}
+
+void Simulator::setNavGraphPath(const std::string& path) {
+    if (!initialized) {
+        navGraphPath = path;
+    }
+}
+
+void Simulator::setRenderingEnabled(bool value) {
+    if (!initialized) {
+        renderingEnabled = value;
+    }
+}
 
 void Simulator::setCameraResolution(int width, int height) {
     this->width = width;
@@ -87,9 +104,13 @@ void Simulator::setCameraVFOV(double vfov) {
     this->vfov = vfov;
 }
 
-void Simulator::setRenderingEnabled(bool value) {
-    if (!initialized) {
-        renderingEnabled = value;
+bool Simulator::setElevationLimits(double min, double max) {
+    if (min < 0.0 && min > -M_PI/2.0 && max > 0.0 && max < M_PI/2.0) {
+        minElevation = min;
+        maxElevation = max;
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -111,21 +132,9 @@ void Simulator::setDepthEnabled(bool value) {
     } 
 }
 
-void Simulator::setDatasetPath(const std::string& path) {
+void Simulator::setBatchSize(unsigned int size) {
     if (!initialized) {
-        datasetPath = path;
-    }
-}
-
-void Simulator::setNavGraphPath(const std::string& path) {
-    if (!initialized) {
-        navGraphPath = path;
-    }
-}
-
-void Simulator::setSeed(int seed) {
-    if (!initialized) {
-        randomSeed = seed;
+        batchSize = size;
     }
 }
 
@@ -135,9 +144,18 @@ void Simulator::setCacheSize(unsigned int size) {
     }
 }
 
+void Simulator::setSeed(int seed) {
+    if (!initialized) {
+        randomSeed = seed;
+    }
+}
+
 void Simulator::initialize() {
-    state->rgb = cv::Mat(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
-    state->depth = cv::Mat(height, width, CV_16UC1, cv::Scalar(0));
+    for (unsigned int i=0; i<batchSize; ++i) {
+        states.push_back(std::make_shared<SimState>());
+        states.back()->rgb = cv::Mat(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
+        states.back()->depth = cv::Mat(height, width, CV_16UC1, cv::Scalar(0));
+    }
     if (renderingEnabled) {
 #ifdef OSMESA_RENDERING
         ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
@@ -309,99 +327,96 @@ void Simulator::initialize() {
 }
 
 void Simulator::populateNavigable() {
-    std::vector<ViewpointPtr> updatedNavigable;
-    updatedNavigable.push_back(state->location);
-    unsigned int idx = state->location->ix;
-    double adjustedheading = M_PI/2.0 - state->heading;
-    glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
-    double cos_half_hfov = cos(vfov * width / height / 2.0);
-    
-    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
-    for (unsigned int i : navGraph.adjacentViewpointIndices(state->scanId, idx)) {
-        // Check if visible between camera left and camera right
-        glm::vec3 target_dir = navGraph.cameraPosition(state->scanId,i) - navGraph.cameraPosition(state->scanId,idx);
-        double rel_distance = glm::length(target_dir);
-        double tar_z = target_dir.z;
-        target_dir.z = 0.f; // project to xy plane
-        double rel_elevation = atan2(tar_z, glm::length(target_dir)) - state->elevation;
-        glm::vec3 normed_target_dir = glm::normalize(target_dir);
-        double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
-        if (cos_angle >= cos_half_hfov) {
-            glm::vec3 pos = navGraph.cameraPosition(state->scanId,i);
-            double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x,
-                    target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
-            Viewpoint v{navGraph.viewpoint(state->scanId,i), i, pos[0], pos[1], pos[2],
-                  rel_heading, rel_elevation, rel_distance};
-            updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
+    for (auto state: states) {
+        std::vector<ViewpointPtr> updatedNavigable;
+        updatedNavigable.push_back(state->location);
+        unsigned int idx = state->location->ix;
+        double adjustedheading = M_PI/2.0 - state->heading;
+        glm::vec3 camera_horizon_dir(cos(adjustedheading), sin(adjustedheading), 0.f);
+        double cos_half_hfov = cos(vfov * width / height / 2.0);
+        
+        auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
+        for (unsigned int i : navGraph.adjacentViewpointIndices(state->scanId, idx)) {
+            // Check if visible between camera left and camera right
+            glm::vec3 target_dir = navGraph.cameraPosition(state->scanId,i) - navGraph.cameraPosition(state->scanId,idx);
+            double rel_distance = glm::length(target_dir);
+            double tar_z = target_dir.z;
+            target_dir.z = 0.f; // project to xy plane
+            double rel_elevation = atan2(tar_z, glm::length(target_dir)) - state->elevation;
+            glm::vec3 normed_target_dir = glm::normalize(target_dir);
+            double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
+            if (cos_angle >= cos_half_hfov) {
+                glm::vec3 pos = navGraph.cameraPosition(state->scanId,i);
+                double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x,
+                        target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );
+                Viewpoint v{navGraph.viewpoint(state->scanId,i), i, pos[0], pos[1], pos[2],
+                      rel_heading, rel_elevation, rel_distance};
+                updatedNavigable.push_back(std::make_shared<Viewpoint>(v));
+            }
         }
+        std::sort(updatedNavigable.begin(), updatedNavigable.end(), ViewpointPtrComp());
+        state->navigableLocations = updatedNavigable;
     }
-    std::sort(updatedNavigable.begin(), updatedNavigable.end(), ViewpointPtrComp());
-    state->navigableLocations = updatedNavigable;
 }
 
-void Simulator::setHeadingElevation(double heading, double elevation) {
-    // Normalize heading to range [0, 360]
-    state->heading = fmod(heading, M_PI*2.0);
-    while (state->heading < 0.0) {
-        state->heading += M_PI*2.0;
-    }
-    if (discretizeViews) {
-        // Snap heading to nearest discrete value
-        double headingIncrement = M_PI*2.0/headingCount;
-        int heading_step = std::lround(state->heading/headingIncrement);
-        if (heading_step == headingCount) heading_step = 0;
-        state->heading = (double)heading_step * headingIncrement;
-        // Snap elevation to nearest discrete value (disregarding elevation limits)
-        state->elevation = elevation;
-        if (state->elevation < -elevationIncrement/2.0) {
-          state->elevation = -elevationIncrement;
-          state->viewIndex = heading_step;
-        } else if (state->elevation > elevationIncrement/2.0) {
-          state->elevation = elevationIncrement;
-          state->viewIndex = heading_step + 2*headingCount;
+void Simulator::setHeadingElevation(const std::vector<double>& heading, const std::vector<double>& elevation) {
+    for (unsigned int i=0; i<states.size(); ++i) {
+        auto state = states.at(i);
+        // Normalize heading to range [0, 360]
+        state->heading = fmod(heading.at(i), M_PI*2.0);
+        while (state->heading < 0.0) {
+            state->heading += M_PI*2.0;
+        }
+        if (discretizeViews) {
+            // Snap heading to nearest discrete value
+            double headingIncrement = M_PI*2.0/headingCount;
+            int heading_step = std::lround(state->heading/headingIncrement);
+            if (heading_step == headingCount) heading_step = 0;
+            state->heading = (double)heading_step * headingIncrement;
+            // Snap elevation to nearest discrete value (disregarding elevation limits)
+            state->elevation = elevation.at(i);
+            if (state->elevation < -elevationIncrement/2.0) {
+              state->elevation = -elevationIncrement;
+              state->viewIndex = heading_step;
+            } else if (state->elevation > elevationIncrement/2.0) {
+              state->elevation = elevationIncrement;
+              state->viewIndex = heading_step + 2*headingCount;
+            } else {
+              state->elevation = 0.0;
+              state->viewIndex = heading_step + headingCount;
+            }
         } else {
-          state->elevation = 0.0;
-          state->viewIndex = heading_step + headingCount;
+            // Set elevation with limits
+            state->elevation = std::max(std::min(elevation.at(i), maxElevation), minElevation);
         }
-    } else {
-        // Set elevation with limits
-        state->elevation = std::max(std::min(elevation, maxElevation), minElevation);
     }
 }
 
-bool Simulator::setElevationLimits(double min, double max) {
-    if (min < 0.0 && min > -M_PI/2.0 && max > 0.0 && max < M_PI/2.0) {
-        minElevation = min;
-        maxElevation = max;
-        return true;
-    } else {
-        return false;
-    }
-}
-
-void Simulator::newEpisode(const std::string& scanId,
-                           const std::string& viewpointId,
-                           double heading,
-                           double elevation) {
+void Simulator::newEpisode(const std::vector<std::string>& scanId,
+                           const std::vector<std::string>& viewpointId,
+                           const std::vector<double>& heading,
+                           const std::vector<double>& elevation) {
     wallTimer.Start();
     processTimer.Start();
     if (!initialized) {
         initialize();
     }
-    state->step = 0;
-    state->scanId = scanId;
     setHeadingElevation(heading, elevation);
     auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
-    const std::string vid = viewpointId.empty() ? navGraph.randomViewpoint(scanId) : viewpointId;
-    unsigned int ix = navGraph.index(state->scanId, vid);
-    glm::vec3 pos = navGraph.cameraPosition(scanId, ix);
-    Viewpoint v {
-        vid, 
-        ix,
-        pos[0], pos[1], pos[2], 
-        0.0, 0.0, 0.0
-    };
-    state->location = std::make_shared<Viewpoint>(v);
+    for (unsigned int i=0; i<states.size(); ++i) {
+        auto state = states.at(i);
+        state->step = 0;
+        state->scanId = scanId.at(i);
+        unsigned int ix = navGraph.index(state->scanId, viewpointId.at(i));
+        glm::vec3 pos = navGraph.cameraPosition(state->scanId, ix);
+        Viewpoint v {
+            viewpointId.at(i), 
+            ix,
+            pos[0], pos[1], pos[2], 
+            0.0, 0.0, 0.0
+        };
+        state->location = std::make_shared<Viewpoint>(v);
+    }
     populateNavigable();
     if (renderingEnabled) {
         renderScene();
@@ -409,80 +424,112 @@ void Simulator::newEpisode(const std::string& scanId,
     processTimer.Stop();
 }
 
-SimStatePtr Simulator::getState() {
-    return this->state;
+
+void Simulator::newRandomEpisode(const std::vector<std::string>& scanId) {
+    std::vector<std::string> viewpointId;
+    std::vector<double> heading;
+    std::vector<double> elevation(scanId.size(), 0.0);
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(0.0,M_PI*2.0);
+    auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
+    for (auto scan : scanId) {
+        viewpointId.push_back(navGraph.randomViewpoint(scan));
+        heading.push_back(distribution(generator));
+    }
+    newEpisode(scanId, viewpointId, heading, elevation);
+}
+
+const std::vector<SimStatePtr>& Simulator::getState() {
+    return this->states;
 }
 
 void Simulator::renderScene() {
-    frames += 1;
+    frames += batchSize;
     loadTimer.Start();
     auto& navGraph = NavGraph::getInstance(navGraphPath, datasetPath, preloadImages, renderDepth, randomSeed, cacheSize);
-    std::pair<GLuint, GLuint> texIds = navGraph.cubemapTextures(state->scanId, state->location->ix);
     loadTimer.Stop();
-    renderTimer.Start();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // Scale and move the cubemap model into position
-    Model = navGraph.cameraRotation(state->scanId,state->location->ix) * Scale;
-    // Opengl camera looking down -z axis. Rotate around x by -90deg (now looking down +y). Add positive elevation to look up.
-    RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f + (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
-    // Rotate camera around z for heading, positive heading will turn right.
-    View = glm::rotate(RotateX, (float)M_PI + (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 M = View * Model;
-    glUniformMatrix4fv(ModelViewMat, 1, GL_FALSE, glm::value_ptr(M));
-    glUniform1i(isDepth, false);
-    glViewport(0, 0, width, height);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.first);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    renderTimer.Stop();
-    gpuReadTimer.Start();
-    cv::Mat img = this->state->rgb;
-    //use fast 4-byte alignment (default anyway) if possible
-    glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
-    //set length of one complete row in destination data (doesn't need to equal img.cols)
-    glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
-    glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
-    gpuReadTimer.Stop();
-    assertOpenGLError("render RGB");
-    if (renderDepth) {
+    for (auto state : states) {
         renderTimer.Start();
-        glUniform1i(isDepth, true);
+        std::pair<GLuint, GLuint> texIds = navGraph.cubemapTextures(state->scanId, state->location->ix);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.second);
+        // Scale and move the cubemap model into position
+        Model = navGraph.cameraRotation(state->scanId,state->location->ix) * Scale;
+        // Opengl camera looking down -z axis. Rotate around x by -90deg (now looking down +y). Add positive elevation to look up.
+        RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f + (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
+        // Rotate camera around z for heading, positive heading will turn right.
+        View = glm::rotate(RotateX, (float)M_PI + (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 M = View * Model;
+        glUniformMatrix4fv(ModelViewMat, 1, GL_FALSE, glm::value_ptr(M));
+        glUniform1i(isDepth, false);
+        glViewport(0, 0, width, height);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.first);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         renderTimer.Stop();
         gpuReadTimer.Start();
-        cv::Mat img = this->state->depth;
+        cv::Mat img = state->rgb;
         //use fast 4-byte alignment (default anyway) if possible
         glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
         //set length of one complete row in destination data (doesn't need to equal img.cols)
         glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
-        glReadPixels(0, 0, img.cols, img.rows, GL_RED, GL_UNSIGNED_SHORT, img.data);
+        glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
         gpuReadTimer.Stop();
-        assertOpenGLError("render Depth");
+        assertOpenGLError("render RGB");
+        if (renderDepth) {
+            renderTimer.Start();
+            glUniform1i(isDepth, true);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.second);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            renderTimer.Stop();
+            gpuReadTimer.Start();
+            cv::Mat img = state->depth;
+            //use fast 4-byte alignment (default anyway) if possible
+            glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
+            //set length of one complete row in destination data (doesn't need to equal img.cols)
+            glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
+            glReadPixels(0, 0, img.cols, img.rows, GL_RED, GL_UNSIGNED_SHORT, img.data);
+            gpuReadTimer.Stop();
+            assertOpenGLError("render Depth");
+        }
     }
 }
 
-void Simulator::makeAction(int index, double heading, double elevation) {
+void Simulator::makeAction(const std::vector<unsigned int>& index, const std::vector<double>& heading, 
+                        const std::vector<double>& elevation) {
     processTimer.Start();
-    // move
-    if (!initialized || index < 0 || index >= state->navigableLocations.size() ){
+    if (!initialized){
         std::stringstream msg;
-        msg << "MatterSim: Invalid action index: " << index;
-        throw std::domain_error( msg.str() );
+        msg << "MatterSim: newEpisode must be called before makeAction";
+        throw std::runtime_error( msg.str() );
     }
-    state->location = state->navigableLocations[index];
-    state->location->rel_heading = 0.0;
-    state->location->rel_elevation = 0.0;
-    state->location->rel_distance = 0.0;
-    state->step += 1;
-    if (discretizeViews) {
-        // Increments based on sign of input
-        if (heading > 0.0) heading = M_PI*2.0/headingCount;
-        if (heading < 0.0) heading = -M_PI*2.0/headingCount;
-        if (elevation > 0.0) elevation =  elevationIncrement;
-        if (elevation < 0.0) elevation = -elevationIncrement;
+    std::vector<double> newHeading;
+    std::vector<double> newElevation;
+    for (unsigned int i=0; i<states.size(); ++i) {
+        auto state = states.at(i);
+        if (index.at(i) >= state->navigableLocations.size() ){
+            std::stringstream msg;
+            msg << "MatterSim: Invalid action index: " << index.at(i) << " in environment " <<
+                  i << " of " << batchSize;
+            throw std::domain_error( msg.str() );
+        }
+        state->location = state->navigableLocations[index.at(i)];
+        state->location->rel_heading = 0.0;
+        state->location->rel_elevation = 0.0;
+        state->location->rel_distance = 0.0;
+        state->step += 1;
+        double h = heading.at(i);
+        double e = elevation.at(i);
+        if (discretizeViews) {
+            // Increments based on sign of input
+            if (h > 0.0) h = M_PI*2.0/headingCount;
+            if (h < 0.0) h = -M_PI*2.0/headingCount;
+            if (e > 0.0) e =  elevationIncrement;
+            if (e < 0.0) e = -elevationIncrement;
+        }
+        newHeading.push_back(state->heading + h);
+        newElevation.push_back(state->elevation + e);
     }
-    setHeadingElevation(state->heading + heading, state->elevation + elevation);
+    setHeadingElevation(newHeading, newElevation);
     populateNavigable();
     if (renderingEnabled) {
         renderScene();
@@ -539,7 +586,7 @@ std::string Simulator::timingInfo() {
     oss << "Rendered " << f << " frames" << std::endl;
     oss << "Wall time: " << wt << " ms, (" << f/wt*1000 << " fps)" << std::endl;
     oss << "Process time: " << pt << " ms, (" << f/pt*1000 << " fps)" << std::endl;
-    oss << "\tTexture loading: " << lt << " ms" << std::endl;
+    oss << "\tImage loading: " << lt << " ms" << std::endl;
     oss << "\tRendering: " << rt << " ms" << std::endl;
     oss << "\tReading rendered image: " << it << " ms" << std::endl;
     return oss.str();

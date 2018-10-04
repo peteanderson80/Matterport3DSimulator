@@ -103,6 +103,25 @@ namespace mattersim {
         ~Simulator();
 
         /**
+         * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>.
+         * The provided directory must contain subdirectories of the form:
+         * "<scanId>/matterport_skybox_images/". Default is "./data/v1/scans/".
+         */
+        void setDatasetPath(const std::string& path);
+
+        /**
+         * Set a non-standard path to the viewpoint connectivity graphs. The provided directory must contain files
+         * of the form "/<scanId>_connectivity.json". Default is "./connectivity" (the graphs provided
+         * by this repo).
+         */
+        void setNavGraphPath(const std::string& path);
+
+        /**
+         * Enable or disable rendering. Useful for testing. Default is true (enabled).
+         */
+        void setRenderingEnabled(bool value);
+
+        /**
          * Sets camera resolution. Default is 320 x 240.
          */
         void setCameraResolution(int width, int height);
@@ -113,9 +132,10 @@ namespace mattersim {
         void setCameraVFOV(double vfov);
 
         /**
-         * Enable or disable rendering. Useful for testing. Default is true (enabled).
+         * Set the camera elevation min and max limits in radians. Default is +-0.94 radians.
+         * @return true if successful.
          */
-        void setRenderingEnabled(bool value);
+        bool setElevationLimits(double min, double max);
 
         /**
          * Enable or disable discretized viewing angles. When enabled, heading and
@@ -137,23 +157,9 @@ namespace mattersim {
         void setDepthEnabled(bool value);
 
         /**
-         * Set a non-standard path to the <a href="https://niessner.github.io/Matterport/">Matterport3D dataset</a>.
-         * The provided directory must contain subdirectories of the form:
-         * "<scanId>/matterport_skybox_images/". Default is "./data/v1/scans/".
+         * Set the number of environments in the batch. Default is 1.
          */
-        void setDatasetPath(const std::string& path);
-
-        /**
-         * Set a non-standard path to the viewpoint connectivity graphs. The provided directory must contain files
-         * of the form "/<scanId>_connectivity.json". Default is "./connectivity" (the graphs provided
-         * by this repo).
-         */
-        void setNavGraphPath(const std::string& path);
-
-        /**
-         * Set the random seed for episodes where viewpoint is not provided.
-         */
-        void setSeed(int seed);
+        void setBatchSize(unsigned int size);
 
         /**
          * Set the cache size for storing pano images in gpu memory. Default is 200.
@@ -161,10 +167,9 @@ namespace mattersim {
         void setCacheSize(unsigned int size);
 
         /**
-         * Set the camera elevation min and max limits in radians. Default is +-0.94 radians.
-         * @return true if successful.
+         * Set the random seed for episodes where viewpoint is not provided.
          */
-        bool setElevationLimits(double min, double max);
+        void setSeed(int seed);
 
         /**
          * Initialize the simulator. Further configuration won't take any effect from now on.
@@ -180,13 +185,19 @@ namespace mattersim {
          * @param elevation - set the initial camera elevation in radians, measured from the horizon
          *                    defined by the x-y plane (up is positive).
          */
-        void newEpisode(const std::string& scanId, const std::string& viewpointId=std::string(),
-              double heading=0, double elevation=0);
+        void newEpisode(const std::vector<std::string>& scanId, const std::vector<std::string>& viewpointId,
+              const std::vector<double>& heading, const std::vector<double>& elevation);
+
+        /**
+         * Starts a new episode at a random viewpoint.
+         * @param scanId - sets which scene is used, e.g. "2t7WUuJeko7" 
+         */
+        void newRandomEpisode(const std::vector<std::string>& scanId);
 
         /**
          * Returns the current batch of environment states including RGB images and available actions.
          */
-        SimStatePtr getState();
+        const std::vector<SimStatePtr>& getState();
 
         /** @brief Select an action.
          *
@@ -198,7 +209,8 @@ namespace mattersim {
          * @param elevation - desired elevation change in radians, measured from the horizon defined
          *                    by the x-y plane (up is positive).
          */
-        void makeAction(int index, double heading, double elevation);
+        void makeAction(const std::vector<unsigned int>& index, const std::vector<double>& heading, 
+                        const std::vector<double>& elevation);
 
         /**
          * Closes the environment and releases underlying texture resources, OpenGL contexts, etc.
@@ -219,7 +231,7 @@ namespace mattersim {
         const int headingCount = 12; // 12 heading values in discretized views
         const double elevationIncrement = M_PI/6.0; // 30 degrees discretized up/down
         void populateNavigable();
-        void setHeadingElevation(double heading, double elevation);
+        void setHeadingElevation(const std::vector<double>& heading, const std::vector<double>& elevation);
         void renderScene();
 #ifdef OSMESA_RENDERING
         void *buffer;
@@ -230,7 +242,7 @@ namespace mattersim {
 #else
         GLuint FramebufferName;
 #endif
-        SimStatePtr state;
+        std::vector<SimStatePtr> states;
         bool initialized;
         bool renderingEnabled;
         bool discretizeViews;
@@ -240,6 +252,7 @@ namespace mattersim {
         int height;
         int randomSeed;
         unsigned int cacheSize;
+        unsigned int batchSize;
         double vfov;
         double minElevation;
         double maxElevation;

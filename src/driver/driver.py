@@ -20,7 +20,7 @@ sim.setCameraResolution(WIDTH, HEIGHT)
 sim.setCameraVFOV(VFOV)
 sim.setDepthEnabled(True)
 sim.initialize()
-sim.newEpisode('2t7WUuJeko7', '1e6b606b44df4a6086c0f97e826d4d15', 0, 0)
+sim.newEpisode(['2t7WUuJeko7'], ['1e6b606b44df4a6086c0f97e826d4d15'], [0], [0])
 
 heading = 0
 elevation = 0
@@ -30,11 +30,11 @@ ANGLEDELTA = 5 * math.pi / 180
 
 
 while True:
-    sim.makeAction(location, heading, elevation)
+    sim.makeAction([location], [heading], [elevation])
     location = 0
     heading = 0
     elevation = 0
-    state = sim.getState()
+    state = sim.getState()[0]
     locations = state.navigableLocations
     rgb = np.array(state.rgb, copy=False)
     for idx, loc in enumerate(locations[1:]):

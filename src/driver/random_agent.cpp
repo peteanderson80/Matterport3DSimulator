@@ -31,11 +31,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < episodes; ++i) {
 
         // Starts a new episode. It is not needed right after init() but it doesn't cost much and the loop is nicer.
-        sim->newEpisode("2t7WUuJeko7"); // Take optional viewpoint_id argument, otherwise launches at a random location
+        sim->newRandomEpisode(std::vector<std::string>(1,"2t7WUuJeko7")); // Launches at a random location
 
         for (int step = 0;step < 10;++step) {
             // Get the state
-            SimStatePtr state = sim->getState(); // SimStatePtr is std::shared_ptr<SimState>
+            SimStatePtr state = sim->getState().at(0); // SimStatePtr is std::shared_ptr<SimState>
 
             // Which consists of:
             unsigned int n = state->step;
@@ -56,7 +56,9 @@ int main(int argc, char *argv[]) {
 
             // Make action (index into reachable, heading change in rad, elevation change in rad)      
 // E.g. an RL agent will sample an action here. A reward can be determined based on location, heading, elevation but that is dataset dependent
-            sim->makeAction(locationIdx, headingChange, elevationChange);
+            sim->makeAction(std::vector<unsigned int>(1, locationIdx), 
+                           std::vector<double>(1, headingChange), 
+                           std::vector<double>(1, elevationChange));
             std::this_thread::sleep_for(std::chrono::milliseconds{100});
         }
     }
