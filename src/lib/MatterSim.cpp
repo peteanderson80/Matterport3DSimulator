@@ -454,6 +454,7 @@ void Simulator::renderScene() {
         renderTimer.Start();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.second);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         renderTimer.Stop();
         gpuReadTimer.Start();
         cv::Mat img = this->state->depth;

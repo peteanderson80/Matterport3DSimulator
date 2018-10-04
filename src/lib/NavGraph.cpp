@@ -52,18 +52,19 @@ void NavGraph::Location::loadCubemapImages() {
     zpos = rgb(cv::Rect(1*w, 0, w, h));
     zneg = rgb(cv::Rect(3*w, 0, w, h));
     if (xpos.empty() || xneg.empty() || ypos.empty() || yneg.empty() || zpos.empty() || zneg.empty()) {
-        throw std::invalid_argument( "MatterSim: Could not open skybox RGB files at: " + skyboxDir + viewpointId + "_skybox*_small.jpg");
+        throw std::invalid_argument( "MatterSim: Could not open skybox RGB files at: " + skyboxDir + viewpointId + "_skybox_small.jpg");
     }
     if (includeDepth) {
         // 16 bit grayscale images
-        xposD = cv::imread(skyboxDir + viewpointId + "_skybox2_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
-        xnegD = cv::imread(skyboxDir + viewpointId + "_skybox4_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
-        yposD = cv::imread(skyboxDir + viewpointId + "_skybox0_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
-        ynegD = cv::imread(skyboxDir + viewpointId + "_skybox5_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
-        zposD = cv::imread(skyboxDir + viewpointId + "_skybox1_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
-        znegD = cv::imread(skyboxDir + viewpointId + "_skybox3_depth.png", CV_LOAD_IMAGE_ANYDEPTH);
+        cv::Mat depth = cv::imread(skyboxDir + viewpointId + "_skybox_depth_small.png", CV_LOAD_IMAGE_ANYDEPTH);
+        xposD = depth(cv::Rect(2*w, 0, w, h));
+        xnegD = depth(cv::Rect(4*w, 0, w, h));
+        yposD = depth(cv::Rect(0*w, 0, w, h));
+        ynegD = depth(cv::Rect(5*w, 0, w, h));
+        zposD = depth(cv::Rect(1*w, 0, w, h));
+        znegD = depth(cv::Rect(3*w, 0, w, h));
         if (xposD.empty() || xnegD.empty() || yposD.empty() || ynegD.empty() || zposD.empty() || znegD.empty()) {
-            throw std::invalid_argument( "MatterSim: Could not open skybox depth files at: " + skyboxDir + viewpointId + "_skybox*_depth.jpg");
+            throw std::invalid_argument( "MatterSim: Could not open skybox depth files at: " + skyboxDir + viewpointId + "_skybox_depth_small.png");
         }
     }
     im_loaded = true;
