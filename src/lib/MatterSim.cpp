@@ -276,6 +276,7 @@ void Simulator::initialize() {
         delete [] fShaderSource;
         glCompileShader(glShaderV);
         glCompileShader(glShaderF);
+
         glProgram = glCreateProgram();
         glAttachShader(glProgram, glShaderV);
         glAttachShader(glProgram, glShaderF);
@@ -288,12 +289,17 @@ void Simulator::initialize() {
         glGetShaderInfoLog(glShaderV, 2048, &vlength, vlog);
         glGetShaderInfoLog(glShaderF, 2048, &flength, flog);
 
-        // grab the pvm matrix and vertex location from our shader program
-        PVMM   = glGetUniformLocation(glProgram, "PVMM");
+        // grab the matrix and vertex location from our shader program
+        ModelViewMat = glGetUniformLocation(glProgram, "ModelViewMat");
+        ProjMat = glGetUniformLocation(glProgram, "ProjMat");
         vertex = glGetAttribLocation(glProgram, "vertex");
+        // If isDepth, the fragment shader converts Euclidean depth values (distance from camera 
+        // centre) back to perpendicular distance from camera plane.
+        isDepth = glGetUniformLocation(glProgram, "isDepth");
 
         // these won't change
         Projection = glm::perspective((float)vfov, (float)width / (float)height, 0.1f, 100.0f);
+        glUniformMatrix4fv(ProjMat, 1, GL_FALSE, glm::value_ptr(Projection));
         Scale      = glm::scale(glm::mat4(1.0f),glm::vec3(10,10,10)); // Scale cube to 10m
 
         // skybox
@@ -435,8 +441,9 @@ void Simulator::renderScene() {
     RotateX = glm::rotate(glm::mat4(1.0f), -(float)M_PI / 2.0f + (float)state->elevation, glm::vec3(1.0f, 0.0f, 0.0f));
     // Rotate camera around z for heading, positive heading will turn right.
     View = glm::rotate(RotateX, (float)M_PI + (float)state->heading, glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 M = Projection * View * Model;
-    glUniformMatrix4fv(PVMM, 1, GL_FALSE, glm::value_ptr(M));
+    glm::mat4 M = View * Model;
+    glUniformMatrix4fv(ModelViewMat, 1, GL_FALSE, glm::value_ptr(M));
+    glUniform1i(isDepth, false);
     glViewport(0, 0, width, height);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.first);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -452,6 +459,7 @@ void Simulator::renderScene() {
     assertOpenGLError("render RGB");
     if (renderDepth) {
         renderTimer.Start();
+        glUniform1i(isDepth, true);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.second);
         glDrawArrays(GL_TRIANGLES, 0, 36);

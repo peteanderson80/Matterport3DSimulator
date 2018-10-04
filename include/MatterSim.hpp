@@ -24,6 +24,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "glm/ext.hpp"
 
 #include "Benchmark.hpp"
 #include "NavGraph.hpp"
@@ -248,8 +249,10 @@ namespace mattersim {
         glm::mat4 Scale;
         glm::mat4 RotateX;
         glm::mat4 RotateZ;
-        GLint PVMM;
+        GLint ProjMat;
+        GLint ModelViewMat;
         GLint vertex;
+        GLint isDepth;
         GLuint vao_cube;
         GLuint vbo_cube_vertices;
         GLuint glProgram;
