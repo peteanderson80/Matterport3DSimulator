@@ -51,26 +51,6 @@ GLfloat cube_vertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-char* loadFile(const char *filename) {
-    char* data;
-    int len;
-    std::ifstream ifs(filename, std::ifstream::in);
-
-    ifs.seekg(0, std::ios::end);
-    len = ifs.tellg();
-
-    ifs.seekg(0, std::ios::beg);
-    data = new char[len + 1];
-
-    ifs.read(data, len);
-    data[len] = 0;
-
-    ifs.close();
-
-    return data;
-}
-
-
 
 Simulator::Simulator() :state{new SimState()},
                         width(320),
@@ -268,12 +248,18 @@ void Simulator::initialize() {
         // load our shaders and compile them.. create a program and link it
         glShaderV = glCreateShader(GL_VERTEX_SHADER);
         glShaderF = glCreateShader(GL_FRAGMENT_SHADER);
-        const GLchar* vShaderSource = loadFile("src/lib/vertex.sh");
-        const GLchar* fShaderSource = loadFile("src/lib/fragment.sh");
+
+        const std::string vShaderString =
+          #include "vertex.sh"
+        ;
+        const std::string fShaderString =
+          #include "fragment.sh"
+        ;
+
+        const GLchar* vShaderSource = (const GLchar *)vShaderString.c_str();
+        const GLchar* fShaderSource = (const GLchar *)fShaderString.c_str();
         glShaderSource(glShaderV, 1, &vShaderSource, NULL);
         glShaderSource(glShaderF, 1, &fShaderSource, NULL);
-        delete [] vShaderSource;
-        delete [] fShaderSource;
         glCompileShader(glShaderV);
         glCompileShader(glShaderF);
 
