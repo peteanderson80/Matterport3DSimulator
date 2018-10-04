@@ -1,4 +1,5 @@
-R"(#version 120
+R""(
+#version 120
 
 varying vec3 texCoord;
 varying vec4 camCoord;
@@ -14,4 +15,5 @@ void main (void) {
   } else {
     gl_FragColor = color;
   }
-})"
+}
+)""

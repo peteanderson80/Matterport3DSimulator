@@ -1,4 +1,5 @@
-R"(#version 120
+R""(
+#version 120
 
 attribute vec3 vertex;
 varying vec3 texCoord;
@@ -10,4 +11,5 @@ void main() {
   camCoord = ModelViewMat * vec4(vertex, 1.0);
   gl_Position = ProjMat * camCoord;
   texCoord = vertex;
-})"
+}
+)""
