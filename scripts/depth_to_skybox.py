@@ -3,7 +3,7 @@
 ''' Script for generating depth skyboxes based on undistorted depth images, 
     in order to support depth output in the simulator. The current version 
     assumes that undistorted depth images are aligned to matterport skyboxes, 
-    and uses simple blending. '''
+    and uses simple blending. Images are downsized 50%. '''
 
 import os
 import math
@@ -13,17 +13,22 @@ from multiprocessing import Pool
 from numpy.linalg import inv,norm
 from StringIO import StringIO
 
+import sys
+sys.path.append('build')
+from MatterSim import cbf
 
 # Note: Matterport camera is really y=up, x=right, -z=look.
 
 SKYBOX_WIDTH = 1024
 SKYBOX_HEIGHT = 1024
+NEW_WIDTH = 512
+NEW_HEIGHT = 512
 base_dir = 'data/v1/scans'
 skybox_template = '%s/%s/matterport_skybox_images/%s_skybox%d_sami.jpg'
 color_template = '%s/%s/undistorted_color_images/%s_i%s.jpg'
 depth_template = '%s/%s/undistorted_depth_images/%s_d%s.png'
 camera_template = '%s/%s/undistorted_camera_parameters/%s.conf'
-skybox_depth_template = '%s/%s/matterport_skybox_images/%s_skybox%d_depth.png'
+skybox_depth_template = '%s/%s/matterport_skybox_images/%s_skybox_depth_small.png'
 
 
 # camera transform for skybox images 0-5 relative to image 1
@@ -94,6 +99,30 @@ def instrinsic_matrix(width, height):
   return K
 
 
+
+def fill_joint_bilateral_filter(rgb, depth):
+  ''' Fill holes in a 16bit depth image given corresponding rgb image '''
+
+  intensity = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+
+  # Convert the depth image to uint8.
+  maxDepth = np.max(depth)+1
+  depth = (depth.astype(np.float64)/maxDepth)
+  depth[depth > 1] = 1
+  depth = (depth*255).astype(np.uint8)
+  
+  # Convert to col major order
+  depth = np.asfortranarray(depth)
+  intensity = np.asfortranarray(intensity)
+  mask = (depth == 0)
+  result = np.zeros_like(depth)
+
+  # Fill holes
+  cbf(depth, intensity, mask, result)
+  result = (result.astype(np.float64)/255*maxDepth).astype(np.uint16)
+  return result
+
+
 def depth_to_skybox(scan, visualize=False):
 
   # Load camera parameters
@@ -124,12 +153,11 @@ def depth_to_skybox(scan, visualize=False):
         d_im = cv2.imread(depth_template % (base_dir,scan,pano,name), cv2.IMREAD_ANYDEPTH)
         depth[name] = z_to_euclid(K_inv, d_im)
 
+    ims = []
     for skybox_ix in range(6):
 
-      if visualize:
-        # Load skybox image
-        skybox = cv2.imread(skybox_template % (base_dir,scan,pano,skybox_ix))
-        cv2.imshow('Skybox', skybox)
+      # Load skybox image
+      skybox = cv2.imread(skybox_template % (base_dir,scan,pano,skybox_ix))
 
       # Skybox index 1 is the same orientation as camera image 1_5
       skybox_ctw,_ = extrinsics[pano + '_i1_5']
@@ -159,8 +187,8 @@ def depth_to_skybox(scan, visualize=False):
 
           # Warp and blend the depth image
           flip = cv2.flip(depth[im_name], 1) # flip around y-axis
-          warp = cv2.warpPerspective(flip, H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), cv2.INTER_NEAREST)
-          mask = cv2.warpPerspective(np.ones_like(flip), H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), cv2.INTER_LINEAR)
+          warp = cv2.warpPerspective(flip, H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), flags=cv2.INTER_NEAREST)
+          mask = cv2.warpPerspective(np.ones_like(flip), H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), flags=cv2.INTER_LINEAR)
           mask[warp == 0] = 0 # Set mask to zero where we don't have any depth values
           mask = cv2.erode(mask,np.ones((3,3),np.uint8),iterations = 1)
           locs = np.where(mask == 1)
@@ -169,22 +197,35 @@ def depth_to_skybox(scan, visualize=False):
           if visualize:
             # Warp and blend the rgb image
             flip = cv2.flip(rgb[im_name], 1) # flip around y-axis
-            warp = cv2.warpPerspective(flip, H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), cv2.INTER_LINEAR)
-            mask = cv2.warpPerspective(np.ones_like(flip), H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), cv2.INTER_LINEAR)
+            warp = cv2.warpPerspective(flip, H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), flags=cv2.INTER_LINEAR)
+            mask = cv2.warpPerspective(np.ones_like(flip), H, (SKYBOX_HEIGHT,SKYBOX_WIDTH), flags=cv2.INTER_LINEAR)
             mask = cv2.erode(mask,np.ones((3,3),np.uint8),iterations = 1)
             locs = np.where(mask == 1)
             base_rgb[locs[0], locs[1]] = warp[locs[0], locs[1]]
 
-      depth_output = cv2.flip(base_depth, 1) # flip around y-axis  
+      depth_output = cv2.flip(base_depth, 1) # flip around y-axis
+      depth_filled = fill_joint_bilateral_filter(skybox, depth_output) # Fill holes
+      depth_small = cv2.resize(depth_filled,(NEW_WIDTH,NEW_HEIGHT),interpolation=cv2.INTER_AREA) # Shrink
+      ims.append(depth_small)
 
-      if visualize:
-        cv2.imshow('Depth', cv2.applyColorMap((depth_output/256).astype(np.uint8), cv2.COLORMAP_JET))
+      if visualize and False:
+        cv2.imshow('Skybox', skybox)
+        cv2.imshow('Depth', cv2.applyColorMap((depth_small/256).astype(np.uint8), cv2.COLORMAP_JET))
         rgb_output = cv2.flip(base_rgb, 1) # flip around y-axis   
         cv2.imshow('RGB', rgb_output)
         cv2.waitKey(0)
-      else:
-        # Save output
-        assert cv2.imwrite(skybox_depth_template % (base_dir,scan,pano,skybox_ix), depth_output)
+
+    newimg = np.concatenate(ims, axis=1)
+
+    if visualize:
+      maxDepth = np.max(newimg)+1
+      newimg = (newimg.astype(np.float64)/maxDepth)
+      newimg = (newimg*255).astype(np.uint8)
+      cv2.imshow('Depth pano', cv2.applyColorMap(newimg, cv2.COLORMAP_JET))
+      cv2.waitKey(0)
+    else:
+      # Save output
+      assert cv2.imwrite(skybox_depth_template % (base_dir,scan,pano), newimg)
 
   if visualize:
     cv2.destroyAllWindows()
@@ -195,7 +236,7 @@ if __name__ == '__main__':
 
   with open('connectivity/scans.txt') as f:
     scans = [scan.strip() for scan in f.readlines()]
-    p = Pool(10)
+    p = Pool(20)
     p.map(depth_to_skybox, scans)  
 
 
