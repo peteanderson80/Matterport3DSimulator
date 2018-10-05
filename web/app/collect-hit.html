@@ -1,0 +1,453 @@
+<!-- HIT template: ImageTagging-v3.0 --><!-- Bootstrap v3.0.3 --><!-- Please note that Bootstrap CSS/JS and JQuery are 3rd party libraries that may update their url/code at any time. Amazon Mechanical Turk (MTurk) is including these libraries as a default option for you, but is not responsible for any changes to the external libraries -->
+<link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" integrity="sha384-IS73LIqjtYesmURkDE9MXKbXqYA8rvKEp/ghicjem7Vc3mGRdQRptJSz60tvrB6+" rel="stylesheet" /><!-- The following snippet enables the 'responsive' behavior on smaller screens -->
+<meta content="width=device-width,initial-scale=1" name="viewport" /><!-- Instructions -->
+<section class="container" id="TaggingOfAnImage">
+<div class="row">
+<div class="col-xs-12 col-md-12"><!-- Instructions -->
+<div class="panel panel-primary"><!-- WARNING: the ids "collapseTrigger" and "instructionBody" are being used to enable expand/collapse feature --><a class="panel-heading" href="javascript:void(0);" id="collapseTrigger"><strong>Instructions: Give A Smart Robot Directions</strong>&nbsp;<span class="collapse-text">(<u><span style="color:#0000FF;">Click to expand instructions</span></u>)</span> </a>
+<div class="panel-body" id="instructionBody">
+<p>You will see a series of panoramic photos taken while moving from a <strong>start location</strong> to a <strong>goal location</strong> in a building. <strong>Your task is to write directions so that a smart robot can find the goal location after starting from the same start location</strong>. The robot understands language and recognizes objects about as well as a typical person. However, you should assume that the robot is visiting this building for the first time.</p>
+
+<p>For your reference, the path to the goal is indicated by color-coded markers (<strong><span style="color:#00FF00;">green</span></strong> for start, <strong><span style="color:#FF0000;">red</span></strong> for goal, and <strong><span style="color:#0000FF;">blue</span></strong> for intermediate markers).</p>
+
+<ul>
+	<li>You won&#39;t see the <strong><span style="color:#00FF00;">green</span></strong> start marker at the beginning - because it&#39;s under your feet.</li>
+	<li>You may not see the <strong><span style="color:#FF0000;">red</span></strong> goal marker until you move (often the goal is in the next room).</li>
+	<li><strong>These markers are not visible to the robot</strong>, and should not be mentioned in your directions.</li>
+</ul>
+
+<p>Good directions will ensure that the robot arrives <strong>within 5 metres</strong> of the red goal marker. Therefore, we suggest:</p>
+
+<ul>
+	<li><strong><span style="color: rgb(255, 0, 0);">NEW!</span>&nbsp;Spelling and punctuation is important.</strong>&nbsp;Please use full sentences with punctuation (,.) and correct spelling.</li>
+	<li><strong>Focus on the goal, not the path</strong>. It&#39;s not necessary for the robot to follow the exact path indicated by the markers.</li>
+	<li><strong>Try to mention objects or landmarks</strong>. This is clearer than saying &#39;turn slight left&#39; or &#39;go forward&#39;.</li>
+</ul>
+
+<p>Mouse Controls:</p>
+
+<ol>
+	<li><strong>Left-click and drag the panoramic image</strong> to look around.</li>
+	<li><strong>Right-click on a color-coded marker</strong> to move to that position.</li>
+	<li><strong>Press the &#39;Play / Replay&#39; button</strong> at any time to watch a 15-20 second animated fly-through from the start to the goal.</li>
+</ol>
+
+<p>Before you start, <strong><a href="https://youtu.be/xn32y514CO0">please watch this short training video</a></strong>. It contains examples that will help you complete these tasks efficiently.</p>
+
+<p>&nbsp;</p>
+
+<p><strong>Note: <span style="color:#FF0000;">This task is not suitable for devices with small screens or touch screen devices</span></strong>. Recommended browsers are Chrome, Firefox and Safari (not Internet Explorer).</p>
+
+<p style="font-size: 13px;">These tasks relate&nbsp;to academic research conducted by Peter Anderson through the <a href="https://www.roboticvision.org/">Australian Centre for Robotic Vision</a>, Brisbane, Australia. We estimate that on average each HIT to take around 1-1.5 minutes to complete. Please send your queries and feedback to <strong>bringmeaspoon@gmail</strong>. We will be continually releasing more HITs for this task.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- End Instructions --><!-- Image Tagging Layout -->
+
+<div class="row" id="workContent">
+<div class="col-xs-12 col-sm-12 image">
+<figure style="display: inline-block; width: 100%;"><canvas id="skybox" style="width:960px; height:540px; display: block; margin: 0 auto;"> </canvas></figure>
+</div>
+
+<div class="col-xs-12 col-sm-4 fields">
+<p><strong>Left-click and drag the panoramic image to start.</strong> Instructions have been updated from the previous batch (please re-read).</p>
+<button class="btn" disabled="true" id="play" onclick="play_animation();" type="button">Play / Replay</button></div>
+
+<div class="col-xs-12 col-sm-8 fields">
+<div class="form-group"><label for="tag1">Write your Directions here (with correct spelling and punctuation):</label><textarea class="form-control" disabled="true" id="tag1" name="tag1" required="" minlength="20" spellcheck="true" rows="3" size="200" type="text"></textarea></div>
+</div>
+</div>
+</section>
+<!-- End Image Tagging Layout --><!-- Open internal style sheet -->
+<style type="text/css">#collapseTrigger{
+  color:#fff;
+  display: block;
+  text-decoration: none;
+}
+#submitButton{
+  white-space: normal;
+}
+.image{
+  margin-bottom: 15px;
+}
+.radio:first-of-type{
+  margin-top: -5px;
+}
+img.loading {
+  background: transparent url(http://thinkfuture.com/wp-content/uploads/2013/10/loading_spinner.gif) no-repeat scroll center center;
+  min-height: 200px;
+  min-width: 200px;
+}
+</style>
+<!-- Close internal style sheet --><!-- Please note that Bootstrap CSS/JS and JQuery are 3rd party libraries that may update their url/code at any time. Amazon Mechanical Turk (MTurk) is including these libraries as a default option for you, but is not responsible for any changes to the external libraries --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous"></script><script type="text/javascript" crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.2/d3.min.js"></script><script type="text/javascript" crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/87/three.min.js"></script><script type="text/javascript" crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+<!--build:js js/main.min.js -->
+<script type="text/javascript" src="js/RequestAnimationFrame.js"></script>
+<script type="text/javascript" src="js/Detector.js"></script>
+<script type="text/javascript" src="js/PTZCameraControls.js"></script>
+<script type="text/javascript" src="js/Matterport3D.js"></script>
+<!-- endbuild -->
+<!--script type="text/javascript" crossorigin="anonymous" src="YOUR PUBLIC URL/js/main.min.js"></script-->
+<script>
+  $(document).ready(function() {
+    // Instructions expand/collapse
+    var content = $('#instructionBody');
+    var trigger = $('#collapseTrigger');
+    content.hide();
+    $('.collapse-text').text('(Click to expand)');
+    trigger.click(function(){
+      content.toggle();
+      var isVisible = content.is(':visible');
+      if(isVisible){
+        $('.collapse-text').text('(Click to collapse)');
+      }else{
+        $('.collapse-text').text('(Click to expand)');
+      }
+    });
+    // end expand/collapse
+    // Avoid newlines in the text area, since AMT strips them out and sentences run together.
+    $("#tag1").keypress(function(event) {
+      if(event.which == '13') {
+        return false;
+      }
+    });
+    // end avoid newlines
+  });
+</script><script>
+//var ix = ${ix}   // UNCOMMENT THIS LINE WHEN INTEGRATING WITH AMT
+var ix = location.search.split('ix=')[1];   // UNCOMMENT THIS LINE TO RUN UI LOCALLY WITH GULP
+var step = 0;
+var playing = false;
+var scan;
+var curr_image_id;
+
+// declare a bunch of variable we will need later
+var camera, camera_pose, scene, controls, renderer, connections, world_frame, cylinder_frame, cubemap_frame;
+var mouse = new THREE.Vector2();
+var id;
+
+var SIZE_X = 960;
+var SIZE_Y = 540;
+var VFOV = 90;
+var ASPECT = SIZE_X/SIZE_Y;
+var path;
+
+var matt = new Matterport3D("");
+matt.loadJson('sample_room_paths.json').then(function(data){
+  path = data[ix.toString()];
+  scan = path['scan'];
+  curr_image_id = path['path'][step]
+  skybox_init();
+  load_connections(scan, curr_image_id);
+});
+
+function play_animation() {
+  if (!playing){
+    document.getElementById("play").disabled = true;
+    if (step != 0 || curr_image_id != path['path'][0]){
+      // First move back to start
+      var image_id = path['path'][0];
+      matt.loadCubeTexture(cube_urls(scan, image_id)).then(function(texture){
+        camera.rotation.x = 0;
+        camera.rotation.y = 0;
+        camera.rotation.z = 0;
+        scene.background = texture;
+        render();
+        move_to(image_id, true);
+        step = 0;
+        playing = true;
+        step_forward();
+      });
+    } else {
+      step = 0;
+      playing = true;
+      step_forward();
+    }
+  }
+}
+
+function step_forward(){
+  step += 1;
+  if (step >= path['path'].length) {
+    step -= 1;
+    playing = false;
+    document.getElementById("play").disabled = false;
+  } else {
+    take_action(path['path'][step]);
+  }
+};
+
+function step_backward(){
+  step -= 1;
+  if (step < 0) {
+    step = 0;
+    return;
+  }
+  take_action(path['path'][step]);
+};
+
+// ## Initialize everything
+function skybox_init(scan, image) {
+  // test if webgl is supported
+  if (! Detector.webgl) Detector.addGetWebGLMessage();
+
+  // create the camera (kinect 2)
+  camera = new THREE.PerspectiveCamera(VFOV, ASPECT, 0.01, 1000);
+  camera_pose = new THREE.Group();
+  camera_pose.add(camera);
+  
+  // create the Matterport world frame
+  world_frame = new THREE.Group();
+  
+  // create the cubemap frame
+  cubemap_frame = new THREE.Group();
+  cubemap_frame.rotation.x = -Math.PI; // Adjust cubemap for z up
+  cubemap_frame.add(world_frame);
+  
+  // create the Scene
+  scene = new THREE.Scene();
+  world_frame.add(camera_pose);
+  scene.add(cubemap_frame);
+
+  var light = new THREE.DirectionalLight( 0xFFFFFF, 1 );
+  light.position.set(0, 0, 100);
+  world_frame.add(light);
+  world_frame.add(new THREE.AmbientLight( 0xAAAAAA )); // soft light
+
+  // init the WebGL renderer
+  renderer = new THREE.WebGLRenderer({canvas: document.getElementById("skybox"), antialias: true } );
+  renderer.setSize(SIZE_X, SIZE_Y);
+
+  controls = new THREE.PTZCameraControls(camera, renderer.domElement);
+  controls.minZoom = 1;
+  controls.maxZoom = 3.0;
+  controls.minTilt = -0.6*Math.PI/2;
+  controls.maxTilt = 0.6*Math.PI/2;
+  controls.enableDamping = true;
+  controls.panSpeed = -0.25;
+  controls.tiltSpeed = -0.25;
+  controls.zoomSpeed = 1.5;
+  controls.dampingFactor = 0.5;
+  controls.addEventListener( 'select', select );
+  controls.addEventListener( 'change', onChange );
+}
+
+function select(event) {
+  if (!playing) {
+    var mouse = new THREE.Vector2();
+    var raycaster = new THREE.Raycaster();
+    mouse.x = ( event.x / SIZE_X ) * 2 - 1;
+	  mouse.y = - ( event.y / SIZE_Y ) * 2 + 1;
+	  raycaster.setFromCamera( mouse, camera );
+	  var intersects = raycaster.intersectObjects( cylinder_frame.children );
+	  if ( intersects.length > 0 ) {
+      intersects[0].object.currentHex = intersects[0].object.material.emissive.getHex();
+      intersects[0].object.material.emissive.setHex( 0xff0000 );
+      image_id = intersects[ 0 ].object.name;
+      take_action(image_id);
+      setTimeout(function(){ intersects[0].object.material.emissive.setHex( intersects[0].object.currentHex ); }, 200);
+	  }
+  }
+}
+
+function load_connections(scan, image_id) {
+  var pose_url  = "/connectivity/"+scan+"_connectivity.json";
+  d3.json(pose_url, function(error, data) {
+    if (error) return console.warn(error);
+    // Create a cylinder frame for showing arrows of directions
+    var id_to_pose = {}
+    for (var i = 0; i < data.length; i++) {
+      id_to_pose[data[i]['image_id']] = data[i];
+      id_to_pose[data[i]['image_id']]['ix'] = i;
+    }
+    cylinder_frame = new THREE.Group();
+    visibility = {};
+    for (var i = 0; i < data.length; i++) {
+      var image_id = data[i]['image_id'];
+      visibility[image_id] = {};
+      var found = false;
+      for (var j = 0; j < path['path'].length; j++) {
+        var target_id = path['path'][j];
+        if (image_id == target_id){
+          found = true;
+          // Viewpoint is in path
+          var pose = data[i]['pose'];
+          for(var k=0; k<pose.length;k++) pose[k] = parseFloat(pose[k]);
+          var height = parseFloat(data[i]['height']);
+          pose[11] -= height; // drop to surface level
+          var m = new THREE.Matrix4();
+          m.fromArray(pose);
+          m.transpose(); // switch row major to column major to suit three.js
+          var geometry = new THREE.CylinderBufferGeometry(0.15, 0.15, 0.5, 128);
+          var color = 0x0000ff;
+          if (j == path['path'].length-1) {
+            color = 0xff0000; // goal
+          } else if (j == 0){
+            color = 0x00ff00; // start
+          }
+          var material = new THREE.MeshLambertMaterial({color: color});
+          material.transparent = true;
+          material.opacity = 1.0;
+          var cylinder = new THREE.Mesh(geometry, material);
+          cylinder.applyMatrix(m);
+          cylinder.height = height;
+          cylinder.name = image_id;
+          cylinder_frame.add(cylinder);
+        }
+      }
+      if (found){
+        for (var j = 0; j < path['path'].length; j++) {
+          var target_id = path['path'][j];
+          if (data[i]['visible'][id_to_pose[target_id]['ix']] || data[i]['unobstructed'][id_to_pose[target_id]['ix']]){
+            visibility[image_id][target_id] = true;
+          }
+        }
+      }
+    }
+    world_frame.add(cylinder_frame);
+    var image_id = path['path'][0];
+    matt.loadCubeTexture(cube_urls(scan, image_id)).then(function(texture){
+      scene.background = texture;
+      move_to(image_id, true);
+    });
+  });
+}
+
+function cube_urls(scan, image_id) {
+  var urlPrefix  = "data/v1/scans/" + scan + "/matterport_skybox_images/" + image_id;
+  return [ urlPrefix + "_skybox2_sami.jpg", urlPrefix + "_skybox4_sami.jpg",
+      urlPrefix + "_skybox0_sami.jpg", urlPrefix + "_skybox5_sami.jpg",
+      urlPrefix + "_skybox1_sami.jpg", urlPrefix + "_skybox3_sami.jpg" ];
+}
+
+function move_to(image_id, isInitial=false) {
+  // Adjust cylinder visibility
+  var cylinders = cylinder_frame.children;
+  for (var i = 0; i < cylinders.length; ++i){
+    cylinders[i].visible = visibility[image_id].hasOwnProperty(cylinders[i].name);
+  }
+  // Correct world frame for individual skybox camera rotation
+  var inv = new THREE.Matrix4();
+  var cam_pose = cylinder_frame.getObjectByName(image_id);
+  inv.getInverse(cam_pose.matrix);
+  var ignore = new THREE.Vector3();
+  inv.decompose(ignore, world_frame.quaternion, world_frame.scale);
+  world_frame.updateMatrix();
+  if (isInitial){
+    set_camera_pose(cam_pose.matrix, cam_pose.height);
+  } else {
+    set_camera_position(cam_pose.matrix, cam_pose.height);
+  }
+  render();
+  curr_image_id = image_id;
+  // Animation
+  if (playing) {
+    step_forward();
+  }
+}
+
+function set_camera_pose(matrix4d, height){
+  matrix4d.decompose(camera_pose.position, camera_pose.quaternion, camera_pose.scale);
+  camera_pose.position.z += height;
+  camera_pose.rotateX(Math.PI); // convert matterport camera to webgl camera
+}
+
+function set_camera_position(matrix4d, height) {
+  var ignore_q = new THREE.Quaternion();
+  var ignore_s = new THREE.Vector3();
+  matrix4d.decompose(camera_pose.position, ignore_q, ignore_s);
+  camera_pose.position.z += height;
+}
+
+function get_camera_pose(){
+  camera.updateMatrix();
+  camera_pose.updateMatrix();
+  var m = camera.matrix.clone();
+  m.premultiply(camera_pose.matrix);
+  return m;
+}
+
+function take_action(image_id) {
+  var texture_promise = matt.loadCubeTexture(cube_urls(scan, image_id)); // start fetching textures
+  var target = cylinder_frame.getObjectByName(image_id);
+
+  // Camera up vector
+  var camera_up = new THREE.Vector3(0,1,0);
+  var camera_look = new THREE.Vector3(0,0,-1);
+  var camera_m = get_camera_pose();
+  var zero = new THREE.Vector3(0,0,0);
+  camera_m.setPosition(zero);
+  camera_up.applyMatrix4(camera_m);
+  camera_up.normalize();
+  camera_look.applyMatrix4(camera_m);
+  camera_look.normalize();
+
+  // look direction
+  var look = target.position.clone();
+  look.sub(camera_pose.position);
+  look.projectOnPlane(camera_up);
+  look.normalize();
+  // Simplified - assumes z is zero
+  var rotate = Math.atan2(look.y,look.x) - Math.atan2(camera_look.y,camera_look.x);
+  if (rotate < -Math.PI) rotate += 2*Math.PI;
+  if (rotate > Math.PI) rotate -= 2*Math.PI;
+
+  var target_y = camera.rotation.y + rotate;
+  var rotate_tween = new TWEEN.Tween({
+    x: camera.rotation.x,
+    y: camera.rotation.y,
+    z: camera.rotation.z})
+  .to( {
+    x: 0,
+    y: target_y,
+    z: 0 }, 2000*Math.abs(rotate) )
+  .easing( TWEEN.Easing.Cubic.InOut)
+  .onUpdate(function() {
+    camera.rotation.x = this.x;
+    camera.rotation.y = this.y;
+    camera.rotation.z = this.z;
+    render();
+  });
+  var new_vfov = VFOV*0.95;
+  var zoom_tween = new TWEEN.Tween({
+    vfov: VFOV})
+  .to( {vfov: new_vfov }, 500 )
+  .easing(TWEEN.Easing.Cubic.InOut)
+  .onUpdate(function() {
+    camera.fov = this.vfov;
+    camera.updateProjectionMatrix();
+    render();
+  })
+  .onComplete(function(){
+    cancelAnimationFrame(id);
+    texture_promise.then(function(texture) {
+      scene.background = texture; 
+      camera.fov = VFOV;
+      camera.updateProjectionMatrix();
+      move_to(image_id);
+    });
+  });
+  rotate_tween.chain(zoom_tween);
+  animate();
+  rotate_tween.start();
+}
+
+function onChange(){
+  if (!playing){
+    document.getElementById("play").disabled = false;
+    document.getElementById("tag1").disabled = false;
+  }
+  render();
+}
+
+// Display the Scene
+function render() {
+  renderer.render(scene, camera);
+}
+
+// tweening
+function animate() {
+  id = requestAnimationFrame( animate );
+  TWEEN.update();
+}
+</script>

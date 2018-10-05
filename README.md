@@ -13,8 +13,8 @@ Visit the main [website](https://bringmeaspoon.org/) for updates and to view a d
 - API for C++ and Python
 - Outputs RGB and depth images
 - Customizable image resolution, camera parameters, etc,
-- Supports off-screen rending (both GPU and CPU based)
-- Fast (xxx fps RGB-D off-screen rendering at 640x480 resolution using a Titan X GPU)
+- Supports off-screen rendering (both GPU and CPU based)
+- Fast (Around 1000 fps RGB-D off-screen rendering at 640x480 resolution using a Titan X GPU)
 - Future releases may support class and instance object segmentations.
 
 ## Reference
@@ -144,6 +144,8 @@ C++ demo:
 build/mattersim_main
 ```
 
+The javscript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator. 
+
 
 ### Building without Docker
 
@@ -185,6 +187,7 @@ doxygen
 - `img_features`: Storage for precomputed image features.
 - `data`: Matterport3D dataset.
 - `tasks`: Currently just the Room-to-Room (R2R) navigation task.
+- `web`: Javascript code for visualizing trajectories and collecting annotations using Amazon Mechanical Turk (AMT).
 
 Other directories are mostly self-explanatory.
 
