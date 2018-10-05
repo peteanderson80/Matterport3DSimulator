@@ -43,7 +43,7 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 ### Actions
 
-At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are [described below](###simulator-api) and in the paper.
+At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are [described below](#simulator-api) and in the paper.
 
 ### Room-to-Room (R2R) Navigation Task
 
@@ -51,7 +51,7 @@ The simulator includes the training data and evaluation metrics for the Room-to-
 
 ## Installation / Build Instructions
 
-We recommend using our [Dockerfile](Dockerfile) to install the simulator. The simulator can also be [built without docker](###building-without-docker) but satisfying the project dependencies may be more difficult.
+We recommend using our [Dockerfile](Dockerfile) to install the simulator. The simulator can also be [built without docker](#building-without-docker) but satisfying the project dependencies may be more difficult.
 
 ### Prerequisites
 
@@ -149,7 +149,7 @@ build/mattersim_main
 
 The javscript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator in first-person view, or as an interface on Amazon Mechanical Turk to collect natural language instruction data. 
 
-(#no-docker)
+
 ### Building without Docker
 
 The simulator can be built outside of a docker container using the cmake build commands described above. However, this is not the recommended approach, as all dependencies will need to be installed locally and may conflict with existing libraries. The main requirements are:
@@ -172,13 +172,37 @@ sudo apt-get install libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa
 
 ### Simulator API
 
-The simulator API in Python exactly matches the extensively commented [MatterSim.hpp](include/MatterSim.hpp) C++ header file, but using python lists in place of C++ std::vectors etc. In general, there are various functions beginning with `set` that set the agent and simulator configuration (such as batch size, rendering parameters, enabling depth output etc). For training agents, we recommend setting `setPreloadingEnabled(True)`, `setBatchSize(X)` and `setCacheSize(2X)`, where X is the desired batch size. When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (more if depth output is enabled), but rendering is much faster. 
+The simulator API in Python exactly matches the extensively commented [MatterSim.hpp](include/MatterSim.hpp) C++ header file, but using python lists in place of C++ std::vectors etc. In general, there are various functions beginning with `set` that set the agent and simulator configuration (such as batch size, rendering parameters, enabling depth output etc). For training agents, we recommend setting `setPreloadingEnabled(True)`, `setBatchSize(X)` and `setCacheSize(2X)`, where X is the desired batch size, e.g.:
+```
+import MatterSim
+sim = MatterSim.Simulator()
+sim.setCameraResolution(640, 480)
+sim.setPreloadingEnabled(True)
+sim.setDepthEnabled(True)
+sim.setBatchSize(100)
+sim.setCacheSize(200)              # cacheSize 200 will use about 1.2GB of GPU memory for caching pano textures
+``` 
 
-To start the simulator, call `initialize` followed by `newEpisode` (or `newRandomEpisode` in which case it is not required to specify a viewpoint). Interaction with the simulator is through the `makeAction` function and the simulator state is returned by calling `getState`. The state contains a list of objects (one for each agent in the batch), as in the following example:
+When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (more if depth output is enabled), but rendering is much faster. 
+
+To start the simulator, call `initialize` followed by the `newEpisode` function, which takes as arguments a list of scanIds, a list of viewpoint ids, a list of headings (in radians), and a list of camera elevations (in radians), e.g.:
+```
+sim.initialize()
+sim.newEpisode(['2t7WUuJeko7'], ['1e6b606b44df4a6086c0f97e826d4d15'], [0], [0])    # Assuming batchSize = 1
+```
+
+Heading is defined from the y-axis with the z-axis up (turning right is positive). Camera elevation is measured from the horizon defined by the x-y plane (up is positive). There is also a `newRandomEpisode` function which only requires a list of scanIds, and randomly determines a viewpoint and heading (with zero camera elevation). 
+
+Interaction with the simulator is through the `makeAction` function, which takes as arguments a list of navigable location indices, a list of heading changes (in radians) and a list of elevation changes (in radians). The navigable location indices select which nearby camera viewpoint (`getState()->navigableLocations`) the agent should move to. Index 0 always contains the current viewpoint. The remaining viewpoints are sorted by their angular distance from the centre of the image, so index 1 (if available) will approximate moving forward. For example, to turn 30 degrees left without moving (keeping camera elevation unchanged): 
+```
+sim.makeAction([0], [-0.523599], [0])
+```
+
+At any time the simulator state can be returned by calling `getState`. The state contains a list of objects (one for each agent in the batch), as in the following example:
 ```javascript
 [
   {
-    "scanId" :                // Which building the agent is in
+    "scanId" : "2t7WUuJeko7"  // Which building the agent is in
     "step" : 5,               // Number of frames since the last newEpisode() call
     "rgb" : <image>,          // 8 bit RGB image, access with np.array(rgb, copy=False)
     "depth" : <image>,        // 16 bit depth image, access with np.array(depth, copy=False)
