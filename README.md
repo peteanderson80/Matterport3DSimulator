@@ -147,7 +147,7 @@ C++ demo:
 build/mattersim_main
 ```
 
-The javscript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator in first-person view, or as an interface on Amazon Mechanical Turk to collect natural language instruction data. 
+The javascript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator in first-person view, or as an interface on Amazon Mechanical Turk to collect natural language instruction data. 
 
 
 ### Building without Docker
@@ -183,7 +183,7 @@ sim.setBatchSize(100)
 sim.setCacheSize(200) # cacheSize 200 uses about 1.2GB of GPU memory for caching pano textures
 ``` 
 
-When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (more if depth output is enabled), but rendering is much faster. 
+When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (about 80G if depth output is enabled), but rendering is much faster. 
 
 To start the simulator, call `initialize` followed by the `newEpisode` function, which takes as arguments a list of scanIds, a list of viewpoint ids, a list of headings (in radians), and a list of camera elevations (in radians), e.g.:
 ```
