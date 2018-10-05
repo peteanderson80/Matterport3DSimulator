@@ -54,9 +54,6 @@ target_link_libraries(tests MatterSim ${JSONCPP_LIBRARIES} ${OpenCV_LIBS})
 add_executable(mattersim_main src/driver/mattersim_main.cpp)
 target_link_libraries(mattersim_main MatterSim)
 
-add_executable(random_agent src/driver/random_agent.cpp)
-target_link_libraries(random_agent MatterSim)
-
 add_subdirectory(pybind11)
 
 find_package(PythonInterp 2.7)

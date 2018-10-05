@@ -6,34 +6,39 @@ import math
 import cv2
 import numpy as np
 
-
 WIDTH = 800
 HEIGHT = 600
 VFOV = math.radians(60)
 HFOV = VFOV*WIDTH/HEIGHT
 TEXT_COLOR = [230, 40, 40]
 
-cv2.namedWindow('RGB')
-cv2.namedWindow('Depth')
+cv2.namedWindow('Python RGB')
+cv2.namedWindow('Python Depth')
+
 sim = MatterSim.Simulator()
 sim.setCameraResolution(WIDTH, HEIGHT)
 sim.setCameraVFOV(VFOV)
 sim.setDepthEnabled(True)
 sim.initialize()
-sim.newEpisode(['2t7WUuJeko7'], ['1e6b606b44df4a6086c0f97e826d4d15'], [0], [0])
+#sim.newEpisode(['2t7WUuJeko7'], ['1e6b606b44df4a6086c0f97e826d4d15'], [0], [0])
+#sim.newEpisode(['1LXtFkjw3qL'], ['0b22fa63d0f54a529c525afbf2e8bb25'], [0], [0])
+sim.newRandomEpisode(['1LXtFkjw3qL'])
 
 heading = 0
 elevation = 0
 location = 0
 ANGLEDELTA = 5 * math.pi / 180
 
-
+print '\nPython Demo'
+print 'Use arrow keys to move the camera.'
+print 'Use number keys (not numpad) to move to nearby viewpoints indicated in the RGB view.\n'
 
 while True:
     sim.makeAction([location], [heading], [elevation])
     location = 0
     heading = 0
     elevation = 0
+
     state = sim.getState()[0]
     locations = state.navigableLocations
     rgb = np.array(state.rgb, copy=False)
@@ -44,10 +49,10 @@ while True:
         y = int(HEIGHT/2 - loc.rel_elevation/VFOV*HEIGHT)
         cv2.putText(rgb, str(idx + 1), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 
             fontScale, TEXT_COLOR, thickness=3)
-    cv2.imshow('RGB', rgb)
+    cv2.imshow('Python RGB', rgb)
 
     depth = np.array(state.depth, copy=False)
-    cv2.imshow('Depth', depth)
+    cv2.imshow('Python Depth', depth)
     k = cv2.waitKey(1)
     if k == -1:
         continue
