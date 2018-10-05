@@ -43,7 +43,7 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 ### Actions
 
-At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are [described below](#api) and in the paper.
+At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are [described below](###simulator-api) and in the paper.
 
 ### Room-to-Room (R2R) Navigation Task
 
@@ -51,7 +51,7 @@ The simulator includes the training data and evaluation metrics for the Room-to-
 
 ## Installation / Build Instructions
 
-We recommend using our [Dockerfile](Dockerfile) to install the simulator. The simulator can also be [built without docker](#no-docker) but satisfying the project dependencies may be more difficult.
+We recommend using our [Dockerfile](Dockerfile) to install the simulator. The simulator can also be [built without docker](###building-without-docker) but satisfying the project dependencies may be more difficult.
 
 ### Prerequisites
 
@@ -170,7 +170,6 @@ The provided [Dockerfile](Dockerfile) contains install commands for most of thes
 sudo apt-get install libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev
 ```
 
-(#api)
 ### Simulator API
 
 The simulator API in Python exactly matches the extensively commented [MatterSim.hpp](include/MatterSim.hpp) C++ header file, but using python lists in place of C++ std::vectors etc. In general, there are various functions beginning with `set` that set the agent and simulator configuration (such as batch size, rendering parameters, enabling depth output etc). For training agents, we recommend setting `setPreloadingEnabled(True)`, `setBatchSize(X)` and `setCacheSize(2X)`, where X is the desired batch size. When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (more if depth output is enabled), but rendering is much faster. 
@@ -189,15 +188,14 @@ To start the simulator, call `initialize` followed by `newEpisode` (or `newRando
     "heading" : 3.141592,     // Agent's current camera heading in radians
     "elevation" : 0,          // Agent's current camera elevation in radians
     "viewIndex" : None,       // Index of the agent's current viewing angle [0-35] (set only when viewing angles are discretized)
-                              // [0-11] looking down, [12-23] looking at horizon, [24-35] looking up
-    "navigableLocations": [   // List of viewpoints you can move to. Index 0 is always the current viewpoint.
+                              // [0-11] is looking down, [12-23] is looking at horizon, is [24-35] looking up
+    "navigableLocations": [   // List of viewpoints you can move to. Index 0 is always the current viewpoint, i.e. don't move.
         {                     // The remaining viewpoints are sorted by their angular distance from the image centre.
             "viewpointId" : , // Viewpoint identifier
-            "ix" : 34,        // Viewpoint index into connectivity graph
+            "ix" : 34,        // Viewpoint index into connectivity graph, used by the simulator
             "x" : 3.53,       // 3D position in world coordinates
             "y" : 5.23,
-            "z" : 1.54,
-            "3D position in world coordinates
+            "z" : 1.54
         },
     ]
   }
