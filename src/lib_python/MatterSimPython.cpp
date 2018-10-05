@@ -80,6 +80,7 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setDepthEnabled", &Simulator::setDepthEnabled)
         .def("setBatchSize", &Simulator::setBatchSize)
         .def("setCacheSize", &Simulator::setCacheSize)
+        .def("setSeed", &Simulator::setSeed)
         .def("initialize", &Simulator::initialize)
         .def("newEpisode", &Simulator::newEpisode)
         .def("newRandomEpisode", &Simulator::newRandomEpisode)

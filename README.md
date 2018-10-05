@@ -7,6 +7,8 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 
 Visit the main [website](https://bringmeaspoon.org/) for updates and to view a demo.
 
+*October 2018*: We have released several updates. The simulator is now dockerized, with depth map outputs, and running at around 1000 fps (headless gpu rendering with EGL)! 
+
 ## Features
 - Dataset consisting of 90 different predominantly indoor environments,
 - All images are real, not synthetic (providing much more visual complexity),
@@ -106,7 +108,7 @@ cd ../
 ./build/tests ~Timing
 ```
 
-Assuming all tests pass, `sim_imgs` will now contain some test images rendered by the simulator. You may also wish to test the rendering frame rate. The following command will try to load all the Matterport environments into memory (requiring XX GB), and then some information about the rendering frame rate (at 640x480 resolution) will be printed to stdout:
+Assuming all tests pass, `sim_imgs` will now contain some test images rendered by the simulator. You may also wish to test the rendering frame rate. The following command will try to load all the Matterport environments into memory (requiring around 80 GB memory), and then some information about the rendering frame rate (at 640x480 resolution) will be printed to stdout:
 ```
 ./build/tests Timing
 ```
@@ -170,9 +172,38 @@ sudo apt-get install libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa
 
 ### Simulator API
 
-TODO
+The simulator API in Python exactly matches the extensively commented [MatterSim.hpp](include/MatterSim.hpp) C++ header file, but using python lists in place of C++ std::vectors etc. In general, there are various functions beginning with `set` that set the agent and simulator configuration (such as batch size, rendering parameters, enabling depth output etc). For training agents, we recommend setting `setPreloadingEnabled(True)`, `setBatchSize(X)` and `setCacheSize(2X)`, where X is the desired batch size. When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (more if depth output is enabled), but rendering is much faster. 
 
-To build html docs for C++ classes in the `doxygen` directory, run this command and navigate to `doxygen/html/index.html`:
+To start the simulator, call `initialize` followed by `newEpisode` (or `newRandomEpisode` in which case it is not required to specify a viewpoint). Interaction with the simulator is through the `makeAction` function and the simulator state is returned by calling `getState`. The state object is a list of dicts (one for each agent in the minibatch), as in the following example:
+```
+[
+  {
+    "scanId" : 
+    "step" : 5, # Number of frames since the last newEpisode() call
+    "rgb" : <image>, # 8 bit RGB image, access with np.array(rgb, copy=False)
+    "depth" : <image>, # 16 bit depth image, access with np.array(depth, copy=False)
+    "location" : { # The agent's current 3D location
+
+    }
+    "heading" : 1.141592, # Agent's current camera heading in radians
+    "elevation" : 0, # Agent's current camera elevation in radians
+    "viewIndex" : None, # Agent's current view [0-35] (set only when viewing angles are discretized)
+                        # [0-11] looking down, [12-23] looking at horizon, [24-35] looking up
+    "navigableLocations": [ # Viewpoints you can move to. Index 0 is always to remain at the current viewpoint.
+        { # The remaining viewpoints are sorted by their angular distance from the centre of the image.
+            "viewpointId" : , # Viewpoint identifier
+            "ix" : 34,   # Viewpoint index into connectivity graph
+            "x" : 3.53, # 3D position in world coordinates
+            "y" : 5.23,
+            "z" : 1.54,
+            "3D position in world coordinates
+        },
+    ]
+  }
+]
+```
+
+Refer to [src/driver/driver.py](src/driver/driver.py) for example usage. To build html docs for C++ classes in the `doxygen` directory, run this command and navigate to `doxygen/html/index.html`:
 ```
 doxygen
 ```

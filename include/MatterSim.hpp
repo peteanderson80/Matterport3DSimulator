@@ -72,7 +72,7 @@ namespace mattersim {
         unsigned int step = 0;
         //! RGB image taken from the agent's current viewpoint
         cv::Mat rgb;
-        //! Depth image taken from the agent's current viewpoint (not implemented)
+        //! Depth image taken from the agent's current viewpoint
         cv::Mat depth;
         //! Agent's current 3D location
         ViewpointPtr location;
@@ -162,7 +162,8 @@ namespace mattersim {
         void setBatchSize(unsigned int size);
 
         /**
-         * Set the cache size for storing pano images in gpu memory. Default is 200.
+         * Set the cache size for storing pano images in gpu memory. Default is 200. Should be comfortably
+         * larger than the batch size.
          */
         void setCacheSize(unsigned int size);
 
