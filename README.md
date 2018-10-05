@@ -180,7 +180,7 @@ sim.setCameraResolution(640, 480)
 sim.setPreloadingEnabled(True)
 sim.setDepthEnabled(True)
 sim.setBatchSize(100)
-sim.setCacheSize(200)              # cacheSize 200 will use about 1.2GB of GPU memory for caching pano textures
+sim.setCacheSize(200) # cacheSize 200 uses about 1.2GB of GPU memory for caching pano textures
 ``` 
 
 When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (more if depth output is enabled), but rendering is much faster. 
@@ -188,12 +188,13 @@ When preloading is enabled, all the pano images will be loaded into memory befor
 To start the simulator, call `initialize` followed by the `newEpisode` function, which takes as arguments a list of scanIds, a list of viewpoint ids, a list of headings (in radians), and a list of camera elevations (in radians), e.g.:
 ```
 sim.initialize()
-sim.newEpisode(['2t7WUuJeko7'], ['1e6b606b44df4a6086c0f97e826d4d15'], [0], [0])    # Assuming batchSize = 1
+# Assuming batchSize = 1
+sim.newEpisode(['2t7WUuJeko7'], ['1e6b606b44df4a6086c0f97e826d4d15'], [0], [0])
 ```
 
 Heading is defined from the y-axis with the z-axis up (turning right is positive). Camera elevation is measured from the horizon defined by the x-y plane (up is positive). There is also a `newRandomEpisode` function which only requires a list of scanIds, and randomly determines a viewpoint and heading (with zero camera elevation). 
 
-Interaction with the simulator is through the `makeAction` function, which takes as arguments a list of navigable location indices, a list of heading changes (in radians) and a list of elevation changes (in radians). The navigable location indices select which nearby camera viewpoint (`getState()->navigableLocations`) the agent should move to. Index 0 always contains the current viewpoint. The remaining viewpoints are sorted by their angular distance from the centre of the image, so index 1 (if available) will approximate moving forward. For example, to turn 30 degrees left without moving (keeping camera elevation unchanged): 
+Interaction with the simulator is through the `makeAction` function, which takes as arguments a list of navigable location indices, a list of heading changes (in radians) and a list of elevation changes (in radians). The navigable location indices select which nearby camera viewpoint the agent should move to. For agent `n` the available options are given by `getState()[n]["navigableLocations"]`. Index 0 always contains the current viewpoint. As the navigation graph is irregular, the remaining viewpoints are sorted by their angular distance from the centre of the image, so index 1 (if available) will approximate moving forward. For example, to turn 30 degrees left without moving (keeping camera elevation unchanged): 
 ```
 sim.makeAction([0], [-0.523599], [0])
 ```
