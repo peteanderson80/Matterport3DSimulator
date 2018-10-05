@@ -40,28 +40,25 @@ class EnvBatch():
             self.image_w = 640
             self.image_h = 480
             self.vfov = 60
-        self.sims = []
-        for i in range(batch_size):
-            sim = MatterSim.Simulator()
-            sim.setRenderingEnabled(False)
-            sim.setDiscretizedViewingAngles(True)
-            sim.setCameraResolution(self.image_w, self.image_h)
-            sim.setCameraVFOV(math.radians(self.vfov))
-            sim.init()
-            self.sims.append(sim)
+        self.batch_size = batch_size
+        self.sim = MatterSim.Simulator()
+        self.sim.setRenderingEnabled(False)
+        self.sim.setDiscretizedViewingAngles(True)
+        self.sim.setBatchSize(self.batch_size)
+        self.sim.setCameraResolution(self.image_w, self.image_h)
+        self.sim.setCameraVFOV(math.radians(self.vfov))
+        self.sim.initialize()
 
     def _make_id(self, scanId, viewpointId):
         return scanId + '_' + viewpointId   
 
     def newEpisodes(self, scanIds, viewpointIds, headings):
-        for i, (scanId, viewpointId, heading) in enumerate(zip(scanIds, viewpointIds, headings)):
-            self.sims[i].newEpisode(scanId, viewpointId, heading, 0)
+        self.sim.newEpisode(scanIds, viewpointIds, headings, [0]*self.batch_size)
   
     def getStates(self):
         ''' Get list of states augmented with precomputed image features. rgb field will be empty. '''
         feature_states = []
-        for sim in self.sims:
-            state = sim.getState()
+        for state in self.sim.getState():
             long_id = self._make_id(state.scanId, state.location.viewpointId)
             if self.features:
                 feature = self.features[long_id][state.viewIndex,:]
@@ -73,28 +70,35 @@ class EnvBatch():
     def makeActions(self, actions):
         ''' Take an action using the full state dependent action interface (with batched input). 
             Every action element should be an (index, heading, elevation) tuple. '''
-        for i, (index, heading, elevation) in enumerate(actions):
-            self.sims[i].makeAction(index, heading, elevation)
+        ix = []
+        heading = []
+        elevation = []
+        for i,h,e in actions:
+            ix.append(int(i))
+            heading.append(float(h))
+            elevation.append(float(e))
+        self.sim.makeAction(ix, heading, elevation)
 
     def makeSimpleActions(self, simple_indices):
         ''' Take an action using a simple interface: 0-forward, 1-turn left, 2-turn right, 3-look up, 4-look down. 
             All viewpoint changes are 30 degrees. Forward, look up and look down may not succeed - check state.
             WARNING - Very likely this simple interface restricts some edges in the graph. Parts of the
             environment may not longer be navigable. '''
+        actions = []
         for i, index in enumerate(simple_indices):
             if index == 0:
-                self.sims[i].makeAction(1, 0, 0)
+                actions.append((1, 0, 0))
             elif index == 1:
-                self.sims[i].makeAction(0,-1, 0)
+                actions.append((0,-1, 0))
             elif index == 2:
-                self.sims[i].makeAction(0, 1, 0)
+                actions.append((0, 1, 0))
             elif index == 3:
-                self.sims[i].makeAction(0, 0, 1)
+                actions.append((0, 0, 1))
             elif index == 4:
-                self.sims[i].makeAction(0, 0,-1)
+                actions.append((0, 0,-1))
             else:
-                sys.exit("Invalid simple action");     
-
+                sys.exit("Invalid simple action");
+        self.makeActions(actions)
 
 
 class R2RBatch():
@@ -176,7 +180,8 @@ class R2RBatch():
         elif state.viewIndex//12 == 2:
             return (0, 0,-1) # Look down
         # Otherwise decide which way to turn
-        target_rel = self.graphs[state.scanId].node[nextViewpointId]['position'] - state.location.point
+        pos = [state.location.x, state.location.y, state.location.z]
+        target_rel = self.graphs[state.scanId].node[nextViewpointId]['position'] - pos
         target_heading = math.pi/2.0 - math.atan2(target_rel[1], target_rel[0]) # convert to rel to y axis
         if target_heading < 0:
             target_heading += 2.0*math.pi

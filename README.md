@@ -93,7 +93,7 @@ docker build -t mattersim .
 
 Run the docker container, mounting both the git repo and the dataset:
 ```
-nvidia-docker run -it --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+nvidia-docker run -it --net=host --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
 ```
 
 Now (from inside the docker container), build the simulator and run the unit tests:
@@ -129,7 +129,7 @@ The recommended (fast) approach for training agents is using off-screen GPU rend
 To run an interactive demo, build the docker image as described above (`docker build -t mattersim .`), then run the docker container while sharing the host's X server and DISPLAY environment variable with the container:
 ```
 xhost +
-nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+nvidia-docker run -it --net=host -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
 cd /root/mount/Matterport3DSimulator
 ```
 

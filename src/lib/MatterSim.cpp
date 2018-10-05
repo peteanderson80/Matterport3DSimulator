@@ -256,12 +256,9 @@ void Simulator::initialize() {
         }
 #endif
 
-        // set our viewport, clear color and depth, and enable depth testing
+        // set our viewport, and disable depth testing
         glViewport(0, 0, this->width, this->height);
-        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-        glClearDepth(1.0f);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_DEPTH_TEST);
 
         // load our shaders and compile them.. create a program and link it
         glShaderV = glCreateShader(GL_VERTEX_SHADER);
@@ -451,7 +448,7 @@ void Simulator::renderScene() {
     for (auto state : states) {
         renderTimer.Start();
         std::pair<GLuint, GLuint> texIds = navGraph.cubemapTextures(state->scanId, state->location->ix);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         // Scale and move the cubemap model into position
         Model = navGraph.cameraRotation(state->scanId,state->location->ix) * Scale;
         // Opengl camera looking down -z axis. Rotate around x by -90deg (now looking down +y). Add positive elevation to look up.
@@ -477,7 +474,7 @@ void Simulator::renderScene() {
         if (renderDepth) {
             renderTimer.Start();
             glUniform1i(isDepth, true);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT);
             glBindTexture(GL_TEXTURE_CUBE_MAP, texIds.second);
             glDrawArrays(GL_TRIANGLES, 0, 36);
             renderTimer.Stop();

@@ -5,9 +5,9 @@
 FROM nvidia/cudagl:9.0-devel-ubuntu16.04
 
 # Install a few libraries to support both EGL and OSMESA options
-RUN apt-get update && apt-get install -y curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev libopencv-dev python-opencv python-setuptools python-dev
+RUN apt-get update && apt-get install -y wget curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev libopencv-dev python-opencv python-setuptools python-dev
 RUN easy_install pip
-RUN pip install torch torchvision
+RUN pip install torch torchvision pandas networkx
 
 #install latest cmake
 ADD https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.sh /cmake-3.12.2-Linux-x86_64.sh
