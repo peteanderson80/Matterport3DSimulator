@@ -7,16 +7,17 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 
 Visit the main [website](https://bringmeaspoon.org/) for updates and to view a demo.
 
-*October 2018*: We have released several updates. The simulator is now dockerized, with depth map outputs, and running at around 1000 fps (headless gpu rendering with EGL)! 
+*NEW October 2018*: We have released several updates. The simulator is now dockerized, it outputs depth maps, it now supports batches of agents and it is far more efficient (faster) than before. As a consequence, there are some changes to the original API. Therefore, to mark the first release we have tagged it as `v0.1`. 
 
 ## Features
 - Dataset consisting of 90 different predominantly indoor environments,
-- All images are real, not synthetic (providing much more visual complexity),
-- API for C++ and Python
 - Outputs RGB and depth images
+- All images and depth maps are real, not synthetic (providing much more visual complexity),
+- API for C++ and Python
 - Customizable image resolution, camera parameters, etc,
 - Supports off-screen rendering (both GPU and CPU based)
 - Fast (Around 1000 fps RGB-D off-screen rendering at 640x480 resolution using a Titan X GPU)
+- Unit tests for the rendering pipeline and agent's motions etc
 - Future releases may support class and instance object segmentations.
 
 ## Reference
@@ -24,7 +25,7 @@ Visit the main [website](https://bringmeaspoon.org/) for updates and to view a d
 The Matterport3D Simulator and the Room-to-Room (R2R) navigation dataset are described in:
 - [Vision-and-Language Navigation: Interpreting visually-grounded navigation instructions in real environments](https://arxiv.org/abs/1711.07280).
 
-If you use the simulator or dataset, please cite our paper (CVPR 2018 spotlight oral):
+If you use the simulator or our dataset, please cite our paper (CVPR 2018 spotlight oral):
 
 ### Bibtex:
 ```
@@ -42,7 +43,7 @@ Matterport3D Simulator is based on densely sampled 360-degree indoor RGB-D image
 
 ### Actions
 
-At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are described in the paper and defined in `include/MatterSim.hpp`.
+At each viewpoint location, the agent can pan and elevate the camera. The agent can also choose to move between viewpoints. The precise details of the agent's observations and actions are [described below](### Simulator API) and in the paper.
 
 ### Room-to-Room (R2R) Navigation Task
 
@@ -50,7 +51,7 @@ The simulator includes the training data and evaluation metrics for the Room-to-
 
 ## Installation / Build Instructions
 
-We recommend using our docker image to install the simulator. The simulator can also be built from source but satisfying the project dependencies may be more difficult.
+We recommend using our [Dockerfile](Dockerfile) to install the simulator. The simulator can also be [built without docker](### Building without Docker) but satisfying the project dependencies may be more difficult.
 
 ### Prerequisites
 
@@ -146,7 +147,7 @@ C++ demo:
 build/mattersim_main
 ```
 
-The javscript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator. 
+The javscript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator in first-person view, or as an interface on Amazon Mechanical Turk to collect natural language instruction data. 
 
 
 ### Building without Docker
