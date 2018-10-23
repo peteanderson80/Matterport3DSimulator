@@ -96,7 +96,7 @@ docker build -t mattersim .
 
 Run the docker container, mounting both the git repo and the dataset:
 ```
-nvidia-docker run -it --net=host --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+nvidia-docker run -it --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
 ```
 
 Now (from inside the docker container), build the simulator and run the unit tests:
@@ -132,11 +132,11 @@ The recommended (fast) approach for training agents is using off-screen GPU rend
 To run an interactive demo, build the docker image as described above (`docker build -t mattersim .`), then run the docker container while sharing the host's X server and DISPLAY environment variable with the container:
 ```
 xhost +
-nvidia-docker run -it --net=host -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
 cd /root/mount/Matterport3DSimulator
 ```
 
-Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. Use the arrow keys to pan and tilt the camera. In the python demo, the top row number keys can be used to move to another viewpoint (if any are visible).
+Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++.
 
 Python demo:
 ```
@@ -147,7 +147,7 @@ C++ demo:
 build/mattersim_main
 ```
 
-The javscript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator in first-person view, or as an interface on Amazon Mechanical Turk to collect natural language instruction data. 
+The javascript code in the `web` directory can also be used as an interactive demo, or to generate videos from the simulator in first-person view, or as an interface on Amazon Mechanical Turk to collect natural language instruction data. 
 
 
 ### Building without Docker
@@ -161,6 +161,7 @@ The simulator can be built outside of a docker container using the cmake build c
 - [OpenGL](https://www.opengl.org/)
 - [GLM](https://glm.g-truc.net/0.9.8/index.html)
 - [Numpy](http://www.numpy.org/)
+
 Optional dependences (depending on the cmake rendering options):
 - [OSMesa](https://www.mesa3d.org/osmesa.html) for OSMesa backend support
 - [epoxy](https://github.com/anholt/libepoxy) for EGL backend support
@@ -183,7 +184,7 @@ sim.setBatchSize(100)
 sim.setCacheSize(200) # cacheSize 200 uses about 1.2GB of GPU memory for caching pano textures
 ``` 
 
-When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (more if depth output is enabled), but rendering is much faster. 
+When preloading is enabled, all the pano images will be loaded into memory before starting. Preloading takes several minutes and requires around 50G memory for RGB output (about 80G if depth output is enabled), but rendering is much faster. 
 
 To start the simulator, call `initialize` followed by the `newEpisode` function, which takes as arguments a list of scanIds, a list of viewpoint ids, a list of headings (in radians), and a list of camera elevations (in radians), e.g.:
 ```
@@ -194,12 +195,12 @@ sim.newEpisode(['2t7WUuJeko7'], ['1e6b606b44df4a6086c0f97e826d4d15'], [0], [0])
 
 Heading is defined from the y-axis with the z-axis up (turning right is positive). Camera elevation is measured from the horizon defined by the x-y plane (up is positive). There is also a `newRandomEpisode` function which only requires a list of scanIds, and randomly determines a viewpoint and heading (with zero camera elevation). 
 
-Interaction with the simulator is through the `makeAction` function, which takes as arguments a list of navigable location indices, a list of heading changes (in radians) and a list of elevation changes (in radians). The navigable location indices select which nearby camera viewpoint the agent should move to. For agent `n` the available options are given by `getState()[n]["navigableLocations"]`. Index 0 always contains the current viewpoint. As the navigation graph is irregular, the remaining viewpoints are sorted by their angular distance from the centre of the image, so index 1 (if available) will approximate moving forward. For example, to turn 30 degrees left without moving (keeping camera elevation unchanged): 
+Interaction with the simulator is through the `makeAction` function, which takes as arguments a list of navigable location indices, a list of heading changes (in radians) and a list of elevation changes (in radians). The navigable location indices select which nearby camera viewpoint the agent should move to. *Only camera viewpoints that are within the agent's current field of view are considered navigable* (i.e., the agent can't move backwards, for example). For agent `n`, navigable locations are given by `getState()[n].navigableLocations`. Index 0 always contains the current viewpoint (i.e., the agent always has the option to stay in the same place). As the navigation graph is irregular, the remaining viewpoints are sorted by their angular distance from the centre of the image, so index 1 (if available) will approximate moving directly forward. For example, to turn 30 degrees left without moving (keeping camera elevation unchanged): 
 ```
 sim.makeAction([0], [-0.523599], [0])
 ```
 
-At any time the simulator state can be returned by calling `getState`. The state contains a list of objects (one for each agent in the batch), as in the following example:
+At any time the simulator state can be returned by calling `getState`. The returned state contains a list of objects (one for each agent in the batch), with attributes as in the following example:
 ```javascript
 [
   {
@@ -208,20 +209,41 @@ At any time the simulator state can be returned by calling `getState`. The state
     "rgb" : <image>,          // 8 bit RGB image, access with np.array(rgb, copy=False)
     "depth" : <image>,        // 16 bit depth image, access with np.array(depth, copy=False)
     "location" : {            // The agent's current 3D location
-
+        "viewpointId" : "1e6b606b44df4a6086c0f97e826d4d15",  // Viewpoint identifier
+        "ix" : 5,                                            // Viewpoint index, used by simulator
+        "x" : 3.59775996208,                                 // 3D position in world coordinates
+        "y" : -0.837355971336,
+        "z" : 1.68884003162,
+        "rel_heading" : 0,                                   // Robot relative coords to this location
+        "rel_elevation" : 0,
+        "rel_distance" : 0
     }
     "heading" : 3.141592,     // Agent's current camera heading in radians
     "elevation" : 0,          // Agent's current camera elevation in radians
-    "viewIndex" : None,       // Index of the agent's current viewing angle [0-35] (set only when viewing angles are discretized)
+    "viewIndex" : 0,          // Index of the agent's current viewing angle [0-35] (only valid with discretized viewing angles)
                               // [0-11] is looking down, [12-23] is looking at horizon, is [24-35] looking up
     "navigableLocations": [   // List of viewpoints you can move to. Index 0 is always the current viewpoint, i.e. don't move.
-        {                     // The remaining viewpoints are sorted by their angular distance from the image centre.
-            "viewpointId" : , // Viewpoint identifier
-            "ix" : 34,        // Viewpoint index into connectivity graph, used by the simulator
-            "x" : 3.53,       // 3D position in world coordinates
-            "y" : 5.23,
-            "z" : 1.54
+        {                     // The remaining valid viewpoints are sorted by their angular distance from the image centre.
+            "viewpointId" : "1e6b606b44df4a6086c0f97e826d4d15",  // Viewpoint identifier
+            "ix" : 5,                                            // Viewpoint index, used by simulator
+            "x" : 3.59775996208,                                 // 3D position in world coordinates
+            "y" : -0.837355971336,
+            "z" : 1.68884003162,
+            "rel_heading" : 0,                                   // Robot relative coords to this location
+            "rel_elevation" : 0,
+            "rel_distance" : 0
         },
+        {
+            "viewpointId" : "1e3a672fa1d24d668866455162e5b58a",  // Viewpoint identifier
+            "ix" : 14,                                           // Viewpoint index, used by simulator
+            "x" : 4.03619003296,                                 // 3D position in world coordinates
+            "y" : 1.11550998688,
+            "z" : 1.65892004967,
+            "rel_heading" : 0.220844170027,                      // Robot relative coords to this location
+            "rel_elevation" : -0.0149478448723,
+            "rel_distance" : 2.00169944763
+        },
+        {...}
     ]
   }
 ]
