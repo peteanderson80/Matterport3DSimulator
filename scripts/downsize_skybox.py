@@ -17,7 +17,28 @@ NEW_HEIGHT = 512
 base_dir = 'data/v1/scans'
 skybox_template = '%s/%s/matterport_skybox_images/%s_skybox%d_sami.jpg'
 skybox_small_template = '%s/%s/matterport_skybox_images/%s_skybox%d_small.jpg'
+skybox_merge_template = '%s/%s/matterport_skybox_images/%s_skybox_small.jpg'
 
+
+
+def downsizeWithMerge(scan):
+  # Load pano ids
+  intrinsics,_ = camera_parameters(scan)
+  pano_ids = list(set([item.split('_')[0] for item in intrinsics.keys()]))
+  print 'Processing scan %s with %d panoramas' % (scan, len(pano_ids))
+
+  for pano in pano_ids:
+
+    ims = []
+    for skybox_ix in range(6):
+
+      # Load and downsize skybox image
+      skybox = cv2.imread(skybox_template % (base_dir,scan,pano,skybox_ix))
+      ims.append(cv2.resize(skybox,(NEW_WIDTH,NEW_HEIGHT),interpolation=cv2.INTER_AREA))
+
+    # Save output
+    newimg = np.concatenate(ims, axis=1)
+    assert cv2.imwrite(skybox_merge_template % (base_dir,scan,pano), newimg)
 
 
 def downsize(scan):
@@ -44,6 +65,6 @@ if __name__ == '__main__':
   with open('connectivity/scans.txt') as f:
     scans = [scan.strip() for scan in f.readlines()]
     p = Pool(10)
-    p.map(downsize, scans)  
+    p.map(downsizeWithMerge, scans)  
 
 
