@@ -70,7 +70,7 @@ namespace mattersim {
         std::string scanId;
         //! Number of frames since the last newEpisode() call
         unsigned int step = 0;
-        //! RGB image taken from the agent's current viewpoint
+        //! RGB image (in BGR channel order) from the agent's current viewpoint
         cv::Mat rgb;
         //! Depth image taken from the agent's current viewpoint
         cv::Mat depth;

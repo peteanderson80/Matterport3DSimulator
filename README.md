@@ -206,7 +206,7 @@ At any time the simulator state can be returned by calling `getState`. The retur
   {
     "scanId" : "2t7WUuJeko7"  // Which building the agent is in
     "step" : 5,               // Number of frames since the last newEpisode() call
-    "rgb" : <image>,          // 8 bit RGB image, access with np.array(rgb, copy=False)
+    "rgb" : <image>,          // 8 bit image (in BGR channel order), access with np.array(rgb, copy=False)
     "depth" : <image>,        // 16 bit depth image, access with np.array(depth, copy=False)
     "location" : {            // The agent's current 3D location
         "viewpointId" : "1e6b606b44df4a6086c0f97e826d4d15",  // Viewpoint identifier
