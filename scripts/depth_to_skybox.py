@@ -234,7 +234,8 @@ def depth_to_skybox(scan, visualize=VISUALIZE_OUTPUT, fill_holes=FILL_HOLES):
       cv2.waitKey(0)
     else:
       # Save output
-      assert cv2.imwrite(skybox_depth_template % (base_dir,scan,pano), newimg)
+      outfile = skybox_depth_template % (base_dir,scan,pano)
+      assert cv2.imwrite(outfile, newimg), 'Could not write to %s' % outfile
 
   if visualize:
     cv2.destroyAllWindows()
