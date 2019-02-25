@@ -10,10 +10,13 @@ from multiprocessing import Pool
 from depth_to_skybox import camera_parameters
 
 
+NUM_WORKER_PROCESSES = 20
+DOWNSIZED_WIDTH = 512
+DOWNSIZED_HEIGHT = 512
+
+# Constants
 SKYBOX_WIDTH = 1024
 SKYBOX_HEIGHT = 1024
-NEW_WIDTH = 512
-NEW_HEIGHT = 512
 base_dir = 'data/v1/scans'
 skybox_template = '%s/%s/matterport_skybox_images/%s_skybox%d_sami.jpg'
 skybox_small_template = '%s/%s/matterport_skybox_images/%s_skybox%d_small.jpg'
@@ -34,7 +37,7 @@ def downsizeWithMerge(scan):
 
       # Load and downsize skybox image
       skybox = cv2.imread(skybox_template % (base_dir,scan,pano,skybox_ix))
-      ims.append(cv2.resize(skybox,(NEW_WIDTH,NEW_HEIGHT),interpolation=cv2.INTER_AREA))
+      ims.append(cv2.resize(skybox,(DOWNSIZED_WIDTH,DOWNSIZED_HEIGHT),interpolation=cv2.INTER_AREA))
 
     # Save output
     newimg = np.concatenate(ims, axis=1)
@@ -54,7 +57,7 @@ def downsize(scan):
 
       # Load and downsize skybox image
       skybox = cv2.imread(skybox_template % (base_dir,scan,pano,skybox_ix))
-      newimg = cv2.resize(skybox,(NEW_WIDTH,NEW_HEIGHT),interpolation=cv2.INTER_AREA)
+      newimg = cv2.resize(skybox,(DOWNSIZED_WIDTH,DOWNSIZED_HEIGHT),interpolation=cv2.INTER_AREA)
 
       # Save output
       assert cv2.imwrite(skybox_small_template % (base_dir,scan,pano,skybox_ix), newimg)
@@ -64,7 +67,7 @@ if __name__ == '__main__':
 
   with open('connectivity/scans.txt') as f:
     scans = [scan.strip() for scan in f.readlines()]
-    p = Pool(10)
+    p = Pool(NUM_WORKER_PROCESSES)
     p.map(downsizeWithMerge, scans)  
 
 

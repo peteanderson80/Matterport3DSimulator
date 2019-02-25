@@ -7,7 +7,7 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 
 Visit the main [website](https://bringmeaspoon.org/) for updates and to view a demo.
 
-*NEW October 2018*: We have released several updates. The simulator is now dockerized, it outputs depth maps, it now supports batches of agents and it is far more efficient (faster) than before. As a consequence, there are some changes to the original API. Therefore, to mark the first release we have tagged it as [v0.1](https://github.com/peteanderson80/Matterport3DSimulator/tree/v0.1). 
+*NEW February 2019*: We have released several updates. The simulator is now dockerized, it supports batches of agents instead of just a single agent, and it is far more efficient (faster) than before. Also, it now outputs depth maps as well as RGB images. As a consequence, there are some changes to the original API (mainly, all inputs and outputs are now batched). Therefore, to mark the first release we have tagged it as [v0.1](https://github.com/peteanderson80/Matterport3DSimulator/tree/v0.1) for any users that don't want to change to the new version. 
 
 ## Features
 - Dataset consisting of 90 different predominantly indoor environments,
@@ -77,7 +77,7 @@ git submodule update --init --recursive
 
 ### Dataset Download
 
-To use the simulator you must first download the [Matterport3D Dataset](https://niessner.github.io/Matterport/) which is available after requesting access [here](https://niessner.github.io/Matterport/). The download script that will be provided allows for downloading of selected data types. To run the simulator, only the `matterport_skybox_images` are needed.
+To use the simulator you must first download the [Matterport3D Dataset](https://niessner.github.io/Matterport/) which is available after requesting access [here](https://niessner.github.io/Matterport/). The download script that will be provided allows for downloading of selected data types. 
 
 Set an environment variable to the location of the dataset, where <PATH> is the full absolute path (not a relative path or symlink) to the directory containing the individual matterport scan directories (17DRP5sb8fy, 2t7WUuJeko7, etc):
 ```
@@ -85,6 +85,26 @@ export MATTERPORT_DATA_DIR=<PATH>
 ```
 
 Note that if <PATH> is a remote sshfs mount, you will need to mount it with the `-o allow_root` option or the docker container won't be able to access this directory. 
+
+### Dataset Preprocessing
+
+To make data loading faster and to reduce memory usage we preprocess the `matterport_skybox_images' by downscaling and combining all cube faces into a single image using the following script:
+```
+./scripts/downsize_skybox.py
+```
+
+This will take a while depending on the number of processes used. By default images are downscaled by 50% and 20 processes are used.
+
+#### Depth Outputs
+
+If you need depth outputs as well as RGB (via `sim.setDepthEnabled(True)`), precompute matching depth skybox images by running this script (which requires the simulator code to be built first, and leave out the 'readonly' option from the commands provided when launching the docker container):
+```
+./scripts/depth_to_skybox.py
+```
+
+Depth skyboxes are generated from the `undistorted_depth_images` using a simple blending approach. As the depth images contain many missing values (corresponding to shiny, bright, transparent, and distant surfaces, which are common in the dataset) we apply a simple crossbilateral filter based on the [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html) code to fill all but the largest holes. A couple of things to keep in mind:
+- We assume that the `undistorted depth images` are aligned to the `matterport_skybox_images`, but in fact this alignment is not perfect. For certain applications where better alignment is required (e.g., generating RGB pointclouds) it might be necessary to replace the `matterport_skybox_images` by stitching together `undistorted_color_images` (which are perfectly aligned to the `undistorted_depth_images`).
+- In the generated depth skyboxes, the depth value is the euclidean distance from the camera center (not the distance in the z direction). This is corrected by the simulator (see Simulator API, below).
 
 
 ### Building and Testing using Docker
@@ -136,7 +156,7 @@ nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=b
 cd /root/mount/Matterport3DSimulator
 ```
 
-Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++.
+Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. By default, these demos have depth rendering on. Check the code and turn it off if you haven't preprocessed the depth outputs (see Depth Outputs above). 
 
 Python demo:
 ```
@@ -173,7 +193,7 @@ sudo apt-get install libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa
 
 ### Simulator API
 
-The simulator API in Python exactly matches the extensively commented [MatterSim.hpp](include/MatterSim.hpp) C++ header file, but using python lists in place of C++ std::vectors etc. In general, there are various functions beginning with `set` that set the agent and simulator configuration (such as batch size, rendering parameters, enabling depth output etc). For training agents, we recommend setting `setPreloadingEnabled(True)`, `setBatchSize(X)` and `setCacheSize(2X)`, where X is the desired batch size, e.g.:
+The simulator [API in Python](src/lib_python/MatterSimPython.cpp) exactly matches the extensively commented [MatterSim.hpp](include/MatterSim.hpp) C++ header file, but using python lists in place of C++ std::vectors etc. In general, there are various functions beginning with `set` that set the agent and simulator configuration (such as batch size, rendering parameters, enabling depth output etc). For training agents, we recommend setting `setPreloadingEnabled(True)`, `setBatchSize(X)` and `setCacheSize(2X)`, where X is the desired batch size, e.g.:
 ```
 import MatterSim
 sim = MatterSim.Simulator()
@@ -207,7 +227,9 @@ At any time the simulator state can be returned by calling `getState`. The retur
     "scanId" : "2t7WUuJeko7"  // Which building the agent is in
     "step" : 5,               // Number of frames since the last newEpisode() call
     "rgb" : <image>,          // 8 bit image (in BGR channel order), access with np.array(rgb, copy=False)
-    "depth" : <image>,        // 16 bit depth image, access with np.array(depth, copy=False)
+    "depth" : <image>,        // 16 bit single-channel image containing the pixel's distance in the z-direction from the camera center 
+                              // (not the euclidean distance from the camera center), 0.25 mm per value (divide by 4000 to get meters). 
+                              // A zero value denotes 'no reading'. Access with np.array(depth, copy=False)
     "location" : {            // The agent's current 3D location
         "viewpointId" : "1e6b606b44df4a6086c0f97e826d4d15",  // Viewpoint identifier
         "ix" : 5,                                            // Viewpoint index, used by simulator
@@ -253,6 +275,17 @@ Refer to [src/driver/driver.py](src/driver/driver.py) for example usage. To buil
 ```
 doxygen
 ```
+
+
+### Precomputing ResNet Image Features
+
+In our initial work using this simulator, we discretized heading and elevation into 30 degree increments, and precomputed image features for each view. Now that the simulator is much faster, this is no longer necessary, but for completeness we include the details of this setting below.
+
+We generate image features using Caffe. To replicate our approach, first download and save some Caffe ResNet-152 weights into the `models` directory. We experiment with weights pretrained on [ImageNet](https://github.com/KaimingHe/deep-residual-networks), and also weights finetuned on the [Places365](https://github.com/CSAILVision/places365) dataset. The script `scripts/precompute_features.py` can then be used to precompute ResNet-152 features. Features are saved in tsv format in the `img_features` directory. 
+
+Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
+- [ResNet-152-imagenet features [380K/2.9GB]](https://www.dropbox.com/s/715bbj8yjz32ekf/ResNet-152-imagenet.zip?dl=1)
+- [ResNet-152-places365 features [380K/2.9GB]](https://www.dropbox.com/s/mzolh9oemracfuo/ResNet-152-places365.zip?dl=1)
 
 
 ### Directory Structure

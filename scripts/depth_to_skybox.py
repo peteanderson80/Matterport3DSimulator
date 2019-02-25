@@ -13,16 +13,23 @@ from multiprocessing import Pool
 from numpy.linalg import inv,norm
 from StringIO import StringIO
 
-import sys
-sys.path.append('build')
-from MatterSim import cbf
 
+# Parameters
+DOWNSIZED_WIDTH = 512
+DOWNSIZED_HEIGHT = 512
+NUM_WORKER_PROCESSES = 20
+FILL_HOLES = True
+VISUALIZE_OUTPUT = False
+
+if FILL_HOLES:
+  import sys
+  sys.path.append('build')
+  from MatterSim import cbf
+
+# Constants
 # Note: Matterport camera is really y=up, x=right, -z=look.
-
 SKYBOX_WIDTH = 1024
 SKYBOX_HEIGHT = 1024
-NEW_WIDTH = 512
-NEW_HEIGHT = 512
 base_dir = 'data/v1/scans'
 skybox_template = '%s/%s/matterport_skybox_images/%s_skybox%d_sami.jpg'
 color_template = '%s/%s/undistorted_color_images/%s_i%s.jpg'
@@ -123,7 +130,7 @@ def fill_joint_bilateral_filter(rgb, depth):
   return result
 
 
-def depth_to_skybox(scan, visualize=False):
+def depth_to_skybox(scan, visualize=VISUALIZE_OUTPUT, fill_holes=FILL_HOLES):
 
   # Load camera parameters
   intrinsics,extrinsics = camera_parameters(scan)
@@ -203,15 +210,17 @@ def depth_to_skybox(scan, visualize=False):
             locs = np.where(mask == 1)
             base_rgb[locs[0], locs[1]] = warp[locs[0], locs[1]]
 
-      depth_output = cv2.flip(base_depth, 1) # flip around y-axis
-      depth_filled = fill_joint_bilateral_filter(skybox, depth_output) # Fill holes
-      depth_small = cv2.resize(depth_filled,(NEW_WIDTH,NEW_HEIGHT),interpolation=cv2.INTER_AREA) # Shrink
-      ims.append(depth_small)
+      depth_small = cv2.resize(cv2.flip(base_depth, 1),(DOWNSIZED_WIDTH,DOWNSIZED_HEIGHT),interpolation=cv2.INTER_NEAREST) # flip around y-axis, downsize
+      if fill_holes:
+        depth_filled = fill_joint_bilateral_filter(skybox, depth_small) # Fill holes
+        ims.append(depth_filled)
+      else:
+        ims.append(depth_small)
 
       if visualize and False:
         cv2.imshow('Skybox', skybox)
         cv2.imshow('Depth', cv2.applyColorMap((depth_small/256).astype(np.uint8), cv2.COLORMAP_JET))
-        rgb_output = cv2.flip(base_rgb, 1) # flip around y-axis   
+        rgb_output = cv2.flip(base_rgb, 1) # flip around y-axis
         cv2.imshow('RGB', rgb_output)
         cv2.waitKey(0)
 
@@ -229,6 +238,7 @@ def depth_to_skybox(scan, visualize=False):
 
   if visualize:
     cv2.destroyAllWindows()
+  print 'Completed scan %s' % (scan, len(pano_ids))
 
 
 
@@ -236,13 +246,8 @@ if __name__ == '__main__':
 
   with open('connectivity/scans.txt') as f:
     scans = [scan.strip() for scan in f.readlines()]
-    p = Pool(20)
-    p.map(depth_to_skybox, scans)  
+    p = Pool(NUM_WORKER_PROCESSES)
+    p.map(depth_to_skybox, scans)
 
 
-
-  
-
-
-        
 
