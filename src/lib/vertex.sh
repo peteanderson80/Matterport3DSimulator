@@ -1,10 +1,15 @@
+R""(
 #version 120
 
 attribute vec3 vertex;
 varying vec3 texCoord;
-uniform mat4 PVM;
+varying vec4 camCoord;
+uniform mat4 ProjMat;
+uniform mat4 ModelViewMat;
 
 void main() {
-gl_Position = PVM * vec4(vertex, 1.0);
-texCoord = vertex;
+  camCoord = ModelViewMat * vec4(vertex, 1.0);
+  gl_Position = ProjMat * camCoord;
+  texCoord = vertex;
 }
+)""

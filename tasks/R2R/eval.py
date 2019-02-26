@@ -55,37 +55,54 @@ class Evaluation(object):
         nearest_position = self._get_nearest(gt['scan'], goal, path)
         self.scores['nav_errors'].append(self.distances[gt['scan']][final_position][goal])
         self.scores['oracle_errors'].append(self.distances[gt['scan']][nearest_position][goal])
-        self.scores['trajectory_steps'].append(len(path)-1)
         distance = 0 # Work out the length of the path in meters
         prev = path[0]
         for curr in path[1:]:
+            if prev[0] != curr[0]:
+                try:
+                    self.graphs[gt['scan']][prev[0]][curr[0]]
+                except KeyError as err:
+                    print 'Error: The provided trajectory moves from %s to %s but the navigation graph contains no '\
+                        'edge between these viewpoints. Please ensure the provided navigation trajectories '\
+                        'are valid, so that trajectory length can be accurately calculated.' % (prev[0], curr[0])
+                    raise
             distance += self.distances[gt['scan']][prev[0]][curr[0]]
             prev = curr
         self.scores['trajectory_lengths'].append(distance)
+        self.scores['shortest_path_lengths'].append(self.distances[gt['scan']][start][goal])
 
     def score(self, output_file):
         ''' Evaluate each agent trajectory based on how close it got to the goal location '''
         self.scores = defaultdict(list)
-        instr_ids = set(self.instr_ids) 
+        instr_ids = set(self.instr_ids)
         with open(output_file) as f:
             for item in json.load(f):
                 # Check against expected ids
                 if item['instr_id'] in instr_ids:
                     instr_ids.remove(item['instr_id'])
                     self._score_item(item['instr_id'], item['trajectory'])
-        assert len(instr_ids) == 0, 'Missing %d of %d instruction ids from %s - not in %s'\
-                       % (len(instr_ids), len(self.instr_ids), ",".join(self.splits), output_file)
+        assert len(instr_ids) == 0, 'Trajectories not provided for %d instruction ids: %s' % (len(instr_ids),instr_ids)
         assert len(self.scores['nav_errors']) == len(self.instr_ids)
-        score_summary = {
-            'nav_error': np.average(self.scores['nav_errors']),
-            'oracle_error': np.average(self.scores['oracle_errors']),
-            'steps': np.average(self.scores['trajectory_steps']),
-            'lengths': np.average(self.scores['trajectory_lengths'])
-        }
         num_successes = len([i for i in self.scores['nav_errors'] if i < self.error_margin])
-        score_summary['success_rate'] = float(num_successes)/float(len(self.scores['nav_errors']))
+
         oracle_successes = len([i for i in self.scores['oracle_errors'] if i < self.error_margin])
-        score_summary['oracle_rate'] = float(oracle_successes)/float(len(self.scores['oracle_errors']))
+        
+        spls = []
+        for err,length,sp in zip(self.scores['nav_errors'],self.scores['trajectory_lengths'],self.scores['shortest_path_lengths']):
+            if err < self.error_margin:
+                spls.append(sp/max(length,sp))
+            else:
+                spls.append(0)
+        
+        score_summary ={
+            'length': np.average(self.scores['trajectory_lengths']),
+            'nav_error': np.average(self.scores['nav_errors']),
+            'oracle success_rate': float(oracle_successes)/float(len(self.scores['oracle_errors'])),
+            'success_rate': float(num_successes)/float(len(self.scores['nav_errors'])),
+            'spl': np.average(spls)
+        }
+
+        assert score_summary['spl'] <= score_summary['success_rate']
         return score_summary, self.scores
 
 
@@ -93,7 +110,7 @@ RESULT_DIR = 'tasks/R2R/results/'
 
 def eval_simple_agents():
     ''' Run simple baselines on each split. '''
-    for split in ['train', 'val_seen', 'val_unseen', 'test']:
+    for split in ['train', 'val_seen', 'val_unseen']:
         env = R2RBatch(None, batch_size=1, splits=[split])
         ev = Evaluation([split])
 

@@ -19,6 +19,12 @@ ln -s ../../connectivity connectivity
 ln -s ../../data data
 ```
 
+Also, download the R2R trajectory data by running this script from the top level directory (if you haven't already done this):
+```
+./tasks/R2R/data/download.sh
+```
+
+
 Now you can start a web server to check out the various visualizations and AMT user interfaces:
 ```
 gulp

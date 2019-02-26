@@ -42,10 +42,11 @@ For the test set, only the first path_id (starting location) is included. We wil
 
 ## Prerequisites
 
-Python 2, [PyTorch](http://pytorch.org/), [NetworkX](https://networkx.github.io/). Install python dependencies by running:
+Python 2, [PyTorch](http://pytorch.org/), [NetworkX](https://networkx.github.io/), [pandas](https://pandas.pydata.org/), etc. These should already be installed in the docker image, or can be installed by running:
 ```
 pip install -r tasks/R2R/requirements.txt
 ```
+
 
 ## Training and Evaluation
 
