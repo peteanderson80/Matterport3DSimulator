@@ -285,7 +285,7 @@ We generate image features using Caffe. To replicate our approach, first downloa
 
 Alternatively, skip the generation and just download and extract our tsv files into the `img_features` directory:
 - [ResNet-152-imagenet features [380K/2.9GB]](https://www.dropbox.com/s/715bbj8yjz32ekf/ResNet-152-imagenet.zip?dl=1)
-- [ResNet-152-places365 features [380K/2.9GB]](https://www.dropbox.com/s/mzolh9oemracfuo/ResNet-152-places365.zip?dl=1)
+- [ResNet-152-places365 features [380K/2.9GB]](https://www.dropbox.com/s/gox1rbdebyaa98w/ResNet-152-places365.zip?dl=1)
 
 
 ### Directory Structure
