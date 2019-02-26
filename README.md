@@ -5,7 +5,7 @@ The Matterport3D Simulator enables development of AI **agents that interact with
 
 ![Concept](teaser.jpg)
 
-Visit the main [website](https://bringmeaspoon.org/) for updates and to view a demo.
+Visit the main [website](https://bringmeaspoon.org/) to view a demo.
 
 *NEW February 2019*: We have released several updates. The simulator is now dockerized, it supports batches of agents instead of just a single agent, and it is far more efficient (faster) than before. Also, it now outputs depth maps as well as RGB images. As a consequence, there are some changes to the original API (mainly, all inputs and outputs are now batched). Therefore, to mark the first release we have tagged it as [v0.1](https://github.com/peteanderson80/Matterport3DSimulator/tree/v0.1) for any users that don't want to change to the new version. 
 
