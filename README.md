@@ -88,7 +88,7 @@ Note that if <PATH> is a remote sshfs mount, you will need to mount it with the 
 
 ### Dataset Preprocessing
 
-To make data loading faster and to reduce memory usage we preprocess the `matterport_skybox_images' by downscaling and combining all cube faces into a single image using the following script:
+To make data loading faster and to reduce memory usage we preprocess the `matterport_skybox_images` by downscaling and combining all cube faces into a single image using the following script:
 ```
 ./scripts/downsize_skybox.py
 ```
