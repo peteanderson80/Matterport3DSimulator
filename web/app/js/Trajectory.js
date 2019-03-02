@@ -171,9 +171,25 @@ function download() {
       a.download = $instr_id.value + '.webm';
       a.click();
       window.URL.revokeObjectURL(url);
+      a.remove();
     };
     capturer.start();
     setTimeout(function(){ play(); }, pauseStart);
+  }
+}
+
+function download_image() {
+  if (!playing && !downloading){
+    var canvas = document.getElementById("skybox");
+    image = canvas.toDataURL();//.replace("image/png", "image/octet-stream");
+    // save download
+    var a = document.createElement('a');
+    document.body.appendChild(a);
+    a.style = 'display: none';
+    a.href = image;
+    a.download = 'threejs_' + get_pose_string() + '.png';
+    a.click();
+    a.remove();
   }
 }
 
@@ -247,8 +263,8 @@ function skybox_init(scan, image) {
   world_frame.add(light);
   world_frame.add(new THREE.AmbientLight( 0xAAAAAA )); // soft light
 
-  // init the WebGL renderer
-  renderer = new THREE.WebGLRenderer({canvas: $canvas, antialias: true } );
+  // init the WebGL renderer - preserveDrawingBuffer is needed for toDataURL()
+  renderer = new THREE.WebGLRenderer({canvas: $canvas, antialias: true, preserveDrawingBuffer: true } );
   renderer.setSize(SIZE_X, SIZE_Y);
 
   controls = new THREE.PTZCameraControls(camera, renderer.domElement);
@@ -344,6 +360,25 @@ function get_camera_pose(){
   var m = camera.matrix.clone();
   m.premultiply(camera_pose.matrix);
   return m;
+}
+
+function get_pose_string(){
+  var m = get_camera_pose();
+
+  // calculate heading
+  var rot = new THREE.Matrix3();
+  rot.setFromMatrix4(m);
+  var cam_look = new THREE.Vector3(0,0,1); // based on matterport camera
+  cam_look.applyMatrix3(rot);
+  heading = -Math.PI/2.0 -Math.atan2(cam_look.y, cam_look.x);
+  if (heading < 0) {
+    heading += 2.0*Math.PI;
+  }
+
+  // calculate elevation
+  elevation = -Math.atan2(cam_look.z, Math.sqrt(Math.pow(cam_look.x,2) + Math.pow(cam_look.y,2)))
+  
+  return scan+"_"+curr_image_id+"_"+heading+"_"+elevation;
 }
 
 function take_action(dest) {
