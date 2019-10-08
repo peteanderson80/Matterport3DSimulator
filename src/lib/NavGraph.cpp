@@ -57,6 +57,8 @@ void NavGraph::Location::loadCubemapImages() {
     if (includeDepth) {
         // 16 bit grayscale images
         cv::Mat depth = cv::imread(skyboxDir + viewpointId + "_skybox_depth_small.png", CV_LOAD_IMAGE_ANYDEPTH);
+        w = depth.cols/6;
+        h = depth.rows;
         xposD = depth(cv::Rect(2*w, 0, w, h));
         xnegD = depth(cv::Rect(4*w, 0, w, h));
         yposD = depth(cv::Rect(0*w, 0, w, h));
