@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-''' Script for generating depth skyboxes based on undistorted depth images, 
-    in order to support depth output in the simulator. The current version 
-    assumes that undistorted depth images are aligned to matterport skyboxes, 
+''' Script for generating depth skyboxes based on undistorted depth images,
+    in order to support depth output in the simulator. The current version
+    assumes that undistorted depth images are aligned to matterport skyboxes,
     and uses simple blending. Images are downsized 50%. '''
 
 import os
@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 from multiprocessing import Pool
 from numpy.linalg import inv,norm
-from StringIO import StringIO
+from io import StringIO
 
 
 # Parameters
@@ -22,8 +22,6 @@ FILL_HOLES = True
 VISUALIZE_OUTPUT = False
 
 if FILL_HOLES:
-  import sys
-  sys.path.append('build')
   from MatterSim import cbf
 
 # Constants
@@ -117,7 +115,7 @@ def fill_joint_bilateral_filter(rgb, depth):
   depth = (depth.astype(np.float64)/maxDepth)
   depth[depth > 1] = 1
   depth = (depth*255).astype(np.uint8)
-  
+
   # Convert to col major order
   depth = np.asfortranarray(depth)
   intensity = np.asfortranarray(intensity)
@@ -138,7 +136,7 @@ def depth_to_skybox(scan, visualize=VISUALIZE_OUTPUT, fill_holes=FILL_HOLES):
   K_skybox = instrinsic_matrix(SKYBOX_WIDTH, SKYBOX_HEIGHT)
 
   pano_ids = list(set([item.split('_')[0] for item in intrinsics.keys()]))
-  print 'Processing scan %s with %d panoramas' % (scan, len(pano_ids))
+  print('Processing scan %s with %d panoramas' % (scan, len(pano_ids)))
 
   if visualize:
     cv2.namedWindow('RGB')
@@ -239,7 +237,7 @@ def depth_to_skybox(scan, visualize=VISUALIZE_OUTPUT, fill_holes=FILL_HOLES):
 
   if visualize:
     cv2.destroyAllWindows()
-  print 'Completed scan %s' % (scan)
+  print('Completed scan %s' % (scan))
 
 
 
@@ -249,6 +247,3 @@ if __name__ == '__main__':
     scans = [scan.strip() for scan in f.readlines()]
     p = Pool(NUM_WORKER_PROCESSES)
     p.map(depth_to_skybox, scans)
-
-
-

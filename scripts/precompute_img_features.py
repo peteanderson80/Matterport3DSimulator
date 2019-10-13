@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ''' Script to precompute image features using a Caffe ResNet CNN, using 36 discretized views
     at each viewpoint in 30 degree increments, and the provided camera WIDTH, HEIGHT 
@@ -16,11 +16,10 @@ csv.field_size_limit(sys.maxsize)
 
 
 # Caffe and MatterSim need to be on the Python path
-sys.path.insert(0, 'build')
 import MatterSim
 
-#caffe_root = '../'  # your caffe build
-#sys.path.insert(0, caffe_root + 'python')
+caffe_root = '../'  # your caffe build
+sys.path.insert(0, caffe_root + 'python')
 import caffe
 
 from timer import Timer
@@ -53,12 +52,13 @@ def load_viewpointids():
                 for item in data:
                     if item['included']:
                         viewpointIds.append((scan, item['image_id']))
-    print 'Loaded %d viewpoints' % len(viewpointIds)
+    print('Loaded %d viewpoints' % len(viewpointIds))
     return viewpointIds
 
 
 def transform_img(im):
     ''' Prep opencv 3 channel image for the network '''
+    im = np.array(im, copy=True)
     im_orig = im.astype(np.float32, copy=True)
     im_orig -= np.array([[[103.1, 115.9, 123.2]]]) # BGR pixel mean
     blob = np.zeros((1, im.shape[0], im.shape[1], 3), dtype=np.float32)
@@ -73,7 +73,8 @@ def build_tsv():
     sim.setCameraResolution(WIDTH, HEIGHT)
     sim.setCameraVFOV(math.radians(VFOV))
     sim.setDiscretizedViewingAngles(True)
-    sim.init()
+    sim.setBatchSize(1)
+    sim.initialize()
 
     # Set up Caffe resnet
     caffe.set_device(GPU_ID)
@@ -84,8 +85,8 @@ def build_tsv():
     count = 0
     t_render = Timer()
     t_net = Timer()
-    with open(OUTFILE, 'wb') as tsvfile:
-        writer = csv.DictWriter(tsvfile, delimiter = '\t', fieldnames = TSV_FIELDNAMES)          
+    with open(OUTFILE, 'wt') as tsvfile:
+        writer = csv.DictWriter(tsvfile, delimiter = '\t', fieldnames = TSV_FIELDNAMES)
 
         # Loop all the viewpoints in the simulator
         viewpointIds = load_viewpointids()
@@ -96,13 +97,13 @@ def build_tsv():
             features = np.empty([VIEWPOINT_SIZE, FEATURE_SIZE], dtype=np.float32)
             for ix in range(VIEWPOINT_SIZE):
                 if ix == 0:
-                    sim.newEpisode(scanId, viewpointId, 0, math.radians(-30))
+                    sim.newEpisode([scanId], [viewpointId], [0], [math.radians(-30)])
                 elif ix % 12 == 0:
-                    sim.makeAction(0, 1.0, 1.0)
+                    sim.makeAction([0], [1.0], [1.0])
                 else:
-                    sim.makeAction(0, 1.0, 0)
+                    sim.makeAction([0], [1.0], [0])
 
-                state = sim.getState()
+                state = sim.getState()[0]
                 assert state.viewIndex == ix
                 
                 # Transform and save generated image
@@ -112,7 +113,7 @@ def build_tsv():
             t_net.tic()
             # Run as many forward passes as necessary
             assert VIEWPOINT_SIZE % BATCH_SIZE == 0
-            forward_passes = VIEWPOINT_SIZE / BATCH_SIZE            
+            forward_passes = VIEWPOINT_SIZE // BATCH_SIZE
             ix = 0
             for f in range(forward_passes):
                 for n in range(BATCH_SIZE):
@@ -122,33 +123,33 @@ def build_tsv():
                 # Forward pass
                 output = net.forward()
                 features[f*BATCH_SIZE:(f+1)*BATCH_SIZE, :] = net.blobs['pool5'].data[:,:,0,0]
-
             writer.writerow({
                 'scanId': scanId,
                 'viewpointId': viewpointId,
                 'image_w': WIDTH,
                 'image_h': HEIGHT,
                 'vfov' : VFOV,
-                'features': base64.b64encode(features)
+                'features': str(base64.b64encode(features), "utf-8")
             })
             count += 1
             t_net.toc()
             if count % 100 == 0:
-                print 'Processed %d / %d viewpoints, %.1fs avg render time, %.1fs avg net time, projected %.1f hours' %\
+                print('Processed %d / %d viewpoints, %.1fs avg render time, %.1fs avg net time, projected %.1f hours' %\
                   (count,len(viewpointIds), t_render.average_time, t_net.average_time, 
-                  (t_render.average_time+t_net.average_time)*len(viewpointIds)/3600)
+                  (t_render.average_time+t_net.average_time)*len(viewpointIds)/3600))
 
 
 def read_tsv(infile):
     # Verify we can read a tsv
     in_data = []
-    with open(infile, "r+b") as tsv_in_file:
+    with open(infile, "rt") as tsv_in_file:
         reader = csv.DictReader(tsv_in_file, delimiter='\t', fieldnames = TSV_FIELDNAMES)
         for item in reader:
+            item['scanId'] = item['scanId']
             item['image_h'] = int(item['image_h'])
-            item['image_w'] = int(item['image_w'])   
-            item['vfov'] = int(item['vfov'])   
-            item['features'] = np.frombuffer(base64.decodestring(item['features']), 
+            item['image_w'] = int(item['image_w'])
+            item['vfov'] = int(item['vfov'])
+            item['features'] = np.frombuffer(base64.b64decode(item['features']),
                     dtype=np.float32).reshape((VIEWPOINT_SIZE, FEATURE_SIZE))
             in_data.append(item)
     return in_data
@@ -158,5 +159,5 @@ if __name__ == "__main__":
 
     build_tsv()
     data = read_tsv(OUTFILE)
-    print 'Completed %d viewpoints' % len(data)
+    print('Completed %d viewpoints' % len(data))
 

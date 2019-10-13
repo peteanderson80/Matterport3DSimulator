@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ''' Script for filling missing values in undistorted depth images. '''
 
@@ -24,7 +24,7 @@ def fill_joint_bilateral_filter(scan):
   # Load camera parameters
   intrinsics,_ = camera_parameters(scan)
   pano_ids = list(set([item.split('_')[0] for item in intrinsics.keys()]))
-  print 'Processing scan %s with %d panoramas' % (scan, len(pano_ids))
+  print('Processing scan %s with %d panoramas' % (scan, len(pano_ids)))
 
   for pano in pano_ids:
 
@@ -45,7 +45,7 @@ def fill_joint_bilateral_filter(scan):
         depth = (depth*255).astype(np.uint8)
 
         #cv2.imshow('input', cv2.applyColorMap(depth, cv2.COLORMAP_JET))
-        
+
         # Convert to col major order
         depth = np.asfortranarray(depth)
         intensity = np.asfortranarray(intensity)
@@ -54,7 +54,7 @@ def fill_joint_bilateral_filter(scan):
 
         # Fill holes
         cbf(depth, intensity, mask, result)
-  
+
         #cv2.imshow('result', cv2.applyColorMap(result, cv2.COLORMAP_JET))
         #cv2.waitKey(0)
 
@@ -68,5 +68,3 @@ if __name__ == '__main__':
     scans = [scan.strip() for scan in f.readlines()]
     p = Pool(10)
     p.map(fill_joint_bilateral_filter, scans)
-
-

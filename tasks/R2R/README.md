@@ -42,9 +42,9 @@ For the test set, only the first path_id (starting location) is included. We wil
 
 ## Prerequisites
 
-Python 2, [PyTorch](http://pytorch.org/), [NetworkX](https://networkx.github.io/), [pandas](https://pandas.pydata.org/), etc. These should already be installed in the docker image, or can be installed by running:
+Python 3, [PyTorch](http://pytorch.org/), [NetworkX](https://networkx.github.io/), [pandas](https://pandas.pydata.org/), etc. These should already be installed in the docker image, or can be installed by running:
 ```
-pip install -r tasks/R2R/requirements.txt
+pip3 install -r tasks/R2R/requirements.txt
 ```
 
 
@@ -54,17 +54,17 @@ There is a test server and leaderboard available at [EvalAI](https://evalai.clou
 
 To train the baseline seq2seq model with student-forcing:
 ```
-python tasks/R2R/train.py
+python3 tasks/R2R/train.py
 ```
 
 To run some simple learning free baselines:
 ```
-python tasks/R2R/eval.py
+python3 tasks/R2R/eval.py
 ```
 
 Generate figures from the paper:
 ```
-python tasks/R2R/plot.py
+python3 tasks/R2R/plot.py
 ```
 
 The simple baselines include:

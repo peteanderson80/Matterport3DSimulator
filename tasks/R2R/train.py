@@ -46,13 +46,13 @@ def train(train_env, encoder, decoder, n_iters, log_every=100, val_envs={}):
     ''' Train on training set, validating on both seen and unseen. '''
 
     agent = Seq2SeqAgent(train_env, "", encoder, decoder, max_episode_len)
-    print 'Training with %s feedback' % feedback_method
+    print('Training with %s feedback' % feedback_method)
     encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate, weight_decay=weight_decay) 
+    decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     data_log = defaultdict(list)
     start = time.time()
-   
+
     for idx in range(0, n_iters, log_every):
 
         interval = min(log_every,n_iters-idx)
@@ -68,7 +68,7 @@ def train(train_env, encoder, decoder, n_iters, log_every=100, val_envs={}):
         loss_str = 'train loss: %.4f' % train_loss_avg
 
         # Run validation
-        for env_name, (env, evaluator) in val_envs.iteritems():
+        for env_name, (env, evaluator) in val_envs.items():
             agent.env = env
             agent.results_path = '%s%s_%s_iter_%d.json' % (RESULT_DIR, model_prefix, env_name, iter)
             # Get validation loss under the same conditions as training
@@ -81,7 +81,7 @@ def train(train_env, encoder, decoder, n_iters, log_every=100, val_envs={}):
             agent.write_results()
             score_summary, _ = evaluator.score(agent.results_path)
             loss_str += ', %s loss: %.4f' % (env_name, val_loss_avg)
-            for metric,val in score_summary.iteritems():
+            for metric,val in score_summary.items():
                 data_log['%s %s' % (env_name,metric)].append(val)
                 if metric in ['success_rate']:
                     loss_str += ', %s: %.3f' % (metric, val)
@@ -95,7 +95,7 @@ def train(train_env, encoder, decoder, n_iters, log_every=100, val_envs={}):
         df.set_index('iteration')
         df_path = '%s%s_log.csv' % (PLOT_DIR, model_prefix)
         df.to_csv(df_path)
-        
+
         split_string = "-".join(train_env.splits)
         enc_path = '%s%s_%s_enc_iter_%d' % (SNAPSHOT_DIR, model_prefix, split_string, iter)
         dec_path = '%s%s_%s_dec_iter_%d' % (SNAPSHOT_DIR, model_prefix, split_string, iter)
@@ -114,16 +114,16 @@ def setup():
 
 def test_submission():
     ''' Train on combined training and validation sets, and generate test submission. '''
-  
+
     setup()
     # Create a batch training environment that will also preprocess text
     vocab = read_vocab(TRAINVAL_VOCAB)
     tok = Tokenizer(vocab=vocab, encoding_length=MAX_INPUT_LENGTH)
     train_env = R2RBatch(features, batch_size=batch_size, splits=['train', 'val_seen', 'val_unseen'], tokenizer=tok)
-    
+
     # Build models and train
     enc_hidden_size = hidden_size//2 if bidirectional else hidden_size
-    encoder = EncoderLSTM(len(vocab), word_embedding_size, enc_hidden_size, padding_idx, 
+    encoder = EncoderLSTM(len(vocab), word_embedding_size, enc_hidden_size, padding_idx,
                   dropout_ratio, bidirectional=bidirectional).cuda()
     decoder = AttnDecoderLSTM(Seq2SeqAgent.n_inputs(), Seq2SeqAgent.n_outputs(),
                   action_embedding_size, hidden_size, dropout_ratio).cuda()
@@ -139,7 +139,7 @@ def test_submission():
 
 def train_val():
     ''' Train on the training set, and validate on seen and unseen splits. '''
-  
+
     setup()
     # Create a batch training environment that will also preprocess text
     vocab = read_vocab(TRAIN_VOCAB)
@@ -147,12 +147,12 @@ def train_val():
     train_env = R2RBatch(features, batch_size=batch_size, splits=['train'], tokenizer=tok)
 
     # Creat validation environments
-    val_envs = {split: (R2RBatch(features, batch_size=batch_size, splits=[split], 
+    val_envs = {split: (R2RBatch(features, batch_size=batch_size, splits=[split],
                 tokenizer=tok), Evaluation([split])) for split in ['val_seen', 'val_unseen']}
 
     # Build models and train
     enc_hidden_size = hidden_size//2 if bidirectional else hidden_size
-    encoder = EncoderLSTM(len(vocab), word_embedding_size, enc_hidden_size, padding_idx, 
+    encoder = EncoderLSTM(len(vocab), word_embedding_size, enc_hidden_size, padding_idx,
                   dropout_ratio, bidirectional=bidirectional).cuda()
     decoder = AttnDecoderLSTM(Seq2SeqAgent.n_inputs(), Seq2SeqAgent.n_outputs(),
                   action_embedding_size, hidden_size, dropout_ratio).cuda()
@@ -162,4 +162,3 @@ def train_val():
 if __name__ == "__main__":
     train_val()
     #test_submission()
-

@@ -35,7 +35,7 @@ def load_nav_graphs(scans):
                 if item['included']:
                     for j,conn in enumerate(item['unobstructed']):
                         if conn and data[j]['included']:
-                            positions[item['image_id']] = np.array([item['pose'][3], 
+                            positions[item['image_id']] = np.array([item['pose'][3],
                                     item['pose'][7], item['pose'][11]]);
                             assert data[j]['unobstructed'][i], 'Graph should be undirected'
                             G.add_edge(item['image_id'],data[j]['image_id'],weight=distance(item,data[j]))
@@ -56,7 +56,7 @@ def load_datasets(splits):
 class Tokenizer(object):
     ''' Class to tokenize and encode a sentence. '''
     SENTENCE_SPLIT_REGEX = re.compile(r'(\W+)') # Split on any non-alphanumeric character
-  
+
     def __init__(self, vocab=None, encoding_length=20):
         self.encoding_length = encoding_length
         self.vocab = vocab
@@ -118,7 +118,7 @@ def build_vocab(splits=['train'], min_count=5, start_vocab=base_vocab):
 
 
 def write_vocab(vocab, path):
-    print 'Writing vocab of size %d to %s' % (len(vocab),path)
+    print('Writing vocab of size %d to %s' % (len(vocab),path))
     with open(path, 'w') as f:
         for word in vocab:
             f.write("%s\n" % word)
@@ -143,4 +143,3 @@ def timeSince(since, percent):
     es = s / (percent)
     rs = es - s
     return '%s (- %s)' % (asMinutes(s), asMinutes(rs))
-

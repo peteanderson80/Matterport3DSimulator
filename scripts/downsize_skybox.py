@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ''' Script for downsizing skybox images. '''
 
@@ -28,7 +28,7 @@ def downsizeWithMerge(scan):
   # Load pano ids
   intrinsics,_ = camera_parameters(scan)
   pano_ids = list(set([item.split('_')[0] for item in intrinsics.keys()]))
-  print 'Processing scan %s with %d panoramas' % (scan, len(pano_ids))
+  print('Processing scan %s with %d panoramas' % (scan, len(pano_ids)))
 
   for pano in pano_ids:
 
@@ -49,7 +49,7 @@ def downsize(scan):
   # Load pano ids
   intrinsics,_ = camera_parameters(scan)
   pano_ids = list(set([item.split('_')[0] for item in intrinsics.keys()]))
-  print 'Processing scan %s with %d panoramas' % (scan, len(pano_ids))
+  print('Processing scan %s with %d panoramas' % (scan, len(pano_ids)))
 
   for pano in pano_ids:
 
@@ -68,6 +68,4 @@ if __name__ == '__main__':
   with open('connectivity/scans.txt') as f:
     scans = [scan.strip() for scan in f.readlines()]
     p = Pool(NUM_WORKER_PROCESSES)
-    p.map(downsizeWithMerge, scans)  
-
-
+    p.map(downsizeWithMerge, scans)

@@ -55,8 +55,7 @@ We recommend using our [Dockerfile](Dockerfile) to install the simulator. The si
 
 ### Prerequisites
 
-- Ubuntu 16.04
-- Nvidia GPU with driver >= 384
+- Nvidia GPU with driver >= 396.37
 - Install [docker](https://docs.docker.com/engine/installation/)
 - Install [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 - Note: CUDA / CuDNN toolkits do not need to be installed (these are provided by the docker image)
@@ -111,12 +110,12 @@ Depth skyboxes are generated from the `undistorted_depth_images` using a simple 
 
 Build the docker image:
 ```
-docker build -t mattersim .
+docker build -t mattersim:9.2-devel-ubuntu18.04 .
 ```
 
 Run the docker container, mounting both the git repo and the dataset:
 ```
-nvidia-docker run -it --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+nvidia-docker run -it --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim:9.2-devel-ubuntu18.04
 ```
 
 Now (from inside the docker container), build the simulator and run the unit tests:
@@ -149,10 +148,10 @@ The recommended (fast) approach for training agents is using off-screen GPU rend
 
 ### Interactive Demo
 
-To run an interactive demo, build the docker image as described above (`docker build -t mattersim .`), then run the docker container while sharing the host's X server and DISPLAY environment variable with the container:
+To run an interactive demo, build the docker image as described above (`docker build -t mattersim:9.2-devel-ubuntu18.04 .`), then run the docker container while sharing the host's X server and DISPLAY environment variable with the container:
 ```
 xhost +
-nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim
+nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim:9.2-devel-ubuntu18.04
 cd /root/mount/Matterport3DSimulator
 ```
 
