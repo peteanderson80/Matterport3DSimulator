@@ -155,11 +155,13 @@ nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=b
 cd /root/mount/Matterport3DSimulator
 ```
 
+If you get an error like `Error: BadShmSeg (invalid shared segment parameter) 128` you may also need to include `-e="QT_X11_NO_MITSHM=1"` in the docker run command above.
+
 Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. By default, these demos have depth rendering on. Check the code and turn it off if you haven't preprocessed the depth outputs (see Depth Outputs above). 
 
 Python demo:
 ```
-python src/driver/driver.py
+python3 src/driver/driver.py
 ```
 C++ demo:
 ```

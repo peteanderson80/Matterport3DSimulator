@@ -56,7 +56,7 @@ target_link_libraries(mattersim_main MatterSim)
 
 add_subdirectory(pybind11)
 
-find_package(PythonInterp 2.7)
+find_package(PythonInterp 3)
 message(${PYTHON_EXECUTABLE})
 
 # Need to search for python executable again to pick up an activated
