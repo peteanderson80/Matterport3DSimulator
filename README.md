@@ -157,7 +157,7 @@ cd /root/mount/Matterport3DSimulator
 
 If you get an error like `Error: BadShmSeg (invalid shared segment parameter) 128` you may also need to include `-e="QT_X11_NO_MITSHM=1"` in the docker run command above.
 
-Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. By default, these demos have depth rendering on. Check the code and turn it off if you haven't preprocessed the depth outputs (see Depth Outputs above). 
+Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. By default, *these demos have depth rendering off*. Check the code and turn it on if you have preprocessed the depth outputs and want to see depth as well (see Depth Outputs above). 
 
 Python demo:
 ```

@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 
     // Sets resolution. Default is 320X240
     sim.setCameraResolution(640,480);
-    sim.setDepthEnabled(true);
+    sim.setDepthEnabled(false);
 
     // Initialize the simulator. Further camera configuration won't take any effect from now on.
     sim.initialize();
