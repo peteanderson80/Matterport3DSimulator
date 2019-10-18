@@ -4,6 +4,18 @@
 
 FROM nvidia/cudagl:9.2-devel-ubuntu18.04
 
+# Install cudnn
+ENV CUDNN_VERSION 7.6.4.38
+LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcudnn7=$CUDNN_VERSION-1+cuda9.2 \
+libcudnn7-dev=$CUDNN_VERSION-1+cuda9.2 \
+&& \
+    apt-mark hold libcudnn7 && \
+    rm -rf /var/lib/apt/lists/*
+
+
 # Install a few libraries to support both EGL and OSMESA options
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y wget doxygen curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev libopencv-dev python-opencv python3-setuptools python3-dev python3-pip
