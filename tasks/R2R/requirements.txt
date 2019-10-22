@@ -6,7 +6,7 @@ networkx==2.2
 numpy==1.13.3
 olefile==0.44
 pandas==0.24.1
-Pillow==4.3.0
+Pillow==6.2.0
 pyparsing==2.2.0
 python-dateutil==2.6.1
 pytz==2017.3
