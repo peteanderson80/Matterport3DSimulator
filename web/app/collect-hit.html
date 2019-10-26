@@ -16,10 +16,10 @@
 	<li><strong>These markers are not visible to the robot</strong>, and should not be mentioned in your directions.</li>
 </ul>
 
-<p>Good directions will ensure that the robot arrives <strong>within 5 metres</strong> of the red goal marker. Therefore, we suggest:</p>
+<p>Good directions will ensure that the robot arrives <strong>within 3 meters</strong> of the red goal marker. Therefore, we suggest:</p>
 
 <ul>
-	<li><strong><span style="color: rgb(255, 0, 0);">NEW!</span>&nbsp;Spelling and punctuation is important.</strong>&nbsp;Please use full sentences with punctuation (,.) and correct spelling.</li>
+	<li><strong>Spelling and punctuation is important.</strong>&nbsp;Please use full sentences with punctuation (,.) and correct spelling.</li>
 	<li><strong>Focus on the goal, not the path</strong>. It&#39;s not necessary for the robot to follow the exact path indicated by the markers.</li>
 	<li><strong>Try to mention objects or landmarks</strong>. This is clearer than saying &#39;turn slight left&#39; or &#39;go forward&#39;.</li>
 </ul>
@@ -32,13 +32,13 @@
 	<li><strong>Press the &#39;Play / Replay&#39; button</strong> at any time to watch a 15-20 second animated fly-through from the start to the goal.</li>
 </ol>
 
-<p>Before you start, <strong><a href="https://youtu.be/xn32y514CO0">please watch this short training video</a></strong>. It contains examples that will help you complete these tasks efficiently.</p>
+<p>Before you start, <strong><a href="https://youtu.be/xn32y514CO0" target="_blank">please watch this short training video</a></strong>. It contains examples that will help you complete these tasks efficiently.</p>
 
 <p>&nbsp;</p>
 
 <p><strong>Note: <span style="color:#FF0000;">This task is not suitable for devices with small screens or touch screen devices</span></strong>. Recommended browsers are Chrome, Firefox and Safari (not Internet Explorer).</p>
 
-<p style="font-size: 13px;">These tasks relate&nbsp;to academic research conducted by Peter Anderson through the <a href="https://www.roboticvision.org/">Australian Centre for Robotic Vision</a>, Brisbane, Australia. We estimate that on average each HIT to take around 1-1.5 minutes to complete. Please send your queries and feedback to <strong>bringmeaspoon@gmail</strong>. We will be continually releasing more HITs for this task.</p>
+<p style="font-size: 13px;">We estimate that on average each HIT to take around 1-1.5 minutes to complete.</p>
 </div>
 </div>
 </div>
@@ -51,11 +51,11 @@
 </div>
 
 <div class="col-xs-12 col-sm-4 fields">
-<p><strong>Left-click and drag the panoramic image to start.</strong> Instructions have been updated from the previous batch (please re-read).</p>
+<p><strong>Left-click and drag the panoramic image to start.</strong></p>
 <button class="btn" disabled="true" id="play" onclick="play_animation();" type="button">Play / Replay</button></div>
 
 <div class="col-xs-12 col-sm-8 fields">
-<div class="form-group"><label for="tag1">Write your Directions here (with correct spelling and punctuation):</label><textarea class="form-control" disabled="true" id="tag1" name="tag1" required="" minlength="20" spellcheck="true" rows="3" size="200" type="text"></textarea></div>
+<div class="form-group"><label for="tag1">Write your Directions here (with correct spelling and punctuation):</label><textarea class="form-control" disabled="true" id="tag1" minlength="20" name="tag1" required="" rows="3" size="200" spellcheck="true" type="text"></textarea></div>
 </div>
 </div>
 </section>
@@ -120,6 +120,7 @@ var step = 0;
 var playing = false;
 var scan;
 var curr_image_id;
+var start_heading = 0;
 
 // declare a bunch of variable we will need later
 var camera, camera_pose, scene, controls, renderer, connections, world_frame, cylinder_frame, cubemap_frame;
@@ -137,6 +138,9 @@ matt.loadJson('sample_room_paths.json').then(function(data){
   path = data[ix.toString()];
   scan = path['scan'];
   curr_image_id = path['path'][step]
+  if ('heading' in path){
+    start_heading = path['heading'];
+  }
   skybox_init();
   load_connections(scan, curr_image_id);
 });
@@ -144,25 +148,19 @@ matt.loadJson('sample_room_paths.json').then(function(data){
 function play_animation() {
   if (!playing){
     document.getElementById("play").disabled = true;
-    if (step != 0 || curr_image_id != path['path'][0]){
-      // First move back to start
-      var image_id = path['path'][0];
-      matt.loadCubeTexture(cube_urls(scan, image_id)).then(function(texture){
-        camera.rotation.x = 0;
-        camera.rotation.y = 0;
-        camera.rotation.z = 0;
-        scene.background = texture;
-        render();
-        move_to(image_id, true);
-        step = 0;
-        playing = true;
-        step_forward();
-      });
-    } else {
+    // First move back to start
+    var image_id = path['path'][0];
+    matt.loadCubeTexture(cube_urls(scan, image_id)).then(function(texture){
+      camera.rotation.x = 0;
+      camera.rotation.y = -start_heading; 
+      camera.rotation.z = 0;
+      scene.background = texture;
+      render();
+      move_to(image_id, true);
       step = 0;
       playing = true;
       step_forward();
-    }
+    });
   }
 }
 
@@ -187,12 +185,16 @@ function step_backward(){
 };
 
 // ## Initialize everything
-function skybox_init(scan, image) {
+function skybox_init() {
   // test if webgl is supported
   if (! Detector.webgl) Detector.addGetWebGLMessage();
 
   // create the camera (kinect 2)
   camera = new THREE.PerspectiveCamera(VFOV, ASPECT, 0.01, 1000);
+
+  // Set the initial heading
+  camera.rotation.y = -start_heading;
+
   camera_pose = new THREE.Group();
   camera_pose.add(camera);
   
@@ -228,6 +230,7 @@ function skybox_init(scan, image) {
   controls.tiltSpeed = -0.25;
   controls.zoomSpeed = 1.5;
   controls.dampingFactor = 0.5;
+
   controls.addEventListener( 'select', select );
   controls.addEventListener( 'change', onChange );
 }
@@ -408,10 +411,10 @@ function take_action(image_id) {
     camera.rotation.z = this.z;
     render();
   });
-  var new_vfov = VFOV*0.95;
+  var new_vfov = VFOV*0.8;
   var zoom_tween = new TWEEN.Tween({
     vfov: VFOV})
-  .to( {vfov: new_vfov }, 500 )
+  .to( {vfov: new_vfov }, 2000 )
   .easing(TWEEN.Easing.Cubic.InOut)
   .onUpdate(function() {
     camera.fov = this.vfov;

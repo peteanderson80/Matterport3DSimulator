@@ -6,7 +6,7 @@
 <div class="col-xs-12 col-md-12"><!-- Instructions -->
 <div class="panel panel-primary"><!-- WARNING: the ids "collapseTrigger" and "instructionBody" are being used to enable expand/collapse feature --><a class="panel-heading" href="javascript:void(0);" id="collapseTrigger"><strong>Instructions: Follow Directions in a Building</strong>&nbsp;<span class="collapse-text">(<u><span style="color:#0000FF;">Click to expand instructions</span></u>)</span> </a>
 <div class="panel-body" id="instructionBody">
-<p>Below the image you will see some navigation directions that describe how to reach a goal location. <strong>Your task is to follow the directions, by moving through the building to reach the goal location</strong>. On average, the goal location will be 5 to 15 meters away, typically in a different room. We will award a <strong> $0.10 bonus </strong> for every HIT that finishes within 3 meters of the goal location. We may reject HITs from workers that are consistently far below average in performance.</p>
+<p>Below the image you will see some navigation directions that describe how to reach a goal location. <strong>Your task is to follow the directions, by moving through the building to reach the goal location</strong>. On average, the goal location will be 5 to 15 meters away, typically in a different room. <span style="color:#0000FF;">We will award a <strong> $0.10 bonus </strong> for every HIT that finishes within 3 meters of the goal location.</span> We may reject HITs from workers that are consistently far below average in performance.</p>
 
 <p>Further requirements:</p>
 
@@ -28,7 +28,7 @@
 
 <p><strong>Note: <span style="color:#FF0000;">This task is not suitable for devices with small screens or touch screen devices</span></strong>. Recommended browsers are Chrome, Firefox and Safari (not Internet Explorer). Please do not submit HITs if you experience difficulties with the interface.</p>
 
-<p style="font-size: 13px;">These tasks relate&nbsp;to academic research conducted by Peter Anderson through the <a href="https://www.roboticvision.org/">Australian Centre for Robotic Vision</a>, Brisbane, Australia. We estimate that on average each HIT to take around 1 minute to complete. Please send your queries and feedback to <strong>bringmeaspoon@gmail</strong>.</p>
+<p style="font-size: 13px;">We estimate that on average each HIT to take around 1 minute to complete.</p>
 </div>
 </div>
 </div>
@@ -110,6 +110,7 @@ var SIZE_Y = 540;
 var VFOV = 90;
 var ASPECT = SIZE_X/SIZE_Y;
 var path;
+var start_heading = 0;
 
 var matt = new Matterport3D("");
 matt.loadJson('/R2Rdata/R2R_test.json').then(function(data){
@@ -118,17 +119,24 @@ matt.loadJson('/R2Rdata/R2R_test.json').then(function(data){
   curr_image_id = task['path'][0]
   instructions = task['instructions'][0]
   $('#instr').text(instructions);
+  if ('heading' in task){
+    start_heading = task['heading'];
+  }
   skybox_init();
   load_connections(scan, curr_image_id);
 });
 
 // ## Initialize everything
-function skybox_init(scan, image) {
+function skybox_init() {
   // test if webgl is supported
   if (! Detector.webgl) Detector.addGetWebGLMessage();
 
   // create the camera (kinect 2)
   camera = new THREE.PerspectiveCamera(VFOV, ASPECT, 0.01, 1000);
+  
+  // Set the initial heading
+  camera.rotation.y = -start_heading;
+  
   camera_pose = new THREE.Group();
   camera_pose.add(camera);
   
