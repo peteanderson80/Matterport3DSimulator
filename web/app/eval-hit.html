@@ -225,7 +225,7 @@ function move_to(image_id, isInitial=false) {
   // Adjust cylinder visibility
   var cylinders = cylinder_frame.children;
   for (var i = 0; i < cylinders.length; ++i){
-    cylinders[i].visible = connections[id_to_ix[image_id]]['unobstructed'][i];
+    cylinders[i].visible = connections[id_to_ix[image_id]]['unobstructed'][i] && cylinders[i].included;
   }
   // Correct world frame for individual skybox camera rotation
   var inv = new THREE.Matrix4();
