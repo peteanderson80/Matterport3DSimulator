@@ -76,6 +76,7 @@ PYBIND11_MODULE(MatterSim, m) {
         .def("setCameraVFOV", &Simulator::setCameraVFOV)
         .def("setElevationLimits", &Simulator::setElevationLimits)
         .def("setDiscretizedViewingAngles", &Simulator::setDiscretizedViewingAngles)
+        .def("setRestrictedNavigation", &Simulator::setRestrictedNavigation)
         .def("setPreloadingEnabled", &Simulator::setPreloadingEnabled)
         .def("setDepthEnabled", &Simulator::setDepthEnabled)
         .def("setBatchSize", &Simulator::setBatchSize)

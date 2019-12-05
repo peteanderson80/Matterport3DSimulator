@@ -66,6 +66,7 @@ Simulator::Simulator() :width(320),
                         initialized(false),
                         renderingEnabled(true),
                         discretizeViews(false),
+                        restrictedNavigation(true),
                         preloadImages(false),
                         renderDepth(false),
                         batchSize(1),
@@ -117,6 +118,12 @@ bool Simulator::setElevationLimits(double min, double max) {
 void Simulator::setDiscretizedViewingAngles(bool value) {
     if (!initialized) {
         discretizeViews = value;
+    }
+}
+
+void Simulator::setRestrictedNavigation(bool value) {
+    if (!initialized) {
+        restrictedNavigation = value;
     }
 }
 
@@ -342,7 +349,7 @@ void Simulator::populateNavigable() {
             double rel_elevation = atan2(tar_z, glm::length(target_dir)) - state->elevation;
             glm::vec3 normed_target_dir = glm::normalize(target_dir);
             double cos_angle = glm::dot(normed_target_dir, camera_horizon_dir);
-            if (cos_angle >= cos_half_hfov) {
+            if (!restrictedNavigation || (cos_angle >= cos_half_hfov)) {
                 glm::vec3 pos = navGraph.cameraPosition(state->scanId,i);
                 double rel_heading = atan2( target_dir.x*camera_horizon_dir.y - target_dir.y*camera_horizon_dir.x,
                         target_dir.x*camera_horizon_dir.x + target_dir.y*camera_horizon_dir.y );

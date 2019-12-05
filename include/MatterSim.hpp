@@ -146,6 +146,15 @@ namespace mattersim {
         void setDiscretizedViewingAngles(bool value);
 
         /**
+         * Enable or disable restricted navigation. When enabled, the navigable locations
+         * that the agent can move to are restricted to nearby viewpoints that are in 
+         * the camera field of view given the current heading. When disabled, the agent 
+         * can always move to any adjacent viewpoint in the navigation graph. 
+         * Default is true (enabled).
+         */
+        void setRestrictedNavigation(bool value);
+
+        /**
          * Enable or disable preloading of images from disk to CPU memory. Default is false (disabled).
          * Enabled is better for training models, but will cause a delay when starting the simulator.
          */
@@ -247,6 +256,7 @@ namespace mattersim {
         bool initialized;
         bool renderingEnabled;
         bool discretizeViews;
+        bool restrictedNavigation;
         bool preloadImages;
         bool renderDepth;
         int width;
