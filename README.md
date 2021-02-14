@@ -145,12 +145,12 @@ Now (still from inside the docker container), run the unit tests:
 ./build/tests ~Timing
 ```
 
-Assuming all tests pass, `sim_imgs` will now contain some test images rendered by the simulator. You may also wish to test the rendering frame rate. The following command will try to load all the Matterport environments into memory (requiring around 80 GB memory), and then some information about the rendering frame rate (at 640x480 resolution) will be printed to stdout:
+Assuming all tests pass, `sim_imgs` will now contain some test images rendered by the simulator. You may also wish to test the rendering frame rate. The following command will try to load all the Matterport environments into memory (requiring around 50 GB memory), and then some information about the rendering frame rate (at 640x480 resolution, RGB outputs only) will be printed to stdout:
 ```
 ./build/tests Timing
 ```
 
-The timing test must be run individually from the other tests to get accurate results. Refer to the [Catch](https://github.com/philsquared/Catch) documentation for unit test configuration options.
+The timing test must be run individually from the other tests to get accurate results. Not that the Timing test will fail if there is insufficient memory. As long as all the other tests pass (i.e., `./build/tests ~Timing`) then the install is good. Refer to the [Catch](https://github.com/philsquared/Catch) documentation for unit test configuration options.
 
 Now exit the docker container:
 ```

@@ -405,8 +405,8 @@ TEST_CASE( "Timing", "[Rendering]" ) {
     sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     sim.setRenderingEnabled(true);
     sim.setDiscretizedViewingAngles(true);
-    sim.setPreloadingEnabled(false);
-    int batchSize = 2;
+    sim.setPreloadingEnabled(true);
+    int batchSize = envs.size();
     sim.setBatchSize(batchSize);
     sim.setDepthEnabled(false);
     REQUIRE_NOTHROW(sim.initialize());
