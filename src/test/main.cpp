@@ -405,10 +405,10 @@ TEST_CASE( "Timing", "[Rendering]" ) {
     sim.setCameraVFOV(radians(60)); // 60deg vfov, 80deg hfov
     sim.setRenderingEnabled(true);
     sim.setDiscretizedViewingAngles(true);
-    sim.setPreloadingEnabled(true);
-    int batchSize = envs.size();
+    sim.setPreloadingEnabled(false);
+    int batchSize = 2;
     sim.setBatchSize(batchSize);
-    sim.setDepthEnabled(true);
+    sim.setDepthEnabled(false);
     REQUIRE_NOTHROW(sim.initialize());
 
     std::vector<unsigned int> ix(batchSize);
