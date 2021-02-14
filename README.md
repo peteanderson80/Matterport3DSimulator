@@ -76,27 +76,59 @@ git submodule update --init --recursive
 
 ### Dataset Download
 
-To use the simulator you must first download the [Matterport3D Dataset](https://niessner.github.io/Matterport/) which is available after requesting access [here](https://niessner.github.io/Matterport/). The download script that will be provided allows for downloading of selected data types. 
+To use the simulator you must first download the [Matterport3D Dataset](https://niessner.github.io/Matterport/) which is available after requesting access [here](https://niessner.github.io/Matterport/). The download script that will be provided allows for downloading of selected data types. At minimum you must download the `matterport_skybox_images`. If you wish to use depth outputs then also download `undistorted_depth_images` and `undistorted_camera_parameters`.
 
-Set an environment variable to the location of the dataset, where <PATH> is the full absolute path (not a relative path or symlink) to the directory containing the individual matterport scan directories (17DRP5sb8fy, 2t7WUuJeko7, etc):
+Set an environment variable to the location of the **unzipped** dataset, where <PATH> is the full absolute path (not a relative path or symlink) to the directory containing the individual matterport scan directories (17DRP5sb8fy, 2t7WUuJeko7, etc):
 ```
 export MATTERPORT_DATA_DIR=<PATH>
 ```
 
 Note that if <PATH> is a remote sshfs mount, you will need to mount it with the `-o allow_root` option or the docker container won't be able to access this directory. 
 
+### Building using Docker
+
+Build the docker image:
+```
+docker build -t mattersim:9.2-devel-ubuntu18.04 .
+```
+
+Run the docker container, mounting both the git repo and the dataset:
+```
+nvidia-docker run -it --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans --volume `pwd`:/root/mount/Matterport3DSimulator mattersim:9.2-devel-ubuntu18.04
+```
+
+Now (from inside the docker container), build the simulator code:
+```
+cd /root/mount/Matterport3DSimulator
+mkdir build && cd build
+cmake -DEGL_RENDERING=ON ..
+make
+cd ../
+```
+
+#### Rendering Options (GPU, CPU, off-screen)
+
+Note that there are three rendering options, which are selected using [cmake](https://cmake.org/) options during the build process (by varying line 3 in the build commands immediately above):
+- GPU rendering using OpenGL (requires an X server): `cmake ..` (default)
+- Off-screen GPU rendering using [EGL](https://www.khronos.org/egl/): `cmake -DEGL_RENDERING=ON ..`
+- Off-screen CPU rendering using [OSMesa](https://www.mesa3d.org/osmesa.html): `cmake -DOSMESA_RENDERING=ON ..`
+
+The recommended (fast) approach for training agents is using off-screen GPU rendering (EGL).
+
 ### Dataset Preprocessing
 
-To make data loading faster and to reduce memory usage we preprocess the `matterport_skybox_images` by downscaling and combining all cube faces into a single image using the following script:
+To make data loading faster and to reduce memory usage we preprocess the `matterport_skybox_images` by downscaling and combining all cube faces into a single image. While still inside the docker container, run the following script:
 ```
 ./scripts/downsize_skybox.py
 ```
 
-This will take a while depending on the number of processes used. By default images are downscaled by 50% and 20 processes are used.
+This will take a while depending on the number of processes used (which is a setting in the script). 
+
+After completion, the `matterport_skybox_images` subdirectories in the dataset will contain image files with filename format `<PANO_ID>_skybox_small.jpg`. By default images are downscaled by 50% and 20 processes are used.
 
 #### Depth Outputs
 
-If you need depth outputs as well as RGB (via `sim.setDepthEnabled(True)`), precompute matching depth skybox images by running this script (which requires the simulator code to be built first, and leave out the 'readonly' option from the commands provided when launching the docker container):
+If you need depth outputs as well as RGB (via `sim.setDepthEnabled(True)`), precompute matching depth skybox images by running this script:
 ```
 ./scripts/depth_to_skybox.py
 ```
@@ -106,25 +138,10 @@ Depth skyboxes are generated from the `undistorted_depth_images` using a simple 
 - In the generated depth skyboxes, the depth value is the euclidean distance from the camera center (not the distance in the z direction). This is corrected by the simulator (see Simulator API, below).
 
 
-### Building and Testing using Docker
+### Running Tests
 
-Build the docker image:
+Now (still from inside the docker container), run the unit tests:
 ```
-docker build -t mattersim:9.2-devel-ubuntu18.04 .
-```
-
-Run the docker container, mounting both the git repo and the dataset:
-```
-nvidia-docker run -it --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim:9.2-devel-ubuntu18.04
-```
-
-Now (from inside the docker container), build the simulator and run the unit tests:
-```
-cd /root/mount/Matterport3DSimulator
-mkdir build && cd build
-cmake -DEGL_RENDERING=ON ..
-make
-cd ../
 ./build/tests ~Timing
 ```
 
@@ -135,20 +152,14 @@ Assuming all tests pass, `sim_imgs` will now contain some test images rendered b
 
 The timing test must be run individually from the other tests to get accurate results. Refer to the [Catch](https://github.com/philsquared/Catch) documentation for unit test configuration options.
 
+Now exit the docker container:
+```
+exit
+```
 
-### Rendering Options (GPU, CPU, off-screen)
+## Interactive Demo
 
-There are three rendering options, which are selected using [cmake](https://cmake.org/) options during the build process (by varying line 3 in the build commands immediately above):
-- GPU rendering using OpenGL (requires an X server): `cmake ..` (default)
-- Off-screen GPU rendering using [EGL](https://www.khronos.org/egl/): `cmake -DEGL_RENDERING=ON ..`
-- Off-screen CPU rendering using [OSMesa](https://www.mesa3d.org/osmesa.html): `cmake -DOSMESA_RENDERING=ON ..`
-
-The recommended (fast) approach for training agents is using off-screen GPU rendering (EGL).
-
-
-### Interactive Demo
-
-To run an interactive demo, build the docker image as described above (`docker build -t mattersim:9.2-devel-ubuntu18.04 .`), then run the docker container while sharing the host's X server and DISPLAY environment variable with the container:
+To run an interactive demo, after completing the Installation / Build Instructions above, run the docker container while sharing the host's X server and DISPLAY environment variable with the container:
 ```
 xhost +
 nvidia-docker run -it -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --mount type=bind,source=$MATTERPORT_DATA_DIR,target=/root/mount/Matterport3DSimulator/data/v1/scans,readonly --volume `pwd`:/root/mount/Matterport3DSimulator mattersim:9.2-devel-ubuntu18.04
@@ -157,7 +168,7 @@ cd /root/mount/Matterport3DSimulator
 
 If you get an error like `Error: BadShmSeg (invalid shared segment parameter) 128` you may also need to include `-e="QT_X11_NO_MITSHM=1"` in the docker run command above.
 
-Build the simulator using any rendering option. Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. By default, *these demos have depth rendering off*. Check the code and turn it on if you have preprocessed the depth outputs and want to see depth as well (see Depth Outputs above). 
+Commands for running both python and C++ demos are provided below. These are very simple demos designed to illustrate the use of the simulator in python and C++. By default, *these demos have depth rendering off*. Check the code and turn it on if you have preprocessed the depth outputs and want to see depth as well (see Depth Outputs above). These demos should work regardless of which rendering option was used when building the simulator. 
 
 Python demo:
 ```
