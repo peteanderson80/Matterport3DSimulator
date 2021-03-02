@@ -16,6 +16,7 @@
 #elif defined (EGL_RENDERING)
 #include <epoxy/gl.h>
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #else
 #include <GL/glew.h>
 #endif
