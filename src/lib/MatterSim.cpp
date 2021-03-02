@@ -174,6 +174,20 @@ void Simulator::initialize() {
             throw std::runtime_error( "MatterSim: OSMesaMakeCurrent failed" );
         }
 #elif defined (EGL_RENDERING)
+        // Magic Linking Code?
+        PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+                (PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
+
+        if (!eglQueryDevicesEXT) {
+            throw std::runtime_error( "MatterSim: Extension eglQueryDevicesEXT not available" );
+        }
+
+        PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+                (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+        if (!eglGetPlatformDisplayEXT) {
+            throw std::runtime_error( "MatterSim: Extension eglGetPlatformDisplayEXT not available" );
+        }
+
         // Assuming Nodes have no more than 32 GPUs
         const int maxDevices = 32;
         int validDevice = 0;
