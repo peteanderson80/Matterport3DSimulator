@@ -174,8 +174,29 @@ void Simulator::initialize() {
             throw std::runtime_error( "MatterSim: OSMesaMakeCurrent failed" );
         }
 #elif defined (EGL_RENDERING)
+        // Assuming Nodes have no more than 32 GPUs
+        const int maxDevices = 32;
+        int validDevice = 0;
+        EGLDeviceExt eglDevices[maxDevices];
+        EGLint numDevices = 0;
+
+        // Use EGL Helpers to return # of Valid Devices
+        if (!eglQueryDevicesEXT(maxDevices, eglDevices, &numDevices) || eglGetError() != EGL_SUCCESS) {
+            throw std::runtime_error( "MatterSim: EGL valid devices not found" );
+        }
+
+        // Iteratively Query each Device (Screen), until you find the right one!
+        for (EGLint i = 0; i < numDevices; ++i) {
+            // Set Display
+            eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevices[i], NULL);
+
+            // Validate and Break
+            if (eglGetError() == EGL_SUCCESS && eglDpy != EGL_NO_DISPLAY) {
+                break;
+            }
+        }
+
         // Initialize EGL
-        eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         assertEGLError("eglGetDisplay");
 
         EGLint major, minor;
