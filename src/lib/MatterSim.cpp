@@ -174,14 +174,50 @@ void Simulator::initialize() {
             throw std::runtime_error( "MatterSim: OSMesaMakeCurrent failed" );
         }
 #elif defined (EGL_RENDERING)
-        // Initialize EGL
-        eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        assertEGLError("eglGetDisplay");
+        // Magic Linking Code?
+        PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+                (PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
 
+        if (!eglQueryDevicesEXT) {
+            throw std::runtime_error( "MatterSim: Extension eglQueryDevicesEXT not available" );
+        }
+
+        PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+                (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+        if (!eglGetPlatformDisplayEXT) {
+            throw std::runtime_error( "MatterSim: Extension eglGetPlatformDisplayEXT not available" );
+        }
+
+        // Assuming Nodes have no more than 32 GPUs
+        const int maxDevices = 32;
+        int validDevice = 0;
+        EGLDeviceEXT eglDevices[maxDevices];
+        EGLint numDevices = 0;
+        EGLBoolean initialized;
         EGLint major, minor;
 
-        eglInitialize(eglDpy, &major, &minor);
-        assertEGLError("eglInitialize");
+        // Use EGL Helpers to return # of Valid Devices
+        if (!eglQueryDevicesEXT(maxDevices, eglDevices, &numDevices) || eglGetError() != EGL_SUCCESS) {
+            throw std::runtime_error( "MatterSim: EGL valid devices not found" );
+        }
+
+        // Iteratively Query each Device (Screen), until you find the right one!
+        for (EGLint i = 0; i < numDevices; ++i) {
+            // Set Display
+            eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevices[i], NULL);
+
+            // Validate and Break
+            if (eglGetError() == EGL_SUCCESS && eglDpy != EGL_NO_DISPLAY) {
+                assertEGLError("eglGetDisplay");
+
+                // Initialize EGL and Check?
+                initialized = eglInitialize(eglDpy, &major, &minor);
+                if (eglGetError() == EGL_SUCCESS && initialized == EGL_TRUE) {
+                    assertEGLError("eglInitialize");
+                    break;
+                }
+            }
+        }
 
         // Select an appropriate configuration
         EGLint numConfigs;
