@@ -177,7 +177,7 @@ void Simulator::initialize() {
         // Assuming Nodes have no more than 32 GPUs
         const int maxDevices = 32;
         int validDevice = 0;
-        EGLDeviceExt eglDevices[maxDevices];
+        EGLDeviceEXT eglDevices[maxDevices];
         EGLint numDevices = 0;
 
         // Use EGL Helpers to return # of Valid Devices
