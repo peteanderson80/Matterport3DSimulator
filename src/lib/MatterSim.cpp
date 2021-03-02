@@ -193,6 +193,8 @@ void Simulator::initialize() {
         int validDevice = 0;
         EGLDeviceEXT eglDevices[maxDevices];
         EGLint numDevices = 0;
+        EGLBoolean initialized;
+        EGLint major, minor;
 
         // Use EGL Helpers to return # of Valid Devices
         if (!eglQueryDevicesEXT(maxDevices, eglDevices, &numDevices) || eglGetError() != EGL_SUCCESS) {
@@ -206,17 +208,16 @@ void Simulator::initialize() {
 
             // Validate and Break
             if (eglGetError() == EGL_SUCCESS && eglDpy != EGL_NO_DISPLAY) {
-                break;
+                assertEGLError("eglGetDisplay");
+
+                // Initialize EGL and Check?
+                initialized = eglInitialize(eglDpy, &major, &minor);
+                if (eglGetError() == EGL_SUCCESS && initialized == EGL_TRUE) {
+                    assertEGLError("eglInitialize");
+                    break;
+                }
             }
         }
-
-        // Initialize EGL
-        assertEGLError("eglGetDisplay");
-
-        EGLint major, minor;
-
-        eglInitialize(eglDpy, &major, &minor);
-        assertEGLError("eglInitialize");
 
         // Select an appropriate configuration
         EGLint numConfigs;
