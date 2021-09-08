@@ -15,7 +15,9 @@
 #include <GL/osmesa.h>
 #elif defined (EGL_RENDERING)
 #include <epoxy/gl.h>
+#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #else
 #include <GL/glew.h>
 #endif
