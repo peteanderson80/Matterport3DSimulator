@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install a few libraries to support both EGL and OSMESA options
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y wget doxygen curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev libopencv-dev libopencv-dev python3-setuptools python3-dev python3-pip
+RUN apt-get update && apt-get install -y wget doxygen curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev libopencv-dev python3-setuptools python3-dev python3-pip
 RUN pip3 install opencv-python==4.5.3.56 torch==1.4.0 torchvision numpy==1.21.1 pandas==1.3.1 networkx==2.2
 
 #install latest cmake
