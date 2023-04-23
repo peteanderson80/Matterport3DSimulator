@@ -3,7 +3,7 @@ cycler==0.10.0
 decorator==4.1.2
 matplotlib==2.2.3
 networkx==2.2
-numpy==1.13.3
+numpy==1.22.0
 olefile==0.44
 pandas==0.24.1
 Pillow==8.3.2
