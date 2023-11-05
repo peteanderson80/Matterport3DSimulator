@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iterator>
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 #include <json/json.h>
 #ifdef _OPENMP
@@ -56,7 +57,7 @@ void NavGraph::Location::loadCubemapImages() {
     }
     if (includeDepth) {
         // 16 bit grayscale images
-        cv::Mat depth = cv::imread(skyboxDir + viewpointId + "_skybox_depth_small.png", CV_LOAD_IMAGE_ANYDEPTH);
+        cv::Mat depth = cv::imread(skyboxDir + viewpointId + "_skybox_depth_small.png", cv::IMREAD_ANYDEPTH );
         w = depth.cols/6;
         h = depth.rows;
         xposD = depth(cv::Rect(2*w, 0, w, h));

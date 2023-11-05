@@ -6462,7 +6462,7 @@ namespace Catch {
         static bool isSet;
         static struct sigaction oldSigActions[];// [sizeof(signalDefs) / sizeof(SignalDefs)];
         static stack_t oldSigStack;
-        static char altStackMem[];
+        static char altStackMem[32768]; // SIGSTKSZ
 
         static void handleSignal( int sig );
 
@@ -6597,7 +6597,7 @@ namespace Catch {
         isSet = true;
         stack_t sigStack;
         sigStack.ss_sp = altStackMem;
-        sigStack.ss_size = SIGSTKSZ;
+        sigStack.ss_size = 32768; //quick fix for: SIGSTKSZ -> proper fix: https://github.com/r-lib/testthat/issues/1373#issuecomment-867661266
         sigStack.ss_flags = 0;
         sigaltstack(&sigStack, &oldSigStack);
         struct sigaction sa = { };
@@ -6628,7 +6628,7 @@ namespace Catch {
     bool FatalConditionHandler::isSet = false;
     struct sigaction FatalConditionHandler::oldSigActions[sizeof(signalDefs)/sizeof(SignalDefs)] = {};
     stack_t FatalConditionHandler::oldSigStack = {};
-    char FatalConditionHandler::altStackMem[SIGSTKSZ] = {};
+    char FatalConditionHandler::altStackMem[32768] = {}; //quick fix for: SIGSTKSZ 
 
 } // namespace Catch
 
