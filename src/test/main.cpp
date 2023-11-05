@@ -376,7 +376,7 @@ TEST_CASE( "RGB Image", "[Rendering]" ) {
             auto imgfile = testcase["reference_image"].asString();
             auto reference_image = cv::imread("webgl_imgs/"+imgfile);
             auto state = sim.getState().at(n);
-            double err = cv::norm(reference_image, state->rgb, CV_L2);
+            double err = cv::norm(reference_image, state->rgb, cv::NORM_L2);
             err /= reference_image.rows * reference_image.cols;
             CHECK(err < 0.15);
             // save for later comparison, these images can also be inspected by hand

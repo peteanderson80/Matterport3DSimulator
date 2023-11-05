@@ -1,3 +1,4 @@
+#include <cstdint> 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "MatterSim.hpp"
