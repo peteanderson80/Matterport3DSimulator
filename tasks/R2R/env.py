@@ -181,7 +181,7 @@ class R2RBatch():
             return (0, 0,-1) # Look down
         # Otherwise decide which way to turn
         pos = [state.location.x, state.location.y, state.location.z]
-        target_rel = self.graphs[state.scanId].node[nextViewpointId]['position'] - pos
+        target_rel = self.graphs[state.scanId].nodes[nextViewpointId]['position'] - pos
         target_heading = math.pi/2.0 - math.atan2(target_rel[1], target_rel[0]) # convert to rel to y axis
         if target_heading < 0:
             target_heading += 2.0*math.pi

@@ -2,24 +2,24 @@
 # Requires nvidia gpu with driver 396.37 or higher
 
 
-FROM nvidia/cudagl:9.2-devel-ubuntu18.04
+FROM nvidia/cudagl:11.4.2-devel-ubuntu20.04
 
 # Install cudnn
-ENV CUDNN_VERSION 7.6.4.38
+ENV CUDNN_VERSION=8.2.4.15
 LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcudnn7=$CUDNN_VERSION-1+cuda9.2 \
-libcudnn7-dev=$CUDNN_VERSION-1+cuda9.2 \
-&& \
-    apt-mark hold libcudnn7 && \
+    libcudnn8=${CUDNN_VERSION}-1+cuda11.4 \
+    libcudnn8-dev=${CUDNN_VERSION}-1+cuda11.4 && \
+    apt-mark hold libcudnn8 && \
     rm -rf /var/lib/apt/lists/*
+
 
 
 # Install a few libraries to support both EGL and OSMESA options
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y wget doxygen curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev libopencv-dev python-opencv python3-setuptools python3-dev python3-pip
-RUN pip3 install opencv-python==4.1.0.25 torch==1.1.0 torchvision==0.3.0 numpy==1.13.3 pandas==0.24.1 networkx==2.2
+RUN apt-get update && apt-get install -y wget doxygen curl libjsoncpp-dev libepoxy-dev libglm-dev libosmesa6 libosmesa6-dev libglew-dev libopencv-dev python3-opencv python3-setuptools python3-dev python3-pip
+RUN pip3 install -i https://mirrors.bfsu.edu.cn/pypi/web/simple opencv-python==4.10.0.84 torch==1.12.1+cu113 torchvision==0.13.1+cu113 numpy==1.24.4 pandas==2.0.3 networkx==3.1
 
 #install latest cmake
 ADD https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.sh /cmake-3.12.2-Linux-x86_64.sh
