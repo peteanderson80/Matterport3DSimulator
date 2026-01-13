@@ -190,7 +190,10 @@ namespace mattersim {
             cv::Mat znegD;
             bool im_loaded;
             bool includeDepth;
+            bool keepImages;
             std::string skyboxDir;          //! Path to skybox images
+
+            void unloadCubemapImages();
         };
         typedef std::shared_ptr<Location> LocationPtr;
 
